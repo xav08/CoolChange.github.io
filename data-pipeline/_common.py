@@ -17,6 +17,7 @@ D1 = "meshblocks_attributes.csv"
 D2 = "acs_days_over_35.geojson"
 D3 = "2016_census_mesh_block_counts.csv"
 D4 = "seifa_2016_sa1_indexes.xls"
+D5 = "vicmap_address.csv"
 GEOM = "meshblocks.geojson"
 
 EXPECTED_BLOCKS = 54239
@@ -82,6 +83,17 @@ def load_d4():
     s = s[["SA1_11", "IRSD", "IRSD_dec"]]
     s.to_csv(cached, index=False)
     return s
+
+
+def load_d5():
+    """VicMap Address, one row per street address point (statewide, unfiltered).
+
+    mesh_block is written as a clean zero-padded string by download_data.py,
+    but read it back with an explicit dtype anyway -- CSV carries no type
+    information, so pandas would otherwise infer float64 again purely from
+    what the column looks like, same trap as MB_CODE16 in D1.
+    """
+    return pd.read_csv(raw(D5), dtype={"mesh_block": str})
 
 
 class Checks:
