@@ -106,6 +106,21 @@ SELECT RTRIM(sa2_code16) AS sa2_code16, sa2_name, min(lga_name) AS lga_name, cou
 LIMIT 10
 `;
 
+const streetSearch = `
+-- name: streetSearch
+SELECT s.street_id,
+       s.road_name,
+       s.road_type,
+       s.locality_name,
+       RTRIM(smb.mb_code16) AS mb_code16,
+       smb.n_addresses
+  FROM street s
+  JOIN street_mesh_block smb ON smb.street_id = s.street_id
+ WHERE LOWER(s.road_name) LIKE LOWER($1) || '%'
+   AND LOWER(s.locality_name) = LOWER($2)
+ ORDER BY s.road_name, smb.mb_code16
+`;
+
 const mapSuburbs = `
 -- name: mapSuburbs
 SELECT RTRIM(m.sa2_code16) AS sa2_code16,
@@ -153,6 +168,7 @@ module.exports = {
   blockProjections,
   areaByKey,
   searchSuburbs,
+  streetSearch,
   mapSuburbs,
   mapMeshblocksBySuburb,
 };

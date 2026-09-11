@@ -116,6 +116,38 @@ function shapeArea(row) {
   };
 }
 
+function shapeStreetSearch(street, suburb, rows) {
+  // A street-name search is a PREFIX match (like suburb search), so
+  // "Main" can legitimately match both "Main Street" and "Main Road" as
+  // separate street entities -- group by street_id, not just flatten
+  // every row, so the frontend can tell distinct streets apart (AC 1.3.4)
+  // as well as multiple blocks within one street (AC 1.3.2).
+  const streetsById = new Map();
+  for (const row of rows) {
+    const id = asInt(row.street_id);
+    if (!streetsById.has(id)) {
+      streetsById.set(id, {
+        street_id: id,
+        road_name: row.road_name,
+        road_type: row.road_type,
+        locality_name: row.locality_name,
+        blocks: [],
+      });
+    }
+    streetsById.get(id).blocks.push({
+      mb_code16: trimCode(row.mb_code16),
+      n_addresses: asInt(row.n_addresses),
+    });
+  }
+
+  const results = Array.from(streetsById.values());
+  return {
+    query: { street, suburb },
+    count: results.length,
+    results,
+  };
+}
+
 function shapeBootstrap({ configRows, modelRow, projectionRows }) {
   const config = Object.fromEntries(configRows.map((r) => [r.key, r.value]));
   return {
@@ -163,6 +195,7 @@ module.exports = {
   shapeComparison,
   shapeCoolest,
   shapeArea,
+  shapeStreetSearch,
   shapeBootstrap,
   shapeMeshblockList,
 };

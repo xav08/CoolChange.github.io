@@ -15,6 +15,7 @@ const {
   shapeCoolest,
   shapeProjection,
   shapeArea,
+  shapeStreetSearch,
   round2,
 } = require("./shape");
 
@@ -151,6 +152,20 @@ async function searchSuburbs(rawQuery) {
   };
 }
 
+async function searchStreets(rawStreet, rawSuburb) {
+  const street = String(rawStreet || "").trim();
+  const suburb = String(rawSuburb || "").trim();
+  if (street.length < 2) {
+    throw badRequest("street must be at least 2 characters.");
+  }
+  if (!suburb) {
+    throw badRequest("suburb is required.");
+  }
+
+  const result = await query(sql.streetSearch, [street, suburb]);
+  return shapeStreetSearch(street, suburb, result.rows);
+}
+
 function geometryFeature(row, properties) {
   return {
     type: "Feature",
@@ -226,6 +241,7 @@ module.exports = {
   getMeshblock,
   getArea,
   searchSuburbs,
+  searchStreets,
   getMapSuburbs,
   getMapMeshblocks,
 };
