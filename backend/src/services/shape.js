@@ -122,6 +122,13 @@ function shapeStreetSearch(street, suburb, rows) {
   // separate street entities -- group by street_id, not just flatten
   // every row, so the frontend can tell distinct streets apart (AC 1.3.4)
   // as well as multiple blocks within one street (AC 1.3.2).
+  //
+  // sa2_code16 is carried per block (not assumed uniform across the whole
+  // result) so the frontend can load the right suburb's map geometry
+  // without a separate, string-matching suburb lookup -- VicMap's
+  // locality_name and ABS's sa2_name aren't guaranteed to be spelled
+  // identically, so resolving via this table's own mb_code16 -> mesh_block
+  // join is exact where a second name-based lookup would be fragile.
   const streetsById = new Map();
   for (const row of rows) {
     const id = asInt(row.street_id);
@@ -137,6 +144,7 @@ function shapeStreetSearch(street, suburb, rows) {
     streetsById.get(id).blocks.push({
       mb_code16: trimCode(row.mb_code16),
       n_addresses: asInt(row.n_addresses),
+      sa2_code16: trimCode(row.sa2_code16),
     });
   }
 

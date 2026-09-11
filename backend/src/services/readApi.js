@@ -152,6 +152,31 @@ async function searchSuburbs(rawQuery) {
   };
 }
 
+// Common road-type abbreviations VicMap itself never stores (its data always
+// spells the type in full) but residents naturally type. Only the LAST
+// whitespace-separated token is checked, since the road type is always the
+// final word -- this avoids ever touching the rest of a street name.
+// "St" is deliberately NOT included: it's genuinely ambiguous with "Saint"
+// (St Kilda Road, St Georges Road, ...), and guessing wrong there would
+// silently break real, common Melbourne street names rather than just
+// failing an abbreviation. Every other entry here is unambiguous.
+const ROAD_TYPE_ABBREVIATIONS = {
+  rd: "road", ave: "avenue", av: "avenue", dr: "drive", ct: "court",
+  cres: "crescent", cr: "crescent", pl: "place", ln: "lane",
+  blvd: "boulevard", hwy: "highway", cl: "close", pde: "parade",
+  cct: "circuit", tce: "terrace", gr: "grove", sq: "square",
+  esp: "esplanade", pkwy: "parkway", cir: "circle",
+};
+
+function expandRoadTypeAbbreviation(street) {
+  const tokens = street.split(/\s+/);
+  const lastIndex = tokens.length - 1;
+  const expansion = ROAD_TYPE_ABBREVIATIONS[tokens[lastIndex].toLowerCase()];
+  if (!expansion) return street;
+  tokens[lastIndex] = expansion;
+  return tokens.join(" ");
+}
+
 async function searchStreets(rawStreet, rawSuburb) {
   const street = String(rawStreet || "").trim();
   const suburb = String(rawSuburb || "").trim();
@@ -162,7 +187,8 @@ async function searchStreets(rawStreet, rawSuburb) {
     throw badRequest("suburb is required.");
   }
 
-  const result = await query(sql.streetSearch, [street, suburb]);
+  const result = await query(sql.streetSearch, [expandRoadTypeAbbreviation(street), suburb]);
+  // echo back what the resident actually typed, not the expanded form used internally
   return shapeStreetSearch(street, suburb, result.rows);
 }
 

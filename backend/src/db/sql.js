@@ -113,10 +113,12 @@ SELECT s.street_id,
        s.road_type,
        s.locality_name,
        RTRIM(smb.mb_code16) AS mb_code16,
-       smb.n_addresses
+       smb.n_addresses,
+       RTRIM(m.sa2_code16) AS sa2_code16
   FROM street s
   JOIN street_mesh_block smb ON smb.street_id = s.street_id
- WHERE LOWER(s.road_name) LIKE LOWER($1) || '%'
+  JOIN mesh_block m ON m.mb_code16 = smb.mb_code16
+ WHERE LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($1) || '%'
    AND LOWER(s.locality_name) = LOWER($2)
  ORDER BY s.road_name, smb.mb_code16
 `;

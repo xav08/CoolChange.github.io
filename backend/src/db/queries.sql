@@ -117,10 +117,11 @@ SELECT sa2_code16, sa2_name, min(lga_name) AS lga_name, count(*) AS n_blocks
 -- for the frontend (AC 1.3.4). Zero rows is a normal, successful empty
 -- result, not an error -- that's AC 1.3.3, handled at the API layer, not here.
 SELECT s.street_id, s.road_name, s.road_type, s.locality_name,
-       smb.mb_code16, smb.n_addresses
+       smb.mb_code16, smb.n_addresses, m.sa2_code16
   FROM street s
   JOIN street_mesh_block smb ON smb.street_id = s.street_id
- WHERE LOWER(s.road_name) LIKE LOWER($1) || '%'
+  JOIN mesh_block m ON m.mb_code16 = smb.mb_code16
+ WHERE LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($1) || '%'
    AND LOWER(s.locality_name) = LOWER($2)
  ORDER BY s.road_name, smb.mb_code16;
 
