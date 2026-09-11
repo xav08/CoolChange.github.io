@@ -268,6 +268,9 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
 .suburb-hover-card { display: grid; gap: 3px; margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
 .suburb-hover-card strong { font-family: Georgia, serif; font-size: 21px; font-weight: 500; }
 .suburb-hover-card span { color: #71877b; font-size: 10px; }
+.street-search-status { margin: 10px 0 0; color: #486558; font-size: 12px; line-height: 1.5; }
+.street-search-status.street-search-empty { color: #71877c; }
+.search-clear-button {border: none; background:none; }
 .mesh-detail-card { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
 .mesh-detail-card > p { margin: 0; color: #61796c; font-size: 12px; }
 .mesh-detail-heading { display: grid; gap: 3px; }
