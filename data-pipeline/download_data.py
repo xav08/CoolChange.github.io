@@ -166,14 +166,38 @@ def _clean_mesh_block(v):
     return str(int(v)).zfill(11)
 
 
+def _file_has_columns(path, columns):
+    import pandas as pd
+    try:
+        header = pd.read_csv(path, nrows=0).columns
+        return all(c in header for c in columns)
+    except Exception:
+        return False
+
+
 def pull_d5():
     name = "vicmap_address.csv"
-    if have(name, 1_000_000):
-        print(f"[skip] {name}")
-        return
-    print("[4/7] Vicmap Address (street <-> mesh block) -- unfiltered, "
-          "filtering to our 54,239 blocks happens in 05_build_street_mesh_block.py ...")
+    partial = out(name) + ".partial"
     import pandas as pd
+
+    if have(name, 1_000_000):
+        if _file_has_columns(out(name), ["lon", "lat"]):
+            print(f"[skip] {name}")
+            return
+        print(f"      {name} exists but has no coordinates (from before the "
+              f"vintage-mismatch fix) -- re-fetching with geometry included")
+
+    if os.path.exists(partial) and not _file_has_columns(partial, ["lon", "lat"]):
+        raise SystemExit(
+            f"{partial} exists but is from before the vintage-mismatch fix (no "
+            f"coordinates). Delete it and re-run -- resuming from it would silently "
+            f"skip fetching coordinates for everything already in that file."
+        )
+
+    print("[4/7] Vicmap Address (street <-> mesh block, with coordinates) -- "
+          "coordinates let 06_reconcile_mesh_block.py work out the correct 2016 "
+          "block directly, instead of trusting VicMap's own current-edition "
+          "mesh_block attribute ...")
 
     # Unfiltered scan + Python-side filtering in Phase 2, paged by OBJECTID
     # cursor (not resultOffset), with checkpointing to a .partial file so a
@@ -186,8 +210,7 @@ def pull_d5():
     total = count_payload["count"]
     print(f"      service reports {total:,} total rows")
 
-    partial = out(name) + ".partial"
-    last_oid, n_so_far, header_written, saw_valid_mesh_block = 0, 0, False, False
+    last_oid, n_so_far, header_written, saw_valid_mesh_block, saw_valid_coords = 0, 0, False, False, False
 
     if os.path.exists(partial):
         existing = pd.read_csv(partial, dtype={"mesh_block": str})
@@ -196,12 +219,13 @@ def pull_d5():
             n_so_far = len(existing)
             header_written = True
             saw_valid_mesh_block = existing["mesh_block"].notna().any()
+            saw_valid_coords = existing["lon"].notna().any()
         print(f"      resuming: {n_so_far:,} rows already saved, continuing after OBJECTID {last_oid:,}")
 
     while True:
         r = get(D5, params={
-            "where": f"OBJECTID > {last_oid}", "outFields": D5_FIELDS, "returnGeometry": "false",
-            "orderByFields": "OBJECTID", "resultRecordCount": D5_PAGE_SIZE, "f": "json",
+            "where": f"OBJECTID > {last_oid}", "outFields": D5_FIELDS, "returnGeometry": "true",
+            "outSR": "4326", "orderByFields": "OBJECTID", "resultRecordCount": D5_PAGE_SIZE, "f": "json",
         })
         payload = r.json()
         if "error" in payload:
@@ -217,8 +241,17 @@ def pull_d5():
 
         page_df = pd.DataFrame(f["attributes"] for f in feats)
         page_df["mesh_block"] = page_df["mesh_block"].map(_clean_mesh_block)
+        # lon/lat, in the same SRID (4326) as mesh_block_geometry -- no
+        # reprojection needed downstream. VicMap's own mesh_block attribute
+        # is still kept above, for reference/debugging only -- it tracks the
+        # CURRENT ASGS edition, not 2016, so it is no longer trusted directly.
+        geoms = [f.get("geometry") for f in feats]
+        page_df["lon"] = [g["x"] if g else None for g in geoms]
+        page_df["lat"] = [g["y"] if g else None for g in geoms]
         if page_df["mesh_block"].notna().any():
             saw_valid_mesh_block = True
+        if page_df["lon"].notna().any():
+            saw_valid_coords = True
 
         page_df.to_csv(partial, mode="a", header=not header_written, index=False)
         header_written = True
@@ -241,6 +274,12 @@ def pull_d5():
         raise SystemExit(
             f"!! mesh_block field came back entirely missing/null across all {n_so_far:,} rows -- "
             f"check the field name is still lowercase 'mesh_block' on the service.\n"
+            f"{partial} was NOT renamed to the final output -- inspect it before retrying."
+        )
+    if not saw_valid_coords:
+        raise SystemExit(
+            f"!! no coordinates came back across all {n_so_far:,} rows -- check "
+            f"returnGeometry/outSR are still accepted by the service.\n"
             f"{partial} was NOT renamed to the final output -- inspect it before retrying."
         )
     print("      checks passed (unfiltered -- block-membership check happens in Phase 2)")

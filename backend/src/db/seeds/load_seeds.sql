@@ -29,10 +29,10 @@ TRUNCATE street_mesh_block, mesh_block_projection, area_baseline, model_coeffici
 \echo '-> mesh_block (expect 54,239 rows)'
 \copy mesh_block (mb_code16, sa1_code16, sa2_code16, sa2_name, sa3_code16, sa3_name, lga_name, uhi_mean, canopy_pct, grass_pct, shrub_pct, any_veg_pct, shrub_tree_pct, tree_03_10_pct, tree_10_15_pct, tree_15plus_pct, mb_category, dwellings, persons, area_sqkm, irsd_score, irsd_decile) FROM 'mesh_block.csv' WITH (FORMAT csv, HEADER true, NULL '')
 
-\echo '-> street (expect 59,032 rows)'
+\echo '-> street (expect 65,015 rows)'
 \copy street (street_id, road_name, road_type, locality_name) FROM 'street.csv' WITH (FORMAT csv, HEADER true, NULL '', FORCE_NOT_NULL (road_type))
 
-\echo '-> street_mesh_block (expect 158,278 rows)'
+\echo '-> street_mesh_block (expect 178,762 rows)'
 \copy street_mesh_block (street_id, mb_code16, n_addresses) FROM 'street_mesh_block.csv' WITH (FORMAT csv, HEADER true, NULL '')
 
 \echo '-> area_baseline (expect 744 rows)'
@@ -84,18 +84,20 @@ BEGIN
     END IF;
 
     SELECT count(*) INTO n_street FROM street;
-    IF n_street <> 59032 THEN
-        RAISE EXCEPTION 'street has % rows, expected 59,032', n_street;
+    IF n_street <> 65015 THEN
+        RAISE EXCEPTION 'street has % rows, expected 65,015', n_street;
     END IF;
 
     SELECT count(*), count(DISTINCT mb_code16) INTO n_smb, n_smb_blocks
       FROM street_mesh_block;
-    IF n_smb <> 158278 OR n_smb_blocks <> 45866 THEN
+    IF n_smb <> 178762 OR n_smb_blocks <> 52071 THEN
         RAISE EXCEPTION 'street_mesh_block has % rows over % blocks, '
-                        'expected 158,278 over 45,866 (45,866 of our 54,239 '
+                        'expected 178,762 over 52,071 (52,071 of our 54,239 '
                         'study-area blocks have at least one street -- the '
-                        'other 8,373 are a documented 2016 mesh-block-vintage '
-                        'gap, not a load failure)', n_smb, n_smb_blocks;
+                        'other 2,168 are addressless per this dataset; the '
+                        'spatial-join reconciliation fixed the previous '
+                        'vintage-mismatch gap of 8,373, not a load failure)',
+                        n_smb, n_smb_blocks;
     END IF;
 
     SELECT slope INTO fitted_slope
