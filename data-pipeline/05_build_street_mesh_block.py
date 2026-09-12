@@ -17,25 +17,26 @@ Every validation gate must pass or nothing is written.
 import os
 import pandas as pd
 
-from _common import load_d1, load_d5, SEEDS, EXPECTED_BLOCKS, Checks
+from _common import load_d1, load_d5_reconciled, SEEDS, EXPECTED_BLOCKS, Checks
 
 # VicMap's own field lengths (FeatureServer/0 schema).
 MAX_ROAD_NAME_LEN = 45
 MAX_ROAD_TYPE_LEN = 15
 MAX_LOCALITY_LEN = 46
 
-# Pinned from profiling the full 4,223,173-row statewide fetch (see
-# e1-street-search-log). Re-derive these if D5 or D1 is ever re-downloaded --
-# don't just bump the numbers to whatever the next run happens to produce.
-EXPECTED_MATCHED_ROWS = 2_355_864       # rows whose mesh_block is one of ours
-EXPECTED_BLOCKS_WITH_STREETS = 45_866   # distinct blocks that appear at least once
+# Pinned from the spatially-corrected run (07_reconcile_mesh_block.py's
+# output, not VicMap's own attribute) -- see e1-street-search-log's
+# vintage-mismatch finding. Re-derive if D5, D1, or mesh_block_geometry
+# changes -- don't just bump these to whatever the next run produces.
+EXPECTED_MATCHED_ROWS = 2_708_962       # +353,098 vs the old attribute method
+EXPECTED_BLOCKS_WITH_STREETS = 52_071   # +6,205 blocks recovered vs the old method
 
 
 def build():
     print("Loading sources ...")
-    d1, d5 = load_d1(), load_d5()
-    print(f"  D1 mesh blocks (study area) : {len(d1):,} rows")
-    print(f"  D5 address points (statewide): {len(d5):,} rows")
+    d1, d5 = load_d1(), load_d5_reconciled()
+    print(f"  D1 mesh blocks (study area)      : {len(d1):,} rows")
+    print(f"  D5 address points (statewide, spatially-corrected): {len(d5):,} rows")
 
     valid_codes = set(d1.MB_CODE16)
 
@@ -71,8 +72,16 @@ def build():
     c = Checks()
     c.expect_true("no nulls in road_name / locality_name after cleaning",
                   not df[["road_name", "locality_name"]].isna().any().any())
-    c.expect("rows after filtering to our study-area blocks", len(df), EXPECTED_MATCHED_ROWS, tol=EXPECTED_MATCHED_ROWS * 0.05)
-    c.expect("distinct blocks with >=1 street", grouped.mesh_block.nunique(), EXPECTED_BLOCKS_WITH_STREETS, tol=1000)
+    if EXPECTED_MATCHED_ROWS is None:
+        print(f"  [no pinned expectation yet] rows after filtering to our study-area "
+              f"blocks: {len(df):,} -- pin this as EXPECTED_MATCHED_ROWS once confirmed correct")
+    else:
+        c.expect("rows after filtering to our study-area blocks", len(df), EXPECTED_MATCHED_ROWS)
+    if EXPECTED_BLOCKS_WITH_STREETS is None:
+        print(f"  [no pinned expectation yet] distinct blocks with >=1 street: "
+              f"{grouped.mesh_block.nunique():,} -- pin this as EXPECTED_BLOCKS_WITH_STREETS once confirmed correct")
+    else:
+        c.expect("distinct blocks with >=1 street", grouped.mesh_block.nunique(), EXPECTED_BLOCKS_WITH_STREETS)
     c.expect_true("street.csv unique on (road_name, road_type, locality_name)",
                   not streets.duplicated(["road_name", "road_type", "locality_name"]).any())
     c.expect_true("street_mesh_block.csv unique on (street_id, mb_code16)",
@@ -103,9 +112,13 @@ def build():
     # blocks correctly at the API level.
     missing = EXPECTED_BLOCKS - grouped.mesh_block.nunique()
     if missing:
-        print(f"\n  {missing:,} of our {EXPECTED_BLOCKS:,} study-area blocks have zero streets -- "
-              f"expected (2016 mesh block vintage vs current addresses in growth corridors "
-              f"like Cranbourne East, Doreen, Tarneit). AC 1.3.3 covers this at the API level.")
+        print(f"\n  {missing:,} of our {EXPECTED_BLOCKS:,} study-area blocks have zero streets. "
+              f"The vintage-mismatch gap this used to describe (8,373 blocks, growth corridors "
+              f"like Cranbourne East/Doreen/Tarneit) was fixed by the spatial-join reconciliation "
+              f"in 07_reconcile_mesh_block.py -- this smaller remainder likely reflects genuinely "
+              f"addressless land (parks, industrial, reserves), but that hasn't been directly "
+              f"confirmed against this corrected data yet. AC 1.3.3 covers this at the API level "
+              f"either way.")
 
     return streets, smb
 
