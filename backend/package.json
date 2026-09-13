@@ -11,6 +11,7 @@
     "dev": "nodemon src/index.js",
     "test": "jest",
     "migrate": "node src/db/migrate.js",
+    "simulator:import": "node src/db/importSimulator.js",
     "seed": "node src/db/seed.js",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",

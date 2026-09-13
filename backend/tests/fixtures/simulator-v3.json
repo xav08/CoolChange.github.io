@@ -1,0 +1,333 @@
+{
+  "schema_version": 3,
+  "policy": {
+    "version": "cooling-screen-v2",
+    "min_local_r2": 0.1,
+    "min_effective_neighbors": 30.0,
+    "min_weighted_canopy_sd_pp": 1.0,
+    "bandwidth_multipliers": [
+      0.5,
+      1.0,
+      2.0
+    ],
+    "canopy_ceiling_pct": 100.0,
+    "ceiling_meaning": "Mathematical percentage bound only; site planting capacity is unknown.",
+    "validated_uncertainty_interval": false,
+    "interpretation": "Provisional engineering display rules; passing is an indicative association, not validated reliability or causal cooling."
+  },
+  "reason_messages": {
+    "invalid_local_fit": "Local data do not support a numerical estimate.",
+    "nonnegative_slope": "Local data do not show a negative canopy–heat association. This does not mean planting causes warming.",
+    "weak_local_fit": "Canopy explains too little of the variation in nearby heat measurements to display this estimate.",
+    "unstable_direction": "The estimated direction changes or cannot be estimated when the neighborhood size changes.",
+    "insufficient_local_support": "There are too few effectively weighted observations or too little canopy variation.",
+    "outside_local_canopy_range": "The requested canopy is outside the range observed in the fitted neighborhood.",
+    "exceeds_percentage_bound": "The whole-tree request would exceed 100% canopy; reduce the tree count.",
+    "exceeds_supplied_site_capacity": "The request exceeds the separately supplied site capacity."
+  },
+  "notice": "Indicative association at maturity. Site capacity is unknown unless separately supplied. No calibrated uncertainty intervals or local growth curve.",
+  "blocks": [
+    {
+      "mb_code16": "20046872000",
+      "observed_uhi": 6.198,
+      "observed_canopy_pct": 0.5601,
+      "status": "unavailable",
+      "reason_codes": [
+        "weak_local_fit",
+        "unstable_direction"
+      ],
+      "scenarios": [
+        {
+          "requested_delta_pp": 0.0,
+          "canopy_pct": 0.5601,
+          "applied_delta_pp": 0.0,
+          "status": "baseline",
+          "reason_codes": [],
+          "predicted_uhi": 6.198,
+          "cooling_c": 0.0
+        },
+        {
+          "requested_delta_pp": 5.0,
+          "canopy_pct": 5.5601,
+          "applied_delta_pp": 5.0,
+          "status": "unavailable",
+          "reason_codes": [
+            "weak_local_fit",
+            "unstable_direction"
+          ],
+          "predicted_uhi": null,
+          "cooling_c": null
+        },
+        {
+          "requested_delta_pp": 10.0,
+          "canopy_pct": 10.5601,
+          "applied_delta_pp": 10.0,
+          "status": "unavailable",
+          "reason_codes": [
+            "weak_local_fit",
+            "unstable_direction"
+          ],
+          "predicted_uhi": null,
+          "cooling_c": null
+        },
+        {
+          "requested_delta_pp": 15.0,
+          "canopy_pct": 15.5601,
+          "applied_delta_pp": 15.0,
+          "status": "unavailable",
+          "reason_codes": [
+            "weak_local_fit",
+            "unstable_direction"
+          ],
+          "predicted_uhi": null,
+          "cooling_c": null
+        }
+      ],
+      "tree_planting": {
+        "area_m2": 17000.0,
+        "simulation_slope": null,
+        "local_canopy_min_pct": 0.5601,
+        "local_canopy_max_pct": 50.0234,
+        "site_capacity_trees": null,
+        "site_capacity_status": "not_assessed",
+        "default_limits_by_profile": {
+          "A": {
+            "max_trees_with_estimate": null,
+            "canopy_domain_max_trees": 667
+          },
+          "B": {
+            "max_trees_with_estimate": null,
+            "canopy_domain_max_trees": 167
+          },
+          "C": {
+            "max_trees_with_estimate": null,
+            "canopy_domain_max_trees": 74
+          }
+        }
+      }
+    },
+    {
+      "mb_code16": "20631942810",
+      "observed_uhi": 15.6781,
+      "observed_canopy_pct": 1.563,
+      "status": "indicative",
+      "reason_codes": [],
+      "scenarios": [
+        {
+          "requested_delta_pp": 0.0,
+          "canopy_pct": 1.563,
+          "applied_delta_pp": 0.0,
+          "status": "baseline",
+          "reason_codes": [],
+          "predicted_uhi": 15.6781,
+          "cooling_c": 0.0
+        },
+        {
+          "requested_delta_pp": 5.0,
+          "canopy_pct": 6.563,
+          "applied_delta_pp": 5.0,
+          "status": "indicative",
+          "reason_codes": [],
+          "predicted_uhi": 14.873139751789191,
+          "cooling_c": 0.8049602482108102
+        },
+        {
+          "requested_delta_pp": 10.0,
+          "canopy_pct": 11.563,
+          "applied_delta_pp": 10.0,
+          "status": "indicative",
+          "reason_codes": [],
+          "predicted_uhi": 14.06817950357838,
+          "cooling_c": 1.6099204964216205
+        },
+        {
+          "requested_delta_pp": 15.0,
+          "canopy_pct": 16.563,
+          "applied_delta_pp": 14.999999999999998,
+          "status": "indicative",
+          "reason_codes": [],
+          "predicted_uhi": 13.26321925536757,
+          "cooling_c": 2.4148807446324305
+        }
+      ],
+      "tree_planting": {
+        "area_m2": 79100.0,
+        "simulation_slope": -0.16099204964216204,
+        "local_canopy_min_pct": 0.4494,
+        "local_canopy_max_pct": 36.0368,
+        "site_capacity_trees": null,
+        "site_capacity_status": "not_assessed",
+        "default_limits_by_profile": {
+          "A": {
+            "max_trees_with_estimate": 2164,
+            "canopy_domain_max_trees": 2164
+          },
+          "B": {
+            "max_trees_with_estimate": 542,
+            "canopy_domain_max_trees": 542
+          },
+          "C": {
+            "max_trees_with_estimate": 241,
+            "canopy_domain_max_trees": 241
+          }
+        }
+      }
+    },
+    {
+      "mb_code16": "20024260000",
+      "observed_uhi": 9.0167,
+      "observed_canopy_pct": 43.4713,
+      "status": "indicative",
+      "reason_codes": [],
+      "scenarios": [
+        {
+          "requested_delta_pp": 0.0,
+          "canopy_pct": 43.4713,
+          "applied_delta_pp": 0.0,
+          "status": "baseline",
+          "reason_codes": [],
+          "predicted_uhi": 9.0167,
+          "cooling_c": 0.0
+        },
+        {
+          "requested_delta_pp": 5.0,
+          "canopy_pct": 48.4713,
+          "applied_delta_pp": 5.0,
+          "status": "unavailable",
+          "reason_codes": [
+            "outside_local_canopy_range"
+          ],
+          "predicted_uhi": null,
+          "cooling_c": null
+        },
+        {
+          "requested_delta_pp": 10.0,
+          "canopy_pct": 53.4713,
+          "applied_delta_pp": 10.0,
+          "status": "unavailable",
+          "reason_codes": [
+            "outside_local_canopy_range"
+          ],
+          "predicted_uhi": null,
+          "cooling_c": null
+        },
+        {
+          "requested_delta_pp": 15.0,
+          "canopy_pct": 58.4713,
+          "applied_delta_pp": 15.0,
+          "status": "unavailable",
+          "reason_codes": [
+            "outside_local_canopy_range"
+          ],
+          "predicted_uhi": null,
+          "cooling_c": null
+        }
+      ],
+      "tree_planting": {
+        "area_m2": 9400.0,
+        "simulation_slope": -0.09516922090071732,
+        "local_canopy_min_pct": 0.3852,
+        "local_canopy_max_pct": 45.4313,
+        "site_capacity_trees": null,
+        "site_capacity_status": "not_assessed",
+        "default_limits_by_profile": {
+          "A": {
+            "max_trees_with_estimate": 14,
+            "canopy_domain_max_trees": 14
+          },
+          "B": {
+            "max_trees_with_estimate": 3,
+            "canopy_domain_max_trees": 3
+          },
+          "C": {
+            "max_trees_with_estimate": 1,
+            "canopy_domain_max_trees": 1
+          }
+        }
+      }
+    }
+  ],
+  "planting_assumptions": {
+    "version": "planting-v1",
+    "reviewed_on": "2026-09-12",
+    "default_profile": "B",
+    "profiles": {
+      "A": {
+        "label": "Small reference canopy",
+        "diameter_m": 4.0,
+        "mature_canopy_area_m2": 12.6,
+        "reference_deep_soil_area_m2": 12.0,
+        "reference_min_soil_width_m": 2.5
+      },
+      "B": {
+        "label": "Medium reference canopy",
+        "diameter_m": 8.0,
+        "mature_canopy_area_m2": 50.3,
+        "reference_deep_soil_area_m2": 49.0,
+        "reference_min_soil_width_m": 4.5
+      },
+      "C": {
+        "label": "Large reference canopy",
+        "diameter_m": 12.0,
+        "mature_canopy_area_m2": 113.1,
+        "reference_deep_soil_area_m2": 121.0,
+        "reference_min_soil_width_m": 6.5
+      }
+    },
+    "profile_basis": "Minimum mature canopy areas in a Victorian residential design reference, adopted as representative simulation sizes, not measured street-tree averages, species recommendations or universal street-planting rules.",
+    "default_choice_basis": "Product assumption: B is the middle reference size. Users may choose A or C; B is not a learned or population-average crown size.",
+    "maturity": {
+      "display_label": "At maturity",
+      "illustrative_horizon_years": [
+        20,
+        30
+      ],
+      "basis": "Cockburn council lists approximate mature dimensions at 20–30 years for its street-tree list. This is an Australian planning example, not a validated Melbourne growth curve or a guarantee for the three reference profiles.",
+      "species_specific_years": null,
+      "annual_growth_curve": null,
+      "guaranteed_by_2050": false
+    },
+    "canopy_accounting": {
+      "default_net_canopy_fraction": 1.0,
+      "interpretation": "Assumes all added trees survive to the selected mature size, their new crown areas do not overlap existing or other new canopy, and all credited canopy lies inside the selected block. A smaller explicit net fraction can describe a scenario; it is not estimated from our data.",
+      "overlap_rule": "Count overlapping canopy only once. No tree positions or crown polygons are available, so actual overlap cannot be calculated.",
+      "physical_percentage_bound": 100.0
+    },
+    "capacity": {
+      "physical_capacity_from_current_data": null,
+      "reason": "Mesh-block area, grass and canopy percentages do not identify permitted planting locations, underground services, crown overlap, clearances or suitable soil geometry.",
+      "model_limit": "Floor of additional canopy supported by the local model, in square metres, divided by the assumed net crown area per tree. This is a simulation limit, not a planting-space assessment.",
+      "optional_site_capacity": "A separately supplied integer capacity and its source can further restrict the scenario. The simulator does not certify that assessment.",
+      "deep_soil_use": "Display the reference soil requirements for site planning, but do not divide total mesh-block or grass area by these numbers to invent planting capacity."
+    },
+    "sources": [
+      {
+        "id": "vic_mid_rise_2026",
+        "title": "Mid-Rise Code Guidelines, Version 1, March 2026",
+        "publisher": "Victorian Department of Transport and Planning",
+        "url": "https://www.planning.vic.gov.au/__data/assets/pdf_file/0037/767836/Mid-Rise-Code-Guidelines.pdf",
+        "locator": "Printed page 23 Table E2-6.2 (PDF page 22); printed page 26 canopy overlap guidance (PDF page 25)",
+        "scope": "Clause 57 residential design guidance; used as a reference-size basis only, not applied as a mesh-block planting law."
+      },
+      {
+        "id": "casey_tree_guide",
+        "title": "City of Casey Summary Tree Guide",
+        "url": "https://www.casey.vic.gov.au/policies-strategies/city-of-casey-summary-tree-guide",
+        "locator": "Tree selection and planting; offsets and spacing",
+        "scope": "Site-specific species selection, 6–20 m spacing depending on tree size, and clearances to infrastructure; does not give a universal mesh-block capacity."
+      },
+      {
+        "id": "cockburn_street_trees",
+        "title": "Request a street tree for your verge",
+        "url": "https://www.cockburn.wa.gov.au/Environment-and-Waste/Street-Trees-and-Verges/Request-a-Street-Tree",
+        "locator": "List of street tree species, approximate mature height and width at 20–30 years",
+        "scope": "Western Australian council example supporting an illustrative horizon, not local growth calibration."
+      }
+    ]
+  },
+  "inputs": {
+    "planting_assumptions_sha256": "cd8e88d03111b17ab0aec6384c1f6bba189196a013ebe716d62ee8c873967e8e",
+    "points_sha256": "d6e1c65cf598c0bb7c57c487221cb283d4c04f3806b72b07c34660a6304d54e1",
+    "mesh_block_sha256": "c9b2ea471b60a1a5983b46066b0d76bad4b1cfa847c3e631cb10923dd8c18f0f"
+  }
+}

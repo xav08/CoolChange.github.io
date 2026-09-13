@@ -17,6 +17,15 @@
 
 BEGIN;
 
+-- A full seed reload invalidates previously imported simulator releases.
+-- This also works before migration 005 has been applied.
+DO $$
+BEGIN
+    IF to_regclass('simulator_release') IS NOT NULL THEN
+        TRUNCATE simulator_active, simulator_block, simulator_release;
+    END IF;
+END $$;
+
 -- Reverse dependency order: children first.
 TRUNCATE mesh_block_projection, area_baseline, model_coefficient, mesh_block
     RESTART IDENTITY CASCADE;
