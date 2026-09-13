@@ -17,6 +17,7 @@ D1 = "meshblocks_attributes.csv"
 D2 = "acs_days_over_35.geojson"
 D3 = "2016_census_mesh_block_counts.csv"
 D4 = "seifa_2016_sa1_indexes.xls"
+D5 = "vicmap_address.csv"
 GEOM = "meshblocks.geojson"
 
 EXPECTED_BLOCKS = 54239
@@ -82,6 +83,40 @@ def load_d4():
     s = s[["SA1_11", "IRSD", "IRSD_dec"]]
     s.to_csv(cached, index=False)
     return s
+
+
+def load_d5():
+    """VicMap Address, one row per street address point (statewide, unfiltered).
+
+    mesh_block is written as a clean zero-padded string by download_data.py,
+    but read it back with an explicit dtype anyway -- CSV carries no type
+    information, so pandas would otherwise infer float64 again purely from
+    what the column looks like, same trap as MB_CODE16 in D1.
+
+    NOTE: mesh_block here is VicMap's own, CURRENT-edition attribute, not
+    2016-vintage -- 05_build_street_mesh_block.py no longer trusts it
+    directly (see e1-street-search-log's vintage-mismatch finding). Use
+    load_d5_reconciled() instead for anything that needs the correct 2016
+    block.
+    """
+    return pd.read_csv(raw(D5), dtype={"mesh_block": str})
+
+
+def load_d5_reconciled():
+    """VicMap Address with mesh_block replaced by the spatially-correct 2016
+    block (07_reconcile_mesh_block.py's output), not VicMap's own
+    current-edition attribute. This is what 05_build_street_mesh_block.py
+    should read.
+    """
+    path = os.path.join(RAW, "vicmap_address_2016.csv")
+    if not os.path.exists(path):
+        raise SystemExit(
+            f"{path} not found -- run 07_reconcile_mesh_block.py first. "
+            f"05_build_street_mesh_block.py no longer reads raw D5 directly, "
+            f"since VicMap's own mesh_block attribute is current-edition, not 2016."
+        )
+    df = pd.read_csv(path, dtype={"mb_code16_2016": str})
+    return df.drop(columns=["mesh_block"]).rename(columns={"mb_code16_2016": "mesh_block"})
 
 
 class Checks:

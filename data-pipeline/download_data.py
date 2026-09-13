@@ -22,13 +22,22 @@ D1 = ("https://plan-gis.mapshare.vic.gov.au/arcgis/rest/services/"
       "CoolingGreening/CoolingGreening/MapServer/55/query")
 D2 = ("https://services-ap1.arcgis.com/Xoz8Es66HpfM8jP9/arcgis/rest/services/"
       "temperature_hazardvariables__proj_gwls__classified_aus__mm/FeatureServer/1/query")
+D5 = ("https://services-ap1.arcgis.com/P744lA0wf4LlBZ84/arcgis/rest/services/"
+      "Vicmap_Address/FeatureServer/0/query")
 
 D1_FIELDS = ("OBJECTID,MB_CODE16,SA1_MAIN16,SA2_MAIN16,SA2_NAME16,SA3_CODE16,SA3_NAME16,"
              "LGA,UHI18_M,PERANYTREE,PERGRASS,PERSHRUB,PERANYVEG,PERSHRBTRE,"
              "PERTR03_10,PERTR10_15,PERTR15PL,Shape_Area")
+D5_FIELDS = "OBJECTID,road_name,road_type,road_suffix,locality_name,mesh_block"
+D5_PAGE_SIZE = 2000                # VicMap FeatureServer's max record count (D1 uses 1000)
 
 EXPECTED_D1_COUNT = 54239          # verified 20 Aug 2026
 EXPECTED_D2_COUNT = 132
+# No EXPECTED_D5_COUNT: VicMap Address updates weekly (unlike D1's static 2018
+# snapshot), and this pull is deliberately unfiltered (see pull_d5()), so
+# there's no fixed row count to check against here. The page loop terminating
+# cleanly is the correctness gate for the download step; the real
+# mesh_block-membership check happens in 05_build_street_mesh_block.py.
 
 FILES = {                          # plain HTTP downloads
     "2016_census_mesh_block_counts.csv":
@@ -75,7 +84,7 @@ def pull_d1_attributes():
     if have(name, 1_000_000):
         print(f"[skip] {name}")
         return
-    print("[1/6] Mesh block attributes (heat + canopy) …")
+    print("[1/7] Mesh block attributes (heat + canopy) …")
     import pandas as pd
     rows, offset = [], 0
     while True:
@@ -119,7 +128,7 @@ def pull_d1_geometry():
     if have(name, 10_000_000):
         print(f"[skip] {name}")
         return
-    print("[2/6] Mesh block polygons — this is the slow one …")
+    print("[2/7] Mesh block polygons — this is the slow one …")
     feats, offset = [], 0
     while True:
         r = get(D1, params={
@@ -144,13 +153,148 @@ def pull_d1_geometry():
     print(f"      -> {out(name)}  ({mb:.0f} MB)")
 
 
+# ----------------------------------------------------------------- D5
+def _clean_mesh_block(v):
+    """Normalise to a zero-padded 11-digit string, or None.
+
+    ArcGIS sometimes serialises this string field as a bare JSON number.
+    Also handles NaN (not just None) since a null in a float64 column
+    surfaces as NaN.
+    """
+    if v is None or (isinstance(v, float) and v != v):   # v != v is the NaN check
+        return None
+    return str(int(v)).zfill(11)
+
+
+def _file_has_columns(path, columns):
+    import pandas as pd
+    try:
+        header = pd.read_csv(path, nrows=0).columns
+        return all(c in header for c in columns)
+    except Exception:
+        return False
+
+
+def pull_d5():
+    name = "vicmap_address.csv"
+    partial = out(name) + ".partial"
+    import pandas as pd
+
+    if have(name, 1_000_000):
+        if _file_has_columns(out(name), ["lon", "lat"]):
+            print(f"[skip] {name}")
+            return
+        print(f"      {name} exists but has no coordinates (from before the "
+              f"vintage-mismatch fix) -- re-fetching with geometry included")
+
+    if os.path.exists(partial) and not _file_has_columns(partial, ["lon", "lat"]):
+        raise SystemExit(
+            f"{partial} exists but is from before the vintage-mismatch fix (no "
+            f"coordinates). Delete it and re-run -- resuming from it would silently "
+            f"skip fetching coordinates for everything already in that file."
+        )
+
+    print("[4/7] Vicmap Address (street <-> mesh block, with coordinates) -- "
+          "coordinates let 06_reconcile_mesh_block.py work out the correct 2016 "
+          "block directly, instead of trusting VicMap's own current-edition "
+          "mesh_block attribute ...")
+
+    # Unfiltered scan + Python-side filtering in Phase 2, paged by OBJECTID
+    # cursor (not resultOffset), with checkpointing to a .partial file so a
+    # failure resumes instead of restarting. See the pipeline decision log
+    # for why.
+    count_r = get(D5, params={"where": "1=1", "returnCountOnly": "true", "f": "json"})
+    count_payload = count_r.json()
+    if "error" in count_payload:
+        raise SystemExit(f"ArcGIS returned an error getting the total count: {count_payload['error']}")
+    total = count_payload["count"]
+    print(f"      service reports {total:,} total rows")
+
+    last_oid, n_so_far, header_written, saw_valid_mesh_block, saw_valid_coords = 0, 0, False, False, False
+
+    if os.path.exists(partial):
+        existing = pd.read_csv(partial, dtype={"mesh_block": str})
+        if len(existing):
+            last_oid = int(existing["OBJECTID"].max())
+            n_so_far = len(existing)
+            header_written = True
+            saw_valid_mesh_block = existing["mesh_block"].notna().any()
+            saw_valid_coords = existing["lon"].notna().any()
+        print(f"      resuming: {n_so_far:,} rows already saved, continuing after OBJECTID {last_oid:,}")
+
+    while True:
+        r = get(D5, params={
+            "where": f"OBJECTID > {last_oid}", "outFields": D5_FIELDS, "returnGeometry": "true",
+            "outSR": "4326", "orderByFields": "OBJECTID", "resultRecordCount": D5_PAGE_SIZE, "f": "json",
+        })
+        payload = r.json()
+        if "error" in payload:
+            raise SystemExit(
+                f"ArcGIS returned an error after OBJECTID {last_oid:,} "
+                f"({n_so_far:,} rows saved so far in {partial}): {payload['error']}\n"
+                f"Progress up to this point is preserved in that file -- "
+                f"just re-run to resume from here, don't delete it."
+            )
+        feats = payload.get("features", [])
+        if not feats:
+            break
+
+        page_df = pd.DataFrame(f["attributes"] for f in feats)
+        page_df["mesh_block"] = page_df["mesh_block"].map(_clean_mesh_block)
+        # lon/lat, in the same SRID (4326) as mesh_block_geometry -- no
+        # reprojection needed downstream. VicMap's own mesh_block attribute
+        # is still kept above, for reference/debugging only -- it tracks the
+        # CURRENT ASGS edition, not 2016, so it is no longer trusted directly.
+        geoms = [f.get("geometry") for f in feats]
+        page_df["lon"] = [g["x"] if g else None for g in geoms]
+        page_df["lat"] = [g["y"] if g else None for g in geoms]
+        if page_df["mesh_block"].notna().any():
+            saw_valid_mesh_block = True
+        if page_df["lon"].notna().any():
+            saw_valid_coords = True
+
+        page_df.to_csv(partial, mode="a", header=not header_written, index=False)
+        header_written = True
+        n_so_far += len(page_df)
+        last_oid = int(page_df["OBJECTID"].max())
+        print(f"      {n_so_far:,} / {total:,}", end="\r")
+        if len(feats) < D5_PAGE_SIZE:
+            break
+
+    print(f"      {n_so_far:,} rows            ")
+
+    if n_so_far != total:
+        raise SystemExit(
+            f"!! fetched {n_so_far:,} rows but the service reports {total:,} total -- "
+            f"the fetch stopped early after OBJECTID {last_oid:,}.\n"
+            f"Progress is saved in {partial} -- just re-run to resume from here, "
+            f"don't delete it."
+        )
+    if not saw_valid_mesh_block:
+        raise SystemExit(
+            f"!! mesh_block field came back entirely missing/null across all {n_so_far:,} rows -- "
+            f"check the field name is still lowercase 'mesh_block' on the service.\n"
+            f"{partial} was NOT renamed to the final output -- inspect it before retrying."
+        )
+    if not saw_valid_coords:
+        raise SystemExit(
+            f"!! no coordinates came back across all {n_so_far:,} rows -- check "
+            f"returnGeometry/outSR are still accepted by the service.\n"
+            f"{partial} was NOT renamed to the final output -- inspect it before retrying."
+        )
+    print("      checks passed (unfiltered -- block-membership check happens in Phase 2)")
+
+    os.replace(partial, out(name))
+    print(f"      -> {out(name)}  ({os.path.getsize(out(name))/1e6:.0f} MB)")
+
+
 # ----------------------------------------------------------------- D2
 def pull_d2():
     name = "acs_days_over_35.geojson"
     if have(name):
         print(f"[skip] {name}")
         return
-    print("[3/6] ACS projected days >= 35 C …")
+    print("[3/7] ACS projected days >= 35 C …")
     r = get(D2, params={
         "where": "1=1", "outFields": "*", "returnGeometry": "true",
         "outSR": 4326, "resultRecordCount": 2000, "f": "geojson",
@@ -166,7 +310,7 @@ def pull_d2():
 
 # ----------------------------------------------------------------- plain files
 def pull_files():
-    for i, (name, url) in enumerate(FILES.items(), start=4):
+    for i, (name, url) in enumerate(FILES.items(), start=5):
         if have(name, 100_000):
             print(f"[skip] {name}")
             continue
@@ -192,8 +336,9 @@ def main():
     if a.geometry:
         pull_d1_geometry()
     else:
-        print("[2/6] skipping polygons — rerun with --geometry when you need the map")
+        print("[2/7] skipping polygons — rerun with --geometry when you need the map")
     pull_d2()
+    pull_d5()
     pull_files()
 
     print("\nDone. Contents of", RAW)

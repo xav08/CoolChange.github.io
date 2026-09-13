@@ -11,14 +11,15 @@
 -- rather than an append. Wrapped in one transaction -- if any file fails,
 -- nothing changes.
 --
--- The CSVs are produced by data-pipeline/02_build_mesh_block.py and
--- data-pipeline/03_build_projections.py. Do not hand-edit them.
+-- The CSVs are produced by data-pipeline/02_build_mesh_block.py,
+-- data-pipeline/03_build_projections.py, and
+-- data-pipeline/05_build_street_mesh_block.py. Do not hand-edit them.
 -- =============================================================================
 
 BEGIN;
 
 -- Reverse dependency order: children first.
-TRUNCATE mesh_block_projection, area_baseline, model_coefficient, mesh_block
+TRUNCATE street_mesh_block, mesh_block_projection, area_baseline, model_coefficient, street, mesh_block
     RESTART IDENTITY CASCADE;
 
 -- Empty CSV fields mean NULL. This matters for irsd_score / irsd_decile,
@@ -27,6 +28,12 @@ TRUNCATE mesh_block_projection, area_baseline, model_coefficient, mesh_block
 
 \echo '-> mesh_block (expect 54,239 rows)'
 \copy mesh_block (mb_code16, sa1_code16, sa2_code16, sa2_name, sa3_code16, sa3_name, lga_name, uhi_mean, canopy_pct, grass_pct, shrub_pct, any_veg_pct, shrub_tree_pct, tree_03_10_pct, tree_10_15_pct, tree_15plus_pct, mb_category, dwellings, persons, area_sqkm, irsd_score, irsd_decile) FROM 'mesh_block.csv' WITH (FORMAT csv, HEADER true, NULL '')
+
+\echo '-> street (expect 65,015 rows)'
+\copy street (street_id, road_name, road_type, locality_name) FROM 'street.csv' WITH (FORMAT csv, HEADER true, NULL '', FORCE_NOT_NULL (road_type))
+
+\echo '-> street_mesh_block (expect 178,762 rows)'
+\copy street_mesh_block (street_id, mb_code16, n_addresses) FROM 'street_mesh_block.csv' WITH (FORMAT csv, HEADER true, NULL '')
 
 \echo '-> area_baseline (expect 744 rows)'
 \copy area_baseline (area_type, area_code, area_name, scope, n_blocks, uhi_mean, uhi_p10, uhi_p90, canopy_mean, canopy_p10, canopy_p90, coolest_mb_code, coolest_uhi, coolest_canopy_pct) FROM 'area_baseline.csv' WITH (FORMAT csv, HEADER true, NULL '')
@@ -47,6 +54,9 @@ DECLARE
     n_no_seifa   INT;
     n_proj       INT;
     n_covered    INT;
+    n_street     INT;
+    n_smb        INT;
+    n_smb_blocks INT;
     total_people INT;
     fitted_slope REAL;
 BEGIN
@@ -73,6 +83,23 @@ BEGIN
                         'expected 204,532 over 51,133', n_proj, n_covered;
     END IF;
 
+    SELECT count(*) INTO n_street FROM street;
+    IF n_street <> 65015 THEN
+        RAISE EXCEPTION 'street has % rows, expected 65,015', n_street;
+    END IF;
+
+    SELECT count(*), count(DISTINCT mb_code16) INTO n_smb, n_smb_blocks
+      FROM street_mesh_block;
+    IF n_smb <> 178762 OR n_smb_blocks <> 52071 THEN
+        RAISE EXCEPTION 'street_mesh_block has % rows over % blocks, '
+                        'expected 178,762 over 52,071 (52,071 of our 54,239 '
+                        'study-area blocks have at least one street -- the '
+                        'other 2,168 are addressless per this dataset; the '
+                        'spatial-join reconciliation fixed the previous '
+                        'vintage-mismatch gap of 8,373, not a load failure)',
+                        n_smb, n_smb_blocks;
+    END IF;
+
     SELECT slope INTO fitted_slope
       FROM model_coefficient WHERE is_active AND scope_type = 'METRO';
     IF fitted_slope IS NULL OR fitted_slope > -0.10 OR fitted_slope < -0.15 THEN
@@ -96,6 +123,8 @@ SELECT 'mesh_block'            AS table_name, count(*) AS rows FROM mesh_block
 UNION ALL SELECT 'mesh_block_projection', count(*) FROM mesh_block_projection
 UNION ALL SELECT 'area_baseline',         count(*) FROM area_baseline
 UNION ALL SELECT 'model_coefficient',     count(*) FROM model_coefficient
+UNION ALL SELECT 'street',                 count(*) FROM street
+UNION ALL SELECT 'street_mesh_block',      count(*) FROM street_mesh_block
 UNION ALL SELECT 'projection_metro',      count(*) FROM projection_metro
 UNION ALL SELECT 'app_config',            count(*) FROM app_config
 ORDER BY 1;
