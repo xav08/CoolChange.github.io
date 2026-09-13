@@ -82,7 +82,7 @@ SELECT pm.warming_level,
        pm.horizon_label,
        COALESCE(p.days_label, pm.days_label) AS days_label,
        COALESCE(p.days_lower, pm.days_lower) AS days_lower,
-       COALESCE(p.days_upper, pm.days_upper) AS days_upper,
+       CASE WHEN p.mb_code16 IS NULL THEN pm.days_upper ELSE p.days_upper END AS days_upper,
        (p.mb_code16 IS NULL)                 AS is_fallback
   FROM projection_metro pm
   LEFT JOIN mesh_block_projection p
