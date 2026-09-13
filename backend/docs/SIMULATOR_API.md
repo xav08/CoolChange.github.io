@@ -132,3 +132,17 @@ transaction rollback/idempotency. Before deployment, apply the migration and
 import on a local/staging PostgreSQL database, then check bootstrap and both
 example block endpoints. The Jest database mocks do not execute PostgreSQL SQL.
 Frontend wiring and deployment are separate remaining steps.
+
+Local Docker validation was completed on 2026-09-13; see
+[the validation report](LOCAL_DATABASE_VALIDATION.md) for the checked release,
+results, remaining scope and reproduction commands. To recheck an imported
+release against its full source export using real SQL and HTTP:
+
+```bash
+npm run simulator:verify -- /absolute/path/to/simulator_scenarios.json
+```
+
+This read-only verifier defaults to the local Docker database on port 5433,
+regardless of a different database URL in `.env`, and closes its temporary HTTP
+server after verification. An explicitly exported `DATABASE_URL` must target
+`localhost:5433/coolchange` or `127.0.0.1:5433/coolchange`.
