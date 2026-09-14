@@ -16,6 +16,7 @@ const {
   shapeCoolest,
   shapeProjection,
   shapeArea,
+  shapeStreetSearch,
   round2,
 } = require("./shape");
 
@@ -153,6 +154,55 @@ async function searchSuburbs(rawQuery) {
   };
 }
 
+// Common road-type abbreviations VicMap itself never stores (its data always
+// spells the type in full) but residents naturally type. Only the LAST
+// whitespace-separated token is checked, since the road type is always the
+// final word -- this avoids ever touching the rest of a street name.
+// "St" is deliberately NOT included: it's genuinely ambiguous with "Saint"
+// (St Kilda Road, St Georges Road, ...), and guessing wrong there would
+// silently break real, common Melbourne street names rather than just
+// failing an abbreviation. Every other entry here is unambiguous.
+const ROAD_TYPE_ABBREVIATIONS = {
+  rd: "road", ave: "avenue", av: "avenue", dr: "drive", ct: "court",
+  cres: "crescent", cr: "crescent", pl: "place", ln: "lane",
+  blvd: "boulevard", hwy: "highway", cl: "close", pde: "parade",
+  cct: "circuit", tce: "terrace", gr: "grove", sq: "square",
+  esp: "esplanade", pkwy: "parkway", cir: "circle",
+};
+
+function expandRoadTypeAbbreviation(street) {
+  const tokens = street.split(/\s+/);
+  const lastIndex = tokens.length - 1;
+  const expansion = ROAD_TYPE_ABBREVIATIONS[tokens[lastIndex].toLowerCase()];
+  if (!expansion) return street;
+  tokens[lastIndex] = expansion;
+  return tokens.join(" ");
+}
+
+function normalizeWhitespace(s) {
+  return s.replace(/\s+/g, " ");
+}
+
+async function searchStreets(rawStreet, rawSuburb) {
+  const street = normalizeWhitespace(String(rawStreet || "")).trim();
+  const suburb = normalizeWhitespace(String(rawSuburb || "")).trim();
+  if (street.length < 2) {
+    throw badRequest("street must be at least 2 characters.");
+  }
+  if (!suburb) {
+    throw badRequest("suburb is required.");
+  }
+
+  // Match against BOTH the raw prefix and the abbreviation-expanded one, not
+  // just the expanded one -- "Pl" expanding to "place" must not stop it from
+  // also matching "Plenty Road" via the plain, unexpanded prefix.
+  const streetExpanded = expandRoadTypeAbbreviation(street);
+  const result = await query(sql.streetSearch, [street, suburb, streetExpanded]);
+  // echo back what the resident actually typed (whitespace-normalised), not
+  // the expanded form used internally for matching
+  return shapeStreetSearch(street, suburb, result.rows);
+}
+
 function geometryFeature(row, properties) {
   return {
     type: "Feature",
@@ -228,6 +278,7 @@ module.exports = {
   getMeshblock,
   getArea,
   searchSuburbs,
+  searchStreets,
   getMapSuburbs,
   getMapMeshblocks,
 };
