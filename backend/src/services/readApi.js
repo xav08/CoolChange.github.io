@@ -1,5 +1,6 @@
 const pool = require("../db/pool");
 const sql = require("../db/sql");
+const { getSimulatorMetadata, getBlockSimulator } = require("./simulator");
 const {
   ApiError,
   notFound,
@@ -35,7 +36,7 @@ async function query(text, params) {
 }
 
 async function getBootstrap() {
-  if (bootstrapCache) return bootstrapCache;
+  if (bootstrapCache) return { ...bootstrapCache, simulator: await getSimulatorMetadata() };
 
   const configResult = await query(sql.bootstrapConfig);
   const modelResult = await query(sql.bootstrapModel);
@@ -58,7 +59,7 @@ async function getBootstrap() {
     modelRow: modelResult.rows[0],
     projectionRows: projectionResult.rows,
   });
-  return bootstrapCache;
+  return { ...bootstrapCache, simulator: await getSimulatorMetadata() };
 }
 
 async function listMeshblocks(lga) {
@@ -106,6 +107,7 @@ async function getMeshblock(mbCode16) {
   const coolest = shapeCoolest(coolestRow);
   return {
     block,
+    simulator: await getBlockSimulator(code),
     flags: shapeFlags(block, coolest),
     comparisons: comparisonRows.map(shapeComparison),
     coolest_in_lga: coolest,

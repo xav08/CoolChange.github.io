@@ -39,6 +39,7 @@ describe("GET /api/v1", () => {
 describe("GET /api/v1/bootstrap", () => {
   it("composes config, model and metro projections", async () => {
     pool.query.mockImplementation(async (text) => {
+      if (text.includes("simulatorMetadata")) return rows([]);
       if (text.includes("bootstrapConfig")) {
         return rows([
           { key: "data_vintage", value: "2018" },
@@ -78,6 +79,7 @@ describe("GET /api/v1/bootstrap", () => {
     const response = await request(app).get("/api/v1/bootstrap");
     expect(response.status).toBe(200);
     expect(response.body.n_blocks).toBe(54239);
+    expect(response.body.simulator).toBeNull();
     expect(response.body.projections[0].days_label).toBe("5-10");
   });
 
@@ -113,6 +115,7 @@ describe("GET /api/v1/meshblocks/:mb_code16", () => {
 
   it("sets fallback and population flags from the four queries", async () => {
     pool.query.mockImplementation(async (text) => {
+      if (text.includes("simulatorBlock")) return rows([]);
       if (text.includes("blockByCode")) {
         return rows([
           {
@@ -179,6 +182,7 @@ describe("GET /api/v1/meshblocks/:mb_code16", () => {
     expect(response.body.flags.no_published_population).toBe(true);
     expect(response.body.flags.already_coolest_in_lga).toBe(false);
     expect(response.body.block.irsd_score).toBeNull();
+    expect(response.body.simulator).toBeNull();
     expect(response.body.projections[0].is_fallback).toBe(true);
     expect(response.body.comparisons[0].uhi_delta).toBe(-0.68);
   });
