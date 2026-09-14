@@ -41,6 +41,11 @@ resource "aws_cloudfront_distribution" "frontend" {
     target_origin_id       = aws_s3_bucket.frontend.id
     viewer_protocol_policy = "redirect-to-https"
     cache_policy_id        = data.aws_cloudfront_cache_policy.caching_optimized.id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_routing.arn
+    }
   }
 
   # SPA routing: S3 has no real object at e.g. /methodology, so it
@@ -103,4 +108,16 @@ data "aws_iam_policy_document" "frontend_bucket" {
 resource "aws_s3_bucket_policy" "frontend" {
   bucket = aws_s3_bucket.frontend.id
   policy = data.aws_iam_policy_document.frontend_bucket.json
+}
+
+
+# Iteration-aware SPA routing, evaluated before the S3 origin is hit.
+# The custom_error_response blocks below stay as a dumb fallback safety
+# net — they just won't normally fire anymore, since this function
+# resolves extensionless paths itself.
+resource "aws_cloudfront_function" "spa_routing" {
+  name    = "${var.name_prefix}-spa-routing"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = file("${path.module}/cloudfront-functions/spa-routing.js")
 }
