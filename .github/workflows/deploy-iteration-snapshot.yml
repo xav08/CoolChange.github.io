@@ -54,6 +54,7 @@ jobs:
         env:
           VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_SITE_PASSWORD: ${{ secrets.VITE_SITE_PASSWORD }}
 
       # Same deploy role as deployfrontend.yml — already scoped
       # (modules/iam/ci_deploy_policy.tf) to the whole bucket via a `/*`
