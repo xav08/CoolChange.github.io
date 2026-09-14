@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 export function AddressExplorer() {
-  const [query, setQuery] = useState("Clyde North VIC 3978");
+  const [query, setQuery] = useState("Clayton VIC 3168");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

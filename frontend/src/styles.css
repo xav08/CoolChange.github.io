@@ -74,7 +74,7 @@ img { display: block; max-width: 100%; }
 
 .lead-copy { padding: 18vh 10vw 21vh; background: var(--paper); }
 .lead-copy .eyebrow { margin-bottom: 38px; color: #6b8277; }
-.lede { max-width: 1180px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(42px, 5.7vw, 86px); line-height: 1.04; letter-spacing: -0.044em; text-wrap: balance; }
+.lede { max-width: 1180px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 4.4vw, 64px); line-height: 1.08; letter-spacing: -0.044em; text-wrap: balance; }
 
 .scrolly { position: relative; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(350px, 0.7fr); gap: 6vw; padding: 12vh 5vw 20vh; background: #e6eade; }
 .sticky-map-wrap { min-width: 0; }
@@ -289,7 +289,7 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
   .hero-copy { font-size: 17px; }
   .hero-cta { margin-top: 30px; }
   .lead-copy { padding: 110px 22px; }
-  .lede { font-size: 41px; }
+  .lede { font-size: 32px; }
   .map-shell { height: 56vh; min-height: 430px; }
   .map-label { top: 13px; left: 13px; }
   .map-tools { top: 13px; right: 13px; }
