@@ -57,8 +57,8 @@ jobs:
       # this build (e.g. an old hashed JS bundle from a previous build) —
       # otherwise the bucket only ever grows.
       - name: Sync build output to S3
-        run: aws s3 sync dist/ s3://${{ vars.FRONTEND_BUCKET_NAME }} --delete
-
+        run: aws s3 sync dist/ s3://${{ vars.FRONTEND_BUCKET_NAME }} --delete --exclude "iteration1/*" --exclude "iteration2/*" --exclude "iteration3/*"
+        
       # Without this, CloudFront keeps serving cached old files at edge
       # locations for up to a day (its default TTL) after a new deploy.
       - name: Invalidate CloudFront cache
