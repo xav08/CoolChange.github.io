@@ -1,5 +1,6 @@
 const pool = require("../db/pool");
 const sql = require("../db/sql");
+const { getSimulatorMetadata, getBlockSimulator } = require("./simulator");
 const {
   ApiError,
   notFound,
@@ -35,7 +36,7 @@ async function query(text, params) {
 }
 
 async function getBootstrap() {
-  if (bootstrapCache) return bootstrapCache;
+  if (bootstrapCache) return { ...bootstrapCache, simulator: await getSimulatorMetadata() };
 
   const configResult = await query(sql.bootstrapConfig);
   const modelResult = await query(sql.bootstrapModel);
@@ -58,7 +59,7 @@ async function getBootstrap() {
     modelRow: modelResult.rows[0],
     projectionRows: projectionResult.rows,
   });
-  return bootstrapCache;
+  return { ...bootstrapCache, simulator: await getSimulatorMetadata() };
 }
 
 async function listMeshblocks(lga) {
@@ -106,6 +107,7 @@ async function getMeshblock(mbCode16) {
   const coolest = shapeCoolest(coolestRow);
   return {
     block,
+    simulator: await getBlockSimulator(code),
     flags: shapeFlags(block, coolest),
     comparisons: comparisonRows.map(shapeComparison),
     coolest_in_lga: coolest,
@@ -177,9 +179,13 @@ function expandRoadTypeAbbreviation(street) {
   return tokens.join(" ");
 }
 
+function normalizeWhitespace(s) {
+  return s.replace(/\s+/g, " ");
+}
+
 async function searchStreets(rawStreet, rawSuburb) {
-  const street = String(rawStreet || "").trim();
-  const suburb = String(rawSuburb || "").trim();
+  const street = normalizeWhitespace(String(rawStreet || "")).trim();
+  const suburb = normalizeWhitespace(String(rawSuburb || "")).trim();
   if (street.length < 2) {
     throw badRequest("street must be at least 2 characters.");
   }
@@ -187,8 +193,13 @@ async function searchStreets(rawStreet, rawSuburb) {
     throw badRequest("suburb is required.");
   }
 
-  const result = await query(sql.streetSearch, [expandRoadTypeAbbreviation(street), suburb]);
-  // echo back what the resident actually typed, not the expanded form used internally
+  // Match against BOTH the raw prefix and the abbreviation-expanded one, not
+  // just the expanded one -- "Pl" expanding to "place" must not stop it from
+  // also matching "Plenty Road" via the plain, unexpanded prefix.
+  const streetExpanded = expandRoadTypeAbbreviation(street);
+  const result = await query(sql.streetSearch, [street, suburb, streetExpanded]);
+  // echo back what the resident actually typed (whitespace-normalised), not
+  // the expanded form used internally for matching
   return shapeStreetSearch(street, suburb, result.rows);
 }
 
