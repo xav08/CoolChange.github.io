@@ -82,7 +82,7 @@ SELECT pm.warming_level,
        pm.horizon_label,
        COALESCE(p.days_label, pm.days_label) AS days_label,
        COALESCE(p.days_lower, pm.days_lower) AS days_lower,
-       COALESCE(p.days_upper, pm.days_upper) AS days_upper,
+       CASE WHEN p.mb_code16 IS NULL THEN pm.days_upper ELSE p.days_upper END AS days_upper,
        (p.mb_code16 IS NULL)                 AS is_fallback
   FROM projection_metro pm
   LEFT JOIN mesh_block_projection p
@@ -108,6 +108,29 @@ SELECT sa2_code16, sa2_name, min(lga_name) AS lga_name, count(*) AS n_blocks
  GROUP BY sa2_code16, sa2_name
  ORDER BY sa2_name
  LIMIT 10;
+
+
+-- GET /api/v1/street-search?street=&suburb= --------------------------------
+-- US1.3, AC 1.3.1-1.3.4. Suburb is an exact match, street name a prefix match,
+-- both lowercased -- same style as suburb search. Returns every matching
+-- block (AC 1.3.2), each with its address count as a disambiguation signal
+-- for the frontend (AC 1.3.4). Zero rows is a normal, successful empty
+-- result, not an error -- that's AC 1.3.3, handled at the API layer, not here.
+--
+-- $1 is the street prefix as typed (whitespace-normalised); $3 is the same
+-- value with common abbreviations expanded (Rd -> Road, etc), computed at
+-- the API layer. Matched with OR, not replaced: an abbreviation expansion
+-- can otherwise swallow a genuine prefix match -- "Pl" expands to "place"
+-- and would stop matching "Plenty Road" if that were the only comparison.
+SELECT s.street_id, s.road_name, s.road_type, s.locality_name,
+       smb.mb_code16, smb.n_addresses, m.sa2_code16
+  FROM street s
+  JOIN street_mesh_block smb ON smb.street_id = s.street_id
+  JOIN mesh_block m ON m.mb_code16 = smb.mb_code16
+ WHERE (LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($1) || '%'
+     OR LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($3) || '%')
+   AND LOWER(s.locality_name) = LOWER($2)
+ ORDER BY s.road_name, smb.mb_code16;
 
 
 -- Optional: which block contains this point? -------------------------------

@@ -79,7 +79,7 @@ SELECT pm.warming_level,
        pm.horizon_label,
        COALESCE(p.days_label, pm.days_label) AS days_label,
        COALESCE(p.days_lower, pm.days_lower) AS days_lower,
-       COALESCE(p.days_upper, pm.days_upper) AS days_upper,
+       CASE WHEN p.mb_code16 IS NULL THEN pm.days_upper ELSE p.days_upper END AS days_upper,
        (p.mb_code16 IS NULL)                 AS is_fallback
   FROM projection_metro pm
   LEFT JOIN mesh_block_projection p
@@ -104,6 +104,24 @@ SELECT RTRIM(sa2_code16) AS sa2_code16, sa2_name, min(lga_name) AS lga_name, cou
  GROUP BY sa2_code16, sa2_name
  ORDER BY sa2_name
 LIMIT 10
+`;
+
+const streetSearch = `
+-- name: streetSearch
+SELECT s.street_id,
+       s.road_name,
+       s.road_type,
+       s.locality_name,
+       RTRIM(smb.mb_code16) AS mb_code16,
+       smb.n_addresses,
+       RTRIM(m.sa2_code16) AS sa2_code16
+  FROM street s
+  JOIN street_mesh_block smb ON smb.street_id = s.street_id
+  JOIN mesh_block m ON m.mb_code16 = smb.mb_code16
+ WHERE (LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($1) || '%'
+     OR LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($3) || '%')
+   AND LOWER(s.locality_name) = LOWER($2)
+ ORDER BY s.road_name, smb.mb_code16
 `;
 
 const mapSuburbs = `
@@ -153,6 +171,7 @@ module.exports = {
   blockProjections,
   areaByKey,
   searchSuburbs,
+  streetSearch,
   mapSuburbs,
   mapMeshblocksBySuburb,
 };

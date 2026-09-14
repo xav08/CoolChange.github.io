@@ -53,6 +53,20 @@ type MeshblockDetail = {
   };
 };
 
+type StreetBlock = {
+  mb_code16: string;
+  n_addresses: number;
+  sa2_code16: string;
+};
+
+type StreetResult = {
+  street_id: number;
+  road_name: string;
+  road_type: string;
+  locality_name: string;
+  blocks: StreetBlock[];
+};
+
 // derive bounds from nested geojson coordinates
 function boundsFor(data: MapFeatureCollection): [[number, number], [number, number]] | null {
   let west = Number.POSITIVE_INFINITY;
@@ -111,6 +125,8 @@ export function MelbourneMapPage() {
   const [mapError, setMapError] = useState("");
   const [loadingSuburb, setLoadingSuburb] = useState(false);
   const [suburb, setSuburb] = useState<SuburbSummary | null>(null);
+  // bumped whenever the search field should clear itself (remounts UnifiedSearch)
+  const [searchResetToken, setSearchResetToken] = useState(0);
   const [hoveredSuburb, setHoveredSuburb] = useState<SuburbSummary | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<MeshblockDetail | null>(null);
   const [blockLoading, setBlockLoading] = useState(false);
@@ -134,6 +150,10 @@ export function MelbourneMapPage() {
       const source = map.getSource(MESH_SOURCE) as GeoJSONSource | undefined;
       source?.setData(data as SourceData);
       setSuburb({ ...selection, ...data.suburb });
+      // a fresh suburb load always starts from a clean slate -- any dim/outline
+      // left over from a previous street search must not carry over
+      map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
+      if (map.getLayer(MESH_FILL)) map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
       // replace suburb outlines with mesh-block layers
       map.setLayoutProperty(SUBURB_FILL, "visibility", "none");
       map.setLayoutProperty(SUBURB_LINE, "visibility", "none");
@@ -154,6 +174,10 @@ export function MelbourneMapPage() {
     const map = mapRef.current;
     if (!map) return;
     map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], mbCode16]);
+    // clicking any block -- highlighted or not -- resolves the street search's
+    // job; drop the dim so the view returns to normal, leaving just this one
+    // block outlined
+    if (map.getLayer(MESH_FILL)) map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
     setBlockLoading(true);
     try {
       const response = await fetch(`${API_BASE}/meshblocks/${mbCode16}`);
@@ -166,7 +190,31 @@ export function MelbourneMapPage() {
     }
   }, []);
 
-  // create the melbourne map and suburb layers
+  // dim every block except the ones a street search matched, and outline
+  // the matches -- deliberately does NOT select/open any block's detail
+  // panel; the resident still has to click one, same as any other block
+  const highlightBlocks = useCallback((mbCodes: string[]) => {
+    const map = mapRef.current;
+    if (!map || !mbCodes.length) return;
+    map.setFilter(MESH_SELECTED, ["in", ["get", "mb_code16"], ["literal", mbCodes]]);
+    map.setLayoutProperty(MESH_SELECTED, "visibility", "visible");
+    map.setPaintProperty(MESH_FILL, "fill-opacity", [
+      "case",
+      ["in", ["get", "mb_code16"], ["literal", mbCodes]],
+      0.85,
+      0.15,
+    ]);
+  }, []);
+
+  // load a suburb's blocks (if not already loaded), then highlight a
+  // street search's matches within it
+  const openStreetMatch = useCallback(
+    async (sa2Code16: string, mbCodes: string[]) => {
+      await openSuburb({ sa2_code16: sa2Code16, sa2_name: "", lga_name: "", n_blocks: 0 });
+      highlightBlocks(mbCodes);
+    },
+    [openSuburb, highlightBlocks],
+  );
   useEffect(() => {
     const container = containerRef.current;
     const mapConfig = resolveMapStyle(accessToken);
@@ -302,12 +350,15 @@ export function MelbourneMapPage() {
     if (!map) return;
     setSuburb(null);
     setSelectedBlock(null);
+    setSearchResetToken((token) => token + 1);
     (map.getSource(MESH_SOURCE) as GeoJSONSource)?.setData(EMPTY_COLLECTION as SourceData);
     map.setLayoutProperty(SUBURB_FILL, "visibility", "visible");
     map.setLayoutProperty(SUBURB_LINE, "visibility", "visible");
     map.setLayoutProperty(MESH_FILL, "visibility", "none");
     map.setLayoutProperty(MESH_LINE, "visibility", "none");
     map.setLayoutProperty(MESH_SELECTED, "visibility", "none");
+    map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
+    if (map.getLayer(MESH_FILL)) map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
     map.flyTo({ center: MELBOURNE_CENTER, zoom: 8.55, duration: 900 });
   }
 
@@ -323,7 +374,11 @@ export function MelbourneMapPage() {
             ? `${suburb.n_blocks.toLocaleString()} mesh blocks in ${suburb.lga_name}. Select a block to inspect its heat and canopy.`
             : "Explore all 54,239 mapped neighbourhood blocks. Choose a suburb on the map or search by name to reveal its local pattern."}
         </p>
-        <SuburbSearch onSelect={(result) => void openSuburb(result)} />
+        <UnifiedSearch
+          key={searchResetToken}
+          onSelectSuburb={(result) => void openSuburb(result)}
+          onStreetMatch={(sa2Code16, mbCodes) => void openStreetMatch(sa2Code16, mbCodes)}
+        />
         {suburb && <button className="map-back-button" type="button" onClick={showAllSuburbs}>← Back to all suburbs</button>}
 
         {(hoveredSuburb && !suburb) && (
@@ -380,8 +435,19 @@ function MetricHelp({ children, label }: { children: string; label: string }) {
   );
 }
 
-// search suburbs and pass the selected result upward
-function SuburbSearch({ onSelect }: { onSelect: (result: SearchResult) => void }) {
+// search a suburb by name, or "street, suburb" to highlight matching blocks
+// on the currently loaded suburb's mesh -- a comma is what decides the mode
+type StreetStatus =
+  | { kind: "match"; count: number; label: string }
+  | { kind: "empty"; label: string };
+
+function UnifiedSearch({
+  onSelectSuburb,
+  onStreetMatch,
+}: {
+  onSelectSuburb: (result: SearchResult) => void;
+  onStreetMatch: (sa2Code16: string, mbCodes: string[]) => void;
+}) {
   const [query, setQuery] = useState(() => {
     const saved = sessionStorage.getItem("coolchange-suburb-query") || "";
     sessionStorage.removeItem("coolchange-suburb-query");
@@ -391,9 +457,19 @@ function SuburbSearch({ onSelect }: { onSelect: (result: SearchResult) => void }
   const [activeIndex, setActiveIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [streetStatus, setStreetStatus] = useState<StreetStatus | null>(null);
 
-  // request matches after the user pauses typing
+  const commaIndex = query.indexOf(",");
+  const isStreetMode = commaIndex >= 0;
+  const streetPart = isStreetMode ? query.slice(0, commaIndex).trim() : "";
+  const suburbPart = isStreetMode ? query.slice(commaIndex + 1).trim() : "";
+
+  // suburb mode: request matches after the user pauses typing
   useEffect(() => {
+    if (isStreetMode) {
+      setResults([]);
+      return undefined;
+    }
     const value = query.trim();
     if (value.length < 2) {
       setResults([]);
@@ -424,19 +500,76 @@ function SuburbSearch({ onSelect }: { onSelect: (result: SearchResult) => void }
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, isStreetMode]);
 
-  // commit a search result and close the list
-  function choose(result: SearchResult) {
+  // street mode: request matches after the user pauses typing. Every block
+  // across every matched street is flattened into one highlight set -- no
+  // picker, the resident just clicks a highlighted block on the map itself.
+  useEffect(() => {
+    if (!isStreetMode || streetPart.length < 2 || suburbPart.length === 0) {
+      setStreetStatus(null);
+      setLoading(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `${API_BASE}/street-search?street=${encodeURIComponent(streetPart)}&suburb=${encodeURIComponent(suburbPart)}`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) throw new Error("Street search failed");
+        const payload = (await response.json()) as { results: StreetResult[] };
+        const blocks = payload.results.flatMap((result) => result.blocks);
+        if (!blocks.length) {
+          setStreetStatus({ kind: "empty", label: suburbPart });
+          return;
+        }
+        // every block here shares the same target suburb (suburb is an
+        // exact match in the query), so the first one's code is enough
+        const sa2Code16 = blocks[0].sa2_code16;
+        const mbCodes = blocks.map((block) => block.mb_code16);
+        setStreetStatus({ kind: "match", count: mbCodes.length, label: suburbPart });
+        onStreetMatch(sa2Code16, mbCodes);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setStreetStatus({ kind: "empty", label: suburbPart });
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+    // onStreetMatch is a fresh function each render at the call site --
+    // intentionally excluded so this effect only re-fires on real query changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStreetMode, streetPart, suburbPart]);
+
+  // commit a suburb result and close the list
+  // reset the field and any pending results/status
+  function clearSearch() {
+    setQuery("");
+    setResults([]);
+    setStreetStatus(null);
+    setIsOpen(false);
+  }
+
+  function chooseSuburb(result: SearchResult) {
     setQuery(result.sa2_name);
     setResults([]);
     setIsOpen(false);
-    onSelect(result);
+    onSelectSuburb(result);
   }
 
-  // support keyboard navigation in the result list
+  // support keyboard navigation in the suburb result list
   function handleKeys(event: KeyboardEvent<HTMLInputElement>) {
-    if (!results.length) return;
+    if (isStreetMode || !results.length) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setActiveIndex((index) => (index + 1) % results.length);
@@ -445,7 +578,7 @@ function SuburbSearch({ onSelect }: { onSelect: (result: SearchResult) => void }
       setActiveIndex((index) => (index - 1 + results.length) % results.length);
     } else if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
-      choose(results[activeIndex]);
+      chooseSuburb(results[activeIndex]);
     } else if (event.key === "Escape") {
       setIsOpen(false);
     }
@@ -453,11 +586,11 @@ function SuburbSearch({ onSelect }: { onSelect: (result: SearchResult) => void }
 
   return (
     <div className="suburb-search">
-      <label htmlFor="suburb-search-input">Find a Melbourne suburb</label>
+      <label htmlFor="unified-search-input">Find a suburb, or type "street, suburb"</label>
       <div className="suburb-search-input-wrap">
         <span aria-hidden="true">⌕</span>
         <input
-          id="suburb-search-input"
+          id="unified-search-input"
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -465,17 +598,30 @@ function SuburbSearch({ onSelect }: { onSelect: (result: SearchResult) => void }
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeys}
-          placeholder="Try Brunswick, Melton…"
+          placeholder="Try Brunswick, or Smith Street, Ringwood"
           autoComplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={isOpen && results.length > 0}
-          aria-controls="suburb-search-results"
-          aria-activedescendant={activeIndex >= 0 ? `suburb-option-${activeIndex}` : undefined}
+          role={isStreetMode ? undefined : "combobox"}
+          aria-autocomplete={isStreetMode ? undefined : "list"}
+          aria-expanded={!isStreetMode && isOpen && results.length > 0}
+          aria-controls={isStreetMode ? undefined : "suburb-search-results"}
+          aria-activedescendant={!isStreetMode && activeIndex >= 0 ? `suburb-option-${activeIndex}` : undefined}
         />
-        {loading && <span className="search-spinner" aria-label="Searching" />}
+        {loading ? (
+          <span className="search-spinner" aria-label="Searching" />
+        ) : query.length > 0 ? (
+          <button
+            type="button"
+            className="search-clear-button"
+            aria-label="Clear search"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={clearSearch}
+          >
+            ×
+          </button>
+        ) : null}
       </div>
-      {isOpen && results.length > 0 && (
+
+      {!isStreetMode && isOpen && results.length > 0 && (
         <ul id="suburb-search-results" className="suburb-search-results" role="listbox">
           {results.map((result, index) => (
             <li
@@ -484,13 +630,24 @@ function SuburbSearch({ onSelect }: { onSelect: (result: SearchResult) => void }
               role="option"
               aria-selected={activeIndex === index}
             >
-              <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => choose(result)}>
+              <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => chooseSuburb(result)}>
                 <span><strong>{result.sa2_name}</strong><small>{result.lga_name}</small></span>
                 <em>{result.n_blocks.toLocaleString()} blocks</em>
               </button>
             </li>
           ))}
         </ul>
+      )}
+
+      {isStreetMode && streetStatus?.kind === "match" && (
+        <p className="street-search-status" aria-live="polite">
+          Highlighting {streetStatus.count} mesh block{streetStatus.count === 1 ? "" : "s"} in {streetStatus.label} — click one to see its details.
+        </p>
+      )}
+      {isStreetMode && streetStatus?.kind === "empty" && (
+        <p className="street-search-status street-search-empty" aria-live="polite">
+          No matching street found in {streetStatus.label}.
+        </p>
       )}
     </div>
   );
