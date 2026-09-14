@@ -118,7 +118,8 @@ SELECT s.street_id,
   FROM street s
   JOIN street_mesh_block smb ON smb.street_id = s.street_id
   JOIN mesh_block m ON m.mb_code16 = smb.mb_code16
- WHERE LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($1) || '%'
+ WHERE (LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($1) || '%'
+     OR LOWER(s.road_name || ' ' || s.road_type) LIKE LOWER($3) || '%')
    AND LOWER(s.locality_name) = LOWER($2)
  ORDER BY s.road_name, smb.mb_code16
 `;
