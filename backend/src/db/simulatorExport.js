@@ -1,3 +1,4 @@
+const { validateUncertainty } = require("./simulatorUncertainty");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 
@@ -85,6 +86,7 @@ function validateExport(data) {
       }
     }
   }
+  validateUncertainty(data);
   const { blocks, ...metadata } = data;
   return { blocks, metadata };
 }

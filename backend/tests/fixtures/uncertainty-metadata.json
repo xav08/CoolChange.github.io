@@ -1,0 +1,41 @@
+{
+  "version": "uncertainty-v1",
+  "method": "gwr_coefficient_normal_v1",
+  "level": 0.95,
+  "critical_value": 1.9599639845400534,
+  "coverage_validated": false,
+  "scope": "conditional_mean_cooling",
+  "pointwise": true,
+  "source_export_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "source_coefficients_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "source_model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coefficient_units": "degrees_C_per_canopy_percentage_point",
+  "variance_assumption": "independent_homoskedastic_errors",
+  "conditioned_on": [
+    "fixed_bandwidth",
+    "coordinates",
+    "observed_baseline",
+    "canopy_change"
+  ],
+  "excludes": [
+    "spatial_error_correlation",
+    "local_smoothing_bias",
+    "bandwidth_selection",
+    "screening_selection",
+    "measurement_error",
+    "tree_growth_and_survival",
+    "site_capacity",
+    "causal_effect_uncertainty",
+    "future_observation_noise"
+  ],
+  "notice": "Synthetic test fixture only. Approximate pointwise intervals; coverage not validated.",
+  "fit": {
+    "n_blocks": 3,
+    "n_neighbors": 3,
+    "trace_s": 1,
+    "trace_sts": 1,
+    "residual_df": 2,
+    "residual_sum_squares": 2,
+    "residual_variance": 1
+  }
+}
