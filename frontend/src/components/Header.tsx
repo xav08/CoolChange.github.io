@@ -1,3 +1,4 @@
+// provide site navigation
 export function Header() {
   return (
     <header className="site-header">

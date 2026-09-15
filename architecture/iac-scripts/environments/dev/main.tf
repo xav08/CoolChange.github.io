@@ -117,3 +117,8 @@ module "secrets" {
     "github-deploy-key" = var.backend_deploy_key
   }
 }
+
+module "team_access" {
+  source       = "../../modules/team_access"
+  team_members = ["savio", "priyanshu", "yu", "yipu", "sheng", "linda"]
+}

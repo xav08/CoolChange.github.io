@@ -1,3 +1,4 @@
+// introduce the project story
 export function Hero() {
   return (
     <section className="hero" id="top">
@@ -15,6 +16,7 @@ export function Hero() {
   );
 }
 
+// explain the local heat problem
 export function LeadCopy() {
   return (
     <section className="lead-copy">

@@ -8,21 +8,26 @@ type HeatMapProps = {
   compact?: boolean;
 };
 
+// map each story step to its default layer
 function mapLayerForStep(step: number): StoryLayer {
   if (step === 1) return "canopy";
   if (step === 3) return "future";
   return "heat";
 }
 
+// render the interactive story map and layer controls
 export function HeatMap({ activeStep, trees = 0, compact = false }: HeatMapProps) {
   const [layer, setLayer] = useState<StoryLayer>(() => mapLayerForStep(activeStep));
+  // cap the simulator input to the map colour range
   const cooling = Math.min(trees / 46, 0.72);
   const legend = mapLayers[layer];
 
+  // reset the selected layer as the story changes
   useEffect(() => {
     setLayer(mapLayerForStep(activeStep));
   }, [activeStep]);
 
+  // build state classes for the map shell
   const mapClass = ["map-shell", compact && "map-shell-compact", `step-${activeStep}`, `layer-${layer}`]
     .filter(Boolean)
     .join(" ");

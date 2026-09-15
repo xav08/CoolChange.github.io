@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { HeatMap } from "./HeatMap";
 
+// model an illustrative planting scenario
 export function TreeSimulator() {
   const [trees, setTrees] = useState(12);
+  // update illustrative values only when tree count changes
   const scenario = useMemo(() => {
     const canopy = 1.3 + trees * 0.36;
     const cooling = Math.min(1.8, trees * 0.046);

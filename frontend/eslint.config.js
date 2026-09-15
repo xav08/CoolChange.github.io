@@ -4,6 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
+// configure lint rules for browser source files
 export default tseslint.config(
   { ignores: ["dist"] },
   {

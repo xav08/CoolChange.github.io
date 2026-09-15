@@ -1,5 +1,6 @@
 export type StoryLayer = "heat" | "canopy" | "future";
 
+// define the scroll-driven story content
 export const storyFacts = [
   {
     id: "city",
@@ -35,6 +36,7 @@ export const storyFacts = [
   },
 ];
 
+// define labels and legends for map layers
 export const mapLayers: Record<StoryLayer, { label: string; low: string; high: string; note: string }> = {
   heat: {
     label: "2026 heat",
@@ -56,6 +58,7 @@ export const mapLayers: Record<StoryLayer, { label: string; low: string; high: s
   },
 };
 
+// define the final action journey
 export const journeySteps = [
   ["01", "See", "Find your street and see its heat."],
   ["02", "Understand", "Compare canopy and local context."],

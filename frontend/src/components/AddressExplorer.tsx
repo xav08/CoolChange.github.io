@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from "react";
 
+// collect a place query before opening the map
 export function AddressExplorer() {
   const [query, setQuery] = useState("Clayton VIC 3168");
 
+  // save the query and open the map page
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // keep the query while moving from the story to the map
     if (query.trim()) sessionStorage.setItem("coolchange-suburb-query", query.trim());
     window.location.hash = "map";
   }

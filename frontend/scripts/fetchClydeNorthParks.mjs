@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
+// define the clyde north area requested from openstreetmap
 const bounds = "-38.16,145.28,-38.08,145.38";
 const query = `
 [out:json][timeout:30];
@@ -14,6 +15,7 @@ const query = `
 out geom;
 `;
 
+// close and normalise polygon rings
 function closeRing(points) {
   if (points.length < 3) return null;
 
@@ -28,10 +30,12 @@ function closeRing(points) {
     return area + point[0] * nextPoint[1] - nextPoint[0] * point[1];
   }, 0);
 
+  // use the expected outer ring direction
   if (signedArea < 0) ring.reverse();
   return ring.length >= 4 ? ring : null;
 }
 
+// convert one polygon ring into a geojson feature
 function featureFromRing(ring, tags, id) {
   const category = tags.boundary === "protected_area"
     || tags.leisure === "nature_reserve"
@@ -53,6 +57,7 @@ function featureFromRing(ring, tags, id) {
   };
 }
 
+// request green-space geometry from openstreetmap
 const response = await fetch("https://overpass-api.de/api/interpreter", {
   method: "POST",
   headers: {
@@ -65,6 +70,7 @@ const response = await fetch("https://overpass-api.de/api/interpreter", {
 if (!response.ok) throw new Error(`Overpass request failed with ${response.status}`);
 
 const data = await response.json();
+// convert returned ways and relations into polygons
 const features = [];
 
 for (const element of data.elements) {
@@ -74,6 +80,7 @@ for (const element of data.elements) {
   }
 
   if (element.type === "relation" && element.members) {
+    // keep outer polygons from each relation
     for (const member of element.members) {
       if (member.role !== "outer" || !member.geometry) continue;
       const ring = closeRing(member.geometry);
@@ -82,6 +89,7 @@ for (const element of data.elements) {
   }
 }
 
+// save the generated geojson beside other map assets
 const collection = { type: "FeatureCollection", features };
 const outputDirectory = new URL("../public/maps/", import.meta.url);
 

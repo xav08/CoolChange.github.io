@@ -30,6 +30,7 @@ const heatStops = [
   { density: 1, colour: [244, 82, 30], cooledColour: [36, 158, 144], alpha: 0.96 },
 ] as const;
 
+// blend two colours by a fractional amount
 function blendColour(start: readonly number[], end: readonly number[], amount: number): RgbColour {
   return [
     Math.round(start[0] + (end[0] - start[0]) * amount),
@@ -38,10 +39,12 @@ function blendColour(start: readonly number[], end: readonly number[], amount: n
   ];
 }
 
+// format a colour for mapbox paint rules
 function rgba([red, green, blue]: RgbColour, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
+// shift the heat palette as simulated cooling increases
 function heatColours(cooling = 0): ExpressionSpecification {
   const colourShift = Math.min(cooling / 0.72, 1);
 
@@ -62,11 +65,13 @@ type MapboxBaseMapProps = {
   cooling: number;
 };
 
+// toggle a map layer when it is available
 function setLayerVisibility(map: mapboxgl.Map, layerId: string, visible: boolean) {
   if (!map.getLayer(layerId)) return;
   map.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
 }
 
+// fade heat layers out when the map is too zoomed out
 function heatZoomFade(map: mapboxgl.Map) {
   const fullyVisibleAt = 13.2;
   const hiddenAt = 12.6;
@@ -78,6 +83,7 @@ function heatZoomFade(map: mapboxgl.Map) {
   return (zoom - hiddenAt) / (fullyVisibleAt - hiddenAt);
 }
 
+// apply the selected story state to map layers
 function updateMapLayers(map: mapboxgl.Map, layer: StoryLayer, cooling: number, locationFade = 1) {
   const showHeat = layer === "heat";
   const showFuture = layer === "future";
@@ -100,6 +106,7 @@ function updateMapLayers(map: mapboxgl.Map, layer: StoryLayer, cooling: number, 
 
 }
 
+// create and maintain the clyde north map
 export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -109,9 +116,11 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
   const [layersReady, setLayersReady] = useState(false);
   const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
+  // keep current controls without recreating the map
   currentLayerRef.current = layer;
   coolingRef.current = cooling;
 
+  // create mapbox sources, layers, and local overlays
   useEffect(() => {
     const container = containerRef.current;
     const mapConfig = resolveMapStyle(accessToken);
@@ -158,6 +167,7 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
 
     map.on("load", async () => {
       try {
+        // load both local overlays before adding map layers
         const [heatPoints, greenAreasResponse] = await Promise.all([
           loadPopulationDensityPoints("/maps/clyde-north-roads.json"),
           fetch("/maps/clyde-north-parks.geojson"),
@@ -194,6 +204,7 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
           },
         });
 
+        // reuse density points for the 2050 scenario
         map.addLayer({
           id: FUTURE_LAYER,
           type: "heatmap",
@@ -263,6 +274,7 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
     };
   }, [accessToken]);
 
+  // update visible layers after control changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !layersReady) return;

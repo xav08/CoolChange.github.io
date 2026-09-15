@@ -3,6 +3,7 @@ import { HeatMap } from "./HeatMap";
 
 type StoryStepsProps = { activeStep: number };
 
+// pair story cards with the changing map state
 export function StorySteps({ activeStep }: StoryStepsProps) {
   return (
     <section className="scrolly" id="story">
@@ -21,6 +22,7 @@ export function StorySteps({ activeStep }: StoryStepsProps) {
   );
 }
 
+// highlight one local mesh-block example
 export function CaseStudy() {
   return (
     <section className="case-study">
@@ -36,6 +38,7 @@ export function CaseStudy() {
   );
 }
 
+// compare planting time with mature canopy
 export function TreeTimeline() {
   return (
     <section className="two-clocks">
@@ -50,6 +53,7 @@ export function TreeTimeline() {
   );
 }
 
+// describe the evidence-led user journey
 export function EvidenceSection() {
   return (
     <section className="evidence-section">

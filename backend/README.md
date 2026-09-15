@@ -2,6 +2,10 @@
 
 Story 0.3 read-only API on the `backend` branch. Schema, seed CSVs and reference SQL come from Yu (`data-analysis`); this branch owns the HTTP contract.
 
+Screened tree-canopy model data can be imported offline and read through the new
+`simulator` fields in bootstrap and mesh-block detail responses. See
+[the simulator contract](docs/SIMULATOR_API.md) for import steps, fields and frontend rules.
+
 Team: FOXES EAT IT. Stack: **Node.js 20 + Express + PostgreSQL/PostGIS**. Listen on **port 3000**. ALB health check is **`GET /health`**.
 
 ---
@@ -90,7 +94,8 @@ psql postgres://coolchange:coolchange@localhost:5433/coolchange
 
 When Savio has cloud RDS ready, point `DATABASE_URL` at that instance and set `DATABASE_SSL=true`. Do not commit `.env`.
 
-The only migration in this scaffold is `001_enable_postgis.sql`. Mesh-block / heat / projection tables will be added as later numbered files under `src/db/migrations/` after the schema is agreed.
+Migrations include PostGIS (001), domain tables (002), and versioned simulator data (005).
+Apply pending migrations before starting the API. Import the simulator export after seeding.
 
 ---
 
@@ -139,6 +144,7 @@ Git: `main` → `development` → `backend`. Keep backend work on this branch un
 | `npm run db:logs` | Follow database logs |
 | `npm run migrate` | Apply pending SQL migrations |
 | `npm run seed` | Load mesh-block CSVs via psql |
+| `npm run simulator:import -- <file> [--dry-run]` | Validate or import the model's simulator export |
 | `npm run dev` | API with reload |
 | `npm start` | API without reload |
 | `npm test` | Jest |

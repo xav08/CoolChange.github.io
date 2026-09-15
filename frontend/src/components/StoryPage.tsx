@@ -6,6 +6,7 @@ import { TreeSimulator } from "./TreeSimulator";
 import { TrustSection } from "./TrustSection";
 import { useActiveStoryStep } from "../hooks/useActiveStoryStep";
 
+// compose the full scroll-led home page
 export function StoryPage() {
   const activeStoryStep = useActiveStoryStep();
 
