@@ -4,7 +4,8 @@ const assert = require("node:assert/strict");
 process.env.DATABASE_URL ||= "postgres://coolchange:coolchange@localhost:5433/coolchange";
 const target = new URL(process.env.DATABASE_URL);
 assert.ok(["localhost", "127.0.0.1"].includes(target.hostname) && target.port === "5433" &&
-  target.pathname === "/coolchange", "Verification is restricted to local Docker coolchange on port 5433");
+  ["/coolchange", "/coolchange_uncertainty_test"].includes(target.pathname),
+"Verification is restricted to local Docker coolchange or coolchange_uncertainty_test on port 5433");
 process.env.DATABASE_SSL = "false";
 process.env.PGOPTIONS = "-c default_transaction_read_only=on";
 const { readExport, validateDatabaseBlocks } = require("../src/db/simulatorExport");
@@ -59,12 +60,15 @@ async function verify(file) {
       b.scenarios.some(s => s.status === "unavailable"));
     assert.ok(outside, "Expected out-of-range scenario coverage");
     selected.add(outside.mb_code16);
+    const crossesZero = blocks.find(b => b.scenarios.some(s => s.cooling_interval?.includes_zero));
+    if (crossesZero) selected.add(crossesZero.mb_code16);
     const byCode = new Map(blocks.map(b => [b.mb_code16, b]));
     for (const code of selected) {
       const body = await get(`/api/v1/meshblocks/${code}`);
       assert.equal(body.block.mb_code16, code);
       assert.deepEqual(body.simulator, { ...byCode.get(code), release_id: releaseId,
-        schema_version: metadata.schema_version, inputs: metadata.inputs });
+        schema_version: metadata.schema_version, inputs: metadata.inputs,
+        ...(metadata.uncertainty ? { uncertainty: metadata.uncertainty } : {}) });
     }
     console.log(`PASS ${selected.size} block HTTP responses: exact baselines, scenarios, nulls, reasons and limits`);
 
@@ -89,7 +93,7 @@ async function verify(file) {
     assert.equal(equity.block.irsd_score, null);
     await get("/api/v1/meshblocks/00000000000", 404);
     console.log("PASS open-ended projections, labelled fallback, missing SEIFA and unknown-block 404");
-    console.log(JSON.stringify({ database: "localhost:5433/coolchange", release_id: releaseId,
+    console.log(JSON.stringify({ database: `${target.hostname}:${target.port}${target.pathname}`, release_id: releaseId,
       blocks: blocks.length, indicative: blocks.filter(b => b.status === "indicative").length,
       unavailable: blocks.filter(b => b.status === "unavailable").length }));
   } finally {
