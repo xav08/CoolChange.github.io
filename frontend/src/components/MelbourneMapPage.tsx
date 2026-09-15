@@ -16,6 +16,7 @@ type MapFeatureCollection = {
   }>;
 };
 const EMPTY_COLLECTION: MapFeatureCollection = { type: "FeatureCollection", features: [] };
+// keep source and layer ids stable so updates target the existing map objects
 const SUBURB_SOURCE = "melbourne-suburbs";
 const MESH_SOURCE = "suburb-meshblocks";
 const SUBURB_FILL = "melbourne-suburbs-fill";
@@ -67,14 +68,14 @@ type StreetResult = {
   blocks: StreetBlock[];
 };
 
-// derive bounds from nested geojson coordinates
+// Calculate bounds from nested GeoJSON coordinates.
 function boundsFor(data: MapFeatureCollection): [[number, number], [number, number]] | null {
   let west = Number.POSITIVE_INFINITY;
   let south = Number.POSITIVE_INFINITY;
   let east = Number.NEGATIVE_INFINITY;
   let north = Number.NEGATIVE_INFINITY;
 
-  // inspect each coordinate level in the geometry
+  // Visit each coordinate in the geometry.
   function visit(value: unknown) {
     if (!Array.isArray(value)) return;
     if (
@@ -100,24 +101,24 @@ function boundsFor(data: MapFeatureCollection): [[number, number], [number, numb
 
 type MapProperties = Record<string, string | number | boolean | null | undefined>;
 
-// read properties from the top rendered feature
+// Read properties from the top rendered feature.
 function eventProperties(event: MapMouseEvent): MapProperties | undefined {
   return (event.features?.[0] as { properties?: MapProperties } | undefined)?.properties;
 }
 
-// safely read a text value from map properties
+// Read a text value from map properties.
 function propertyText(properties: MapProperties | undefined, key: string) {
   const value = properties?.[key];
   return value == null ? "" : String(value);
 }
 
-// safely read a numeric value from map properties
+// Read a numeric value from map properties.
 function propertyNumber(properties: MapProperties | undefined, key: string) {
   const value = Number(properties?.[key]);
   return Number.isFinite(value) ? value : 0;
 }
 
-// render the suburb and mesh-block explorer
+// Render the suburb and mesh block explorer.
 export function MelbourneMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -132,7 +133,7 @@ export function MelbourneMapPage() {
   const [blockLoading, setBlockLoading] = useState(false);
   const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
-  // load and display mesh blocks for one suburb
+  // Load and display mesh blocks for one suburb.
   const openSuburb = useCallback(async (selection: SearchResult | SuburbSummary) => {
     const map = mapRef.current;
     if (!map) return;
@@ -150,8 +151,7 @@ export function MelbourneMapPage() {
       const source = map.getSource(MESH_SOURCE) as GeoJSONSource | undefined;
       source?.setData(data as SourceData);
       setSuburb({ ...selection, ...data.suburb });
-      // a fresh suburb load always starts from a clean slate -- any dim/outline
-      // left over from a previous street search must not carry over
+      // Clear highlighting from the previous street search.
       map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
       if (map.getLayer(MESH_FILL)) map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
       // replace suburb outlines with mesh-block layers
@@ -169,7 +169,7 @@ export function MelbourneMapPage() {
     }
   }, []);
 
-  // load the details for one selected mesh block
+  // Load details for the selected mesh block.
   const openBlock = useCallback(async (mbCode16: string) => {
     const map = mapRef.current;
     if (!map) return;
@@ -190,9 +190,7 @@ export function MelbourneMapPage() {
     }
   }, []);
 
-  // dim every block except the ones a street search matched, and outline
-  // the matches -- deliberately does NOT select/open any block's detail
-  // panel; the resident still has to click one, same as any other block
+  // Highlight blocks matched by a street search.
   const highlightBlocks = useCallback((mbCodes: string[]) => {
     const map = mapRef.current;
     if (!map || !mbCodes.length) return;
@@ -206,8 +204,7 @@ export function MelbourneMapPage() {
     ]);
   }, []);
 
-  // load a suburb's blocks (if not already loaded), then highlight a
-  // street search's matches within it
+  // Load a suburb and highlight matching street blocks.
   const openStreetMatch = useCallback(
     async (sa2Code16: string, mbCodes: string[]) => {
       await openSuburb({ sa2_code16: sa2Code16, sa2_name: "", lga_name: "", n_blocks: 0 });
@@ -215,6 +212,8 @@ export function MelbourneMapPage() {
     },
     [openSuburb, highlightBlocks],
   );
+
+  // Create the Melbourne map and its suburb layers.
   useEffect(() => {
     const container = containerRef.current;
     const mapConfig = resolveMapStyle(accessToken);
@@ -293,6 +292,7 @@ export function MelbourneMapPage() {
         setHoveredSuburb(null);
       });
       map.on("mousemove", SUBURB_FILL, (event: MapMouseEvent) => {
+        // update the hover card without committing the user to a suburb selection
         const properties = eventProperties(event);
         if (!properties) return;
         setHoveredSuburb({
@@ -319,6 +319,7 @@ export function MelbourneMapPage() {
       map.on("mouseenter", MESH_FILL, () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", MESH_FILL, () => { map.getCanvas().style.cursor = ""; });
       map.on("click", MESH_FILL, (event: MapMouseEvent) => {
+        // use the rendered feature id to request the detailed metrics on demand
         const code = propertyText(eventProperties(event), "mb_code16");
         if (code) void openBlock(code);
       });
@@ -344,13 +345,14 @@ export function MelbourneMapPage() {
     };
   }, [accessToken, openBlock, openSuburb]);
 
-  // restore the full melbourne suburb view
+  // Restore the full Melbourne suburb view.
   function showAllSuburbs() {
     const map = mapRef.current;
     if (!map) return;
     setSuburb(null);
     setSelectedBlock(null);
     setSearchResetToken((token) => token + 1);
+    // Clear detailed geometry before restoring the overview.
     (map.getSource(MESH_SOURCE) as GeoJSONSource)?.setData(EMPTY_COLLECTION as SourceData);
     map.setLayoutProperty(SUBURB_FILL, "visibility", "visible");
     map.setLayoutProperty(SUBURB_LINE, "visibility", "visible");
@@ -425,7 +427,7 @@ export function MelbourneMapPage() {
   );
 }
 
-// show a compact hover explanation for a metric
+// Show a short explanation for a metric.
 function MetricHelp({ children, label }: { children: string; label: string }) {
   return (
     <span className="metric-help" role="img" aria-label={label}>
@@ -435,12 +437,11 @@ function MetricHelp({ children, label }: { children: string; label: string }) {
   );
 }
 
-// search a suburb by name, or "street, suburb" to highlight matching blocks
-// on the currently loaded suburb's mesh -- a comma is what decides the mode
 type StreetStatus =
   | { kind: "match"; count: number; label: string }
   | { kind: "empty"; label: string };
 
+// Search for suburbs or matching street blocks.
 function UnifiedSearch({
   onSelectSuburb,
   onStreetMatch,
@@ -502,9 +503,7 @@ function UnifiedSearch({
     };
   }, [query, isStreetMode]);
 
-  // street mode: request matches after the user pauses typing. Every block
-  // across every matched street is flattened into one highlight set -- no
-  // picker, the resident just clicks a highlighted block on the map itself.
+  // Search for matching street blocks after a short delay.
   useEffect(() => {
     if (!isStreetMode || streetPart.length < 2 || suburbPart.length === 0) {
       setStreetStatus(null);
@@ -527,8 +526,7 @@ function UnifiedSearch({
           setStreetStatus({ kind: "empty", label: suburbPart });
           return;
         }
-        // every block here shares the same target suburb (suburb is an
-        // exact match in the query), so the first one's code is enough
+        // Use the shared suburb code from the first matched block.
         const sa2Code16 = blocks[0].sa2_code16;
         const mbCodes = blocks.map((block) => block.mb_code16);
         setStreetStatus({ kind: "match", count: mbCodes.length, label: suburbPart });
@@ -546,13 +544,11 @@ function UnifiedSearch({
       window.clearTimeout(timer);
       controller.abort();
     };
-    // onStreetMatch is a fresh function each render at the call site --
-    // intentionally excluded so this effect only re-fires on real query changes
+    // Run this effect only when the search query changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStreetMode, streetPart, suburbPart]);
 
-  // commit a suburb result and close the list
-  // reset the field and any pending results/status
+  // Clear the search field and results.
   function clearSearch() {
     setQuery("");
     setResults([]);
@@ -560,6 +556,7 @@ function UnifiedSearch({
     setIsOpen(false);
   }
 
+  // Select a suburb and close the result list.
   function chooseSuburb(result: SearchResult) {
     setQuery(result.sa2_name);
     setResults([]);
@@ -567,7 +564,7 @@ function UnifiedSearch({
     onSelectSuburb(result);
   }
 
-  // support keyboard navigation in the suburb result list
+  // Handle keyboard navigation in the result list.
   function handleKeys(event: KeyboardEvent<HTMLInputElement>) {
     if (isStreetMode || !results.length) return;
     if (event.key === "ArrowDown") {

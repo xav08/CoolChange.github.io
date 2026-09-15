@@ -39,8 +39,8 @@ img { display: block; max-width: 100%; }
 .site-header nav { display: flex; align-items: center; gap: 4px; padding: 5px; }
 .site-header nav a { border-radius: 999px; padding: 10px 14px; color: #345646; text-decoration: none; font-size: 12px; font-weight: 800; transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease; }
 .site-header nav a:hover { background: #e2ece0; color: var(--deep-green); }
-.site-header nav .nav-cta { background: var(--deep-green); color: #f3f6ee; }
-.site-header nav .nav-cta:hover { background: #265a43; color: white; transform: translateY(-1px); }
+.site-header nav a[aria-current="page"] { background: var(--deep-green); color: #f3f6ee; }
+.site-header nav a[aria-current="page"]:hover { background: #265a43; color: white; transform: translateY(-1px); }
 .nav-cta span { margin-left: 8px; }
 
 /* style the about page and data lists */

@@ -12,7 +12,7 @@ export default function App() {
   return (
     <>
       <PasswordGate>
-        <Header />
+        <Header page={page} />
         {page === "about" ? <AboutPage /> : page === "map" ? <MelbourneMapPage /> : <StoryPage />}
       </PasswordGate>
     </>
