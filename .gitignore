@@ -21,3 +21,6 @@ frontend/public/data/
 *.textClipping
 
 data-pipeline/data/raw/*
+
+# Full GWR exports are distributed through S3, not Git.
+backend/src/db/GWR/

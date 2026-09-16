@@ -1,7 +1,8 @@
-const { readExport, validateDatabaseBlocks } = require("./simulatorExport");
+const { validateDatabaseBlocks } = require("./simulatorExport");
+const { readSimulatorSource } = require("./simulatorSource");
 
 async function importSimulator(pool, file) {
-  const { blocks, metadata, releaseId } = readExport(file);
+  const { blocks, metadata, releaseId } = await readSimulatorSource(file);
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -19,6 +20,10 @@ async function importSimulator(pool, file) {
           SELECT $1, item->>'mb_code16', item FROM jsonb_array_elements($2::jsonb) item`,
         [releaseId, JSON.stringify(blocks.slice(i, i + 500))]);
       }
+    } else if (metadata.source_url) {
+      // The exact same bytes may already have been imported from a local file.
+      await client.query("UPDATE simulator_release SET metadata = jsonb_set(metadata, '{source_url}', to_jsonb($2::text)) WHERE release_id = $1",
+        [releaseId, metadata.source_url]);
     }
     const count = await client.query("SELECT count(*)::int AS count FROM simulator_block WHERE release_id = $1", [releaseId]);
     if (count.rows[0].count !== blocks.length) throw new Error("Simulator release is incomplete; activation cancelled.");
@@ -37,12 +42,12 @@ async function importSimulator(pool, file) {
 async function main(args) {
   const dryRun = args.includes("--dry-run");
   const files = args.filter((arg) => arg !== "--dry-run");
-  if (files.length !== 1 || files[0].startsWith("--")) {
-    throw new Error("Usage: npm run simulator:import -- <simulator_scenarios.json> [--dry-run]");
+  if (files.length > 1 || files[0]?.startsWith("--")) {
+    throw new Error("Usage: npm run simulator:import -- [HTTPS URL or local JSON file] [--dry-run]");
   }
   if (dryRun) {
-    const { releaseId, blocks } = readExport(files[0]);
-    console.log(JSON.stringify({ release_id: releaseId, block_count: blocks.length, validation: "file_only", database_checked: false }));
+    const { releaseId, blocks } = await readSimulatorSource(files[0]);
+    console.log(JSON.stringify({ release_id: releaseId, block_count: blocks.length, validation: "source_only", database_checked: false }));
     return;
   }
   const pool = require("./pool");

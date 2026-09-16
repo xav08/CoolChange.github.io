@@ -46,3 +46,21 @@ test.each(["uhi_mean", "canopy_pct", "area_sqkm", "mb_code16"])("rejects differe
 test("rejects missing or extra database blocks", () => {
   expect(() => validateDatabaseBlocks(fixture.blocks, baselines(fixture).slice(1))).toThrow("count differs");
 });
+
+const uncertaintyFixture = require("./fixtures/simulator-uncertainty-v1.json");
+test("accepts the new conditional mean uncertainty export", () => {
+  expect(() => validateExport(uncertaintyFixture)).not.toThrow();
+});
+
+test.each([
+  ["negative standard error", (d, b) => { b.tree_planting.coefficient_uncertainty.standard_error = -1; }],
+  ["incorrect coefficient bounds", (d, b) => { b.tree_planting.coefficient_uncertainty.upper = 4; }],
+  ["incorrect cooling bounds", (d, b) => { b.scenarios[1].cooling_interval.lower_c = 4; }],
+  ["invented validated coverage", d => { d.uncertainty.coverage_validated = true; }],
+  ["unsupported prediction interval", d => { d.uncertainty.scope = "future_temperature"; }],
+  ["unsupported critical value", d => { d.uncertainty.critical_value = 1; }],
+])("rejects %s in the uncertainty export", (_, mutate) => {
+  const data = JSON.parse(JSON.stringify(uncertaintyFixture));
+  mutate(data, data.blocks.find(b => b.status === "indicative" && b.scenarios[1].status === "indicative"));
+  expect(() => validateExport(data)).toThrow("Invalid simulator export");
+});
