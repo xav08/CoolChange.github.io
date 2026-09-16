@@ -43,7 +43,7 @@ async function main(args) {
   const dryRun = args.includes("--dry-run");
   const files = args.filter((arg) => arg !== "--dry-run");
   if (files.length > 1 || files[0]?.startsWith("--")) {
-    throw new Error("Usage: npm run simulator:import -- [HTTPS URL or local JSON file] [--dry-run]");
+    throw new Error("Usage: npm run simulator:import -- [local JSON file] [--dry-run]");
   }
   if (dryRun) {
     const { releaseId, blocks } = await readSimulatorSource(files[0]);
