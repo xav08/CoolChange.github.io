@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "re
 import mapboxgl, { type GeoJSONSource, type MapMouseEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { resolveMapStyle } from "../utils/mapStyle";
+import { BlockPlanting } from "./BlockPlanting";
+import { MetricHelp } from "./MetricHelp";
+import { calculatePlanting, keepSuburbPlanting, restorePlanting, updatePlanting, PLANTING_STORAGE_KEY, type PlantingModel, type PlantingScenario } from "../utils/planting";
 
 // resolve the backend endpoint for map data
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
@@ -46,6 +49,7 @@ type MeshblockProperties = {
 };
 
 type MeshblockDetail = {
+  simulator?: { release_id: string; interactive?: PlantingModel } | null;
   block: MeshblockProperties & {
     sa2_name: string;
     lga_name: string;
@@ -121,7 +125,10 @@ function propertyNumber(properties: MapProperties | undefined, key: string) {
 // Render the suburb and mesh block explorer.
 export function MelbourneMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const meshDataRef = useRef<MapFeatureCollection>(EMPTY_COLLECTION);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
   const [loadingSuburb, setLoadingSuburb] = useState(false);
@@ -131,13 +138,69 @@ export function MelbourneMapPage() {
   const [hoveredSuburb, setHoveredSuburb] = useState<SuburbSummary | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<MeshblockDetail | null>(null);
   const [blockLoading, setBlockLoading] = useState(false);
+  const blockRequest = useRef<AbortController | null>(null);
+  const suburbRequest = useRef<AbortController | null>(null);
+  const [scenarios, setScenarios] = useState<PlantingScenario[]>(() => {
+    try { return restorePlanting(localStorage.getItem(PLANTING_STORAGE_KEY)); } catch { return []; }
+  });
+  const [comparison, setComparison] = useState<"before" | "after">("after");
+  const [plantingNotice, setPlantingNotice] = useState("");
+  const model = selectedBlock?.simulator?.interactive ?? null;
+  const activeScenario = scenarios.find(s => s.code === selectedBlock?.block.mb_code16);
+  const addedTrees = activeScenario?.trees ?? 0;
+  const displayed = model ? calculatePlanting(model, comparison === "after" ? addedTrees : 0) : null;
   const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+  useEffect(() => {
+    try { localStorage.setItem(PLANTING_STORAGE_KEY, JSON.stringify(scenarios)); } catch { /* Private browsing may disable storage. */ }
+  }, [scenarios]);
+
+  useEffect(() => {
+    if (detailRef.current && panelRef.current) {
+      // Bring the selected metrics and slider into view without moving the map.
+      panelRef.current.scrollTo({ top: detailRef.current.offsetTop - 24 });
+    }
+  }, [selectedBlock?.block.mb_code16]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map?.getSource(MESH_SOURCE)) return;
+    // Clearing feature state restores individually reset blocks and Reset all.
+    map.removeFeatureState({ source: MESH_SOURCE });
+    if (comparison === "after") {
+      for (const scenario of scenarios) {
+        map.setFeatureState({ source: MESH_SOURCE, id: scenario.code }, {
+          simulatedHeat: calculatePlanting(scenario.model, scenario.trees).heat,
+        });
+      }
+    }
+  }, [scenarios, comparison, mapReady, suburb]);
+
+  function changeTrees(trees: number) {
+    if (!model || !selectedBlock?.simulator || !suburb) return;
+    const code = selectedBlock.block.mb_code16;
+    setPlantingNotice("");
+    const next = { code, suburb_code: suburb.sa2_code16, release: selectedBlock.simulator.release_id, trees, model };
+    setScenarios(current => updatePlanting(current, next));
+    setComparison("after");
+  }
+
+  function resetPlanting() {
+    setScenarios([]);
+    setComparison("after");
+    setPlantingNotice("All added trees cleared. Every block is back to its baseline.");
+  }
 
   // Load and display mesh blocks for one suburb.
   const openSuburb = useCallback(async (selection: SearchResult | SuburbSummary) => {
     const map = mapRef.current;
     if (!map) return;
 
+    suburbRequest.current?.abort();
+    blockRequest.current?.abort();
+    const controller = new AbortController();
+    suburbRequest.current = controller;
+    setBlockLoading(false);
     setLoadingSuburb(true);
     setSelectedBlock(null);
     setMapError("");
@@ -145,11 +208,17 @@ export function MelbourneMapPage() {
       // load mesh blocks only after a suburb is selected
       const response = await fetch(
         `${API_BASE}/map/suburbs/${encodeURIComponent(selection.sa2_code16)}/meshblocks`,
+        { signal: controller.signal },
       );
       if (!response.ok) throw new Error("This suburb’s mesh blocks could not be loaded.");
       const data = (await response.json()) as MapFeatureCollection & { suburb: SearchResult };
+      if (controller.signal.aborted) return;
       const source = map.getSource(MESH_SOURCE) as GeoJSONSource | undefined;
       source?.setData(data as SourceData);
+      meshDataRef.current = data;
+      setScenarios(current => keepSuburbPlanting(current, selection.sa2_code16));
+      setPlantingNotice("");
+      setComparison("after");
       setSuburb({ ...selection, ...data.suburb });
       // Clear highlighting from the previous street search.
       map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
@@ -162,17 +231,27 @@ export function MelbourneMapPage() {
       map.setLayoutProperty(MESH_SELECTED, "visibility", "visible");
       const bounds = boundsFor(data);
       if (bounds) map.fitBounds(bounds, { padding: 70, duration: 1000, maxZoom: 14.7 });
+      return true;
     } catch (error) {
+      if (controller.signal.aborted) return;
       setMapError(error instanceof Error ? error.message : "Could not load this suburb.");
     } finally {
-      setLoadingSuburb(false);
+      if (!controller.signal.aborted) {
+        setLoadingSuburb(false);
+        suburbRequest.current = null;
+      }
     }
   }, []);
 
   // Load details for the selected mesh block.
   const openBlock = useCallback(async (mbCode16: string) => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || (suburbRequest.current && !suburbRequest.current.signal.aborted)) return;
+    blockRequest.current?.abort();
+    const controller = new AbortController();
+    blockRequest.current = controller;
+    setSelectedBlock(null);
+    setMapError("");
     map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], mbCode16]);
     // clicking any block -- highlighted or not -- resolves the street search's
     // job; drop the dim so the view returns to normal, leaving just this one
@@ -180,13 +259,25 @@ export function MelbourneMapPage() {
     if (map.getLayer(MESH_FILL)) map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
     setBlockLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/meshblocks/${mbCode16}`);
+      const response = await fetch(`${API_BASE}/meshblocks/${mbCode16}`, { signal: controller.signal });
       if (!response.ok) throw new Error("Mesh-block details are unavailable.");
-      setSelectedBlock((await response.json()) as MeshblockDetail);
+      const detail = (await response.json()) as MeshblockDetail;
+      if (controller.signal.aborted) return;
+      setSelectedBlock(detail);
+      // Reconcile saved scenarios with the active release and freshly read model.
+      setScenarios(current => {
+        if (!detail.simulator) return [];
+        const release = detail.simulator.release_id;
+        const compatible = current.filter(s => s.release === release);
+        const saved = compatible.find(s => s.code === mbCode16);
+        const fresh = detail.simulator.interactive;
+        return saved && fresh ? updatePlanting(compatible, { ...saved, model: fresh }) : compatible;
+      });
     } catch (error) {
+      if (controller.signal.aborted) return;
       setMapError(error instanceof Error ? error.message : "Could not load this mesh block.");
     } finally {
-      setBlockLoading(false);
+      if (!controller.signal.aborted) setBlockLoading(false);
     }
   }, []);
 
@@ -204,11 +295,29 @@ export function MelbourneMapPage() {
     ]);
   }, []);
 
+  function viewPlantedBlock(code: string) {
+    void openBlock(code);
+    const feature = meshDataRef.current.features.find(item => String(item.properties?.mb_code16) === code);
+    const bounds = feature ? boundsFor({ type: "FeatureCollection", features: [feature] }) : null;
+    const map = mapRef.current;
+    if (bounds && map) {
+      map.easeTo({ center: [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2],
+        offset: window.matchMedia("(max-width: 620px)").matches ? [0, map.getContainer().clientHeight * 0.29] : [180, 0],
+        duration: 350 });
+    }
+  }
+
+  function resetBlock(code: string) {
+    setScenarios(current => current.filter(item => item.code !== code));
+    setPlantingNotice(`Added trees removed from block ${code}.`);
+  }
+
   // Load a suburb and highlight matching street blocks.
   const openStreetMatch = useCallback(
     async (sa2Code16: string, mbCodes: string[]) => {
-      await openSuburb({ sa2_code16: sa2Code16, sa2_name: "", lga_name: "", n_blocks: 0 });
-      highlightBlocks(mbCodes);
+      if (await openSuburb({ sa2_code16: sa2Code16, sa2_name: "", lga_name: "", n_blocks: 0 })) {
+        highlightBlocks(mbCodes);
+      }
     },
     [openSuburb, highlightBlocks],
   );
@@ -237,7 +346,7 @@ export function MelbourneMapPage() {
     map.on("load", async () => {
       // sources must exist before their layers are added
       map.addSource(SUBURB_SOURCE, { type: "geojson", data: EMPTY_COLLECTION as SourceData });
-      map.addSource(MESH_SOURCE, { type: "geojson", data: EMPTY_COLLECTION as SourceData });
+      map.addSource(MESH_SOURCE, { type: "geojson", data: EMPTY_COLLECTION as SourceData, promoteId: "mb_code16" });
 
       map.addLayer({
         id: SUBURB_FILL,
@@ -264,7 +373,7 @@ export function MelbourneMapPage() {
         layout: { visibility: "none" },
         paint: {
           "fill-color": [
-            "interpolate", ["linear"], ["coalesce", ["get", "uhi_mean"], 0],
+            "interpolate", ["linear"], ["coalesce", ["feature-state", "simulatedHeat"], ["get", "uhi_mean"], 0],
             -4, "#238f93", 0, "#78c794", 4, "#eed05e", 8, "#ed8142", 12, "#cf3e32",
           ],
           "fill-opacity": 0.8,
@@ -321,7 +430,13 @@ export function MelbourneMapPage() {
       map.on("click", MESH_FILL, (event: MapMouseEvent) => {
         // use the rendered feature id to request the detailed metrics on demand
         const code = propertyText(eventProperties(event), "mb_code16");
-        if (code) void openBlock(code);
+        if (code) {
+          void openBlock(code);
+          if (window.matchMedia("(max-width: 620px)").matches) {
+            // Keep the tapped block below the taller mobile information card.
+            map.easeTo({ center: event.lngLat, offset: [0, map.getContainer().clientHeight * 0.29], duration: 350 });
+          }
+        }
       });
 
       try {
@@ -340,6 +455,8 @@ export function MelbourneMapPage() {
 
     return () => {
       cancelled = true;
+      blockRequest.current?.abort();
+      suburbRequest.current?.abort();
       mapRef.current = null;
       map.remove();
     };
@@ -349,6 +466,10 @@ export function MelbourneMapPage() {
   function showAllSuburbs() {
     const map = mapRef.current;
     if (!map) return;
+    blockRequest.current?.abort();
+    suburbRequest.current?.abort();
+    setBlockLoading(false);
+    setLoadingSuburb(false);
     setSuburb(null);
     setSelectedBlock(null);
     setSearchResetToken((token) => token + 1);
@@ -368,7 +489,7 @@ export function MelbourneMapPage() {
     <main className="melbourne-map-page">
       <div ref={containerRef} className="melbourne-map-canvas" aria-label="Interactive urban heat map of metropolitan Melbourne" />
 
-      <section className="map-explorer-panel" aria-label="Map explorer">
+      <section ref={panelRef} className={`map-explorer-panel${selectedBlock ? " has-selected-block" : ""}`} aria-label="Map explorer">
         <p className="map-page-eyebrow">Melbourne · 2018 mesh blocks</p>
         <h1>{suburb ? suburb.sa2_name : "See the heat beneath your suburb."}</h1>
         <p className="map-page-intro">
@@ -391,49 +512,60 @@ export function MelbourneMapPage() {
         )}
 
         {(blockLoading || selectedBlock) && (
-          <div className="mesh-detail-card" aria-live="polite">
+          <div ref={detailRef} className="mesh-detail-card">
             {blockLoading && !selectedBlock ? <p>Reading this mesh block…</p> : selectedBlock && (
               <>
                 <div className="mesh-detail-heading"><span>Selected mesh block</span><strong>{selectedBlock.block.mb_code16}</strong></div>
                 <dl>
                   <div className="metric-item">
-                    <dt>Surface heat</dt>
-                    <MetricHelp label="About surface heat">2018 satellite surface heat above non-urban land.</MetricHelp>
-                    <dd>{selectedBlock.block.uhi_mean == null ? "Not available" : `${selectedBlock.block.uhi_mean.toFixed(1)}°C`}</dd>
+                    <dt>{comparison === "after" && addedTrees ? "Modelled heat" : "Surface heat"}</dt>
+                    <MetricHelp label="About surface heat">{addedTrees && comparison === "after" ? "Modelled surface heat after mature tree planting, relative to non-urban land, using the 2018 baseline climate conditions." : "2018 satellite surface heat above non-urban land."}</MetricHelp>
+                    <dd>{displayed ? `${displayed.heat.toFixed(1)}°C` : selectedBlock.block.uhi_mean == null ? "Not available" : `${selectedBlock.block.uhi_mean.toFixed(1)}°C`}</dd>
                   </div>
                   <div className="metric-item">
                     <dt>Tree canopy</dt>
-                    <MetricHelp label="About tree canopy">Tree canopy cover in this block, measured in 2018.</MetricHelp>
-                    <dd>{selectedBlock.block.canopy_pct == null ? "Not available" : `${selectedBlock.block.canopy_pct.toFixed(1)}%`}</dd>
+                    <MetricHelp label="About tree canopy">{addedTrees && comparison === "after" ? "Baseline tree canopy plus the mature canopy of your added trees." : "Tree canopy cover in this block, measured in 2018."}</MetricHelp>
+                    <dd>{displayed ? `${displayed.canopy.toFixed(1)}%` : selectedBlock.block.canopy_pct == null ? "Not available" : `${selectedBlock.block.canopy_pct.toFixed(1)}%`}</dd>
                   </div>
                   <div className="metric-item"><dt>Category</dt><dd>{selectedBlock.block.mb_category || "Not classified"}</dd></div>
                   <div className="metric-item"><dt>Population</dt><dd>{selectedBlock.block.persons?.toLocaleString() ?? "Not published"}</dd></div>
                 </dl>
+                <BlockPlanting model={model} trees={addedTrees} onChange={changeTrees} />
               </>
             )}
           </div>
         )}
+        {suburb && (selectedBlock || scenarios.length > 0) && <div className="planting-controls">
+          <div className="planting-map-toggle" role="group" aria-label="Compare map before and after planting">
+            <button type="button" aria-pressed={comparison === "before"} onClick={() => setComparison("before")}>Before</button>
+            <button type="button" aria-pressed={comparison === "after"} onClick={() => setComparison("after")}>After</button>
+          </div>
+          <button className="planting-reset" type="button" disabled={scenarios.length === 0} onClick={resetPlanting}>Reset all</button>
+        </div>}
+        {suburb && (selectedBlock || scenarios.length > 0) && <details className="planted-blocks" key={suburb.sa2_code16}>
+          <summary><span>Added trees in {suburb.sa2_name}</span><span className="planted-blocks-count">{scenarios.length} {scenarios.length === 1 ? "block" : "blocks"}</span></summary>
+          <p className="planted-blocks-hint">Keep adding trees across this suburb. Switching to another suburb clears these additions.</p>
+          {scenarios.length ? <ul>
+            {scenarios.map(scenario => <li key={scenario.code} className={scenario.code === selectedBlock?.block.mb_code16 ? "is-selected" : ""}>
+              <button type="button" className="planted-block-view" onClick={() => viewPlantedBlock(scenario.code)} aria-label={`View block ${scenario.code}, ${scenario.trees} added trees`} aria-current={scenario.code === selectedBlock?.block.mb_code16 ? "true" : undefined}>
+                <span>Block {scenario.code}</span><strong>{scenario.trees.toLocaleString()} {scenario.trees === 1 ? "tree" : "trees"} added</strong>
+              </button>
+              <button type="button" className="planted-block-reset" aria-label={`Reset block ${scenario.code}`} onClick={() => resetBlock(scenario.code)}>Reset</button>
+            </li>)}
+          </ul> : <p className="planted-blocks-empty">Blocks appear here when you add trees.</p>}
+        </details>}
+        {plantingNotice && <p className="planting-notice" role="status">{plantingNotice}</p>}
       </section>
 
       <div className="map-heat-legend" aria-label="Surface heat legend">
         <span>Cooler</span><i /><span>Hotter</span>
-        <small>°C above non-urban baseline</small>
+        <small>{suburb && scenarios.length > 0 ? `${comparison === "after" ? "After planting · modelled" : "Before planting · observed"} · ` : ""}°C above non-urban baseline</small>
       </div>
 
       {(!mapReady || loadingSuburb) && <div className="map-page-loading">{loadingSuburb ? "Drawing mesh blocks…" : "Mapping Melbourne…"}</div>}
       {!resolveMapStyle(accessToken).accessToken && <div className="map-page-error">Add a public Mapbox token (pk.*) to frontend/.env.local.</div>}
       {mapError && <div className="map-page-error" role="alert">{mapError}</div>}
     </main>
-  );
-}
-
-// Show a short explanation for a metric.
-function MetricHelp({ children, label }: { children: string; label: string }) {
-  return (
-    <span className="metric-help" role="img" aria-label={label}>
-      ?
-      <span className="metric-help-tooltip">{children}</span>
-    </span>
   );
 }
 

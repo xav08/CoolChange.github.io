@@ -8,13 +8,13 @@ assert.ok(["localhost", "127.0.0.1"].includes(target.hostname) && target.port ==
 "Verification is restricted to local Docker coolchange or coolchange_uncertainty_test on port 5433");
 process.env.DATABASE_SSL = "false";
 process.env.PGOPTIONS = "-c default_transaction_read_only=on";
-const { readExport, validateDatabaseBlocks } = require("../src/db/simulatorExport");
+const { validateDatabaseBlocks } = require("../src/db/simulatorExport");
+const { readSimulatorSource } = require("../src/db/simulatorSource");
 const pool = require("../src/db/pool");
 const app = require("../src/index");
 
 async function verify(file) {
-  assert.ok(file, "Pass the full simulator_scenarios.json path");
-  const { blocks, metadata, releaseId } = readExport(file);
+  const { blocks, metadata, releaseId } = await readSimulatorSource(file);
   let server;
   try {
     const baseline = await pool.query("SELECT mb_code16, uhi_mean, canopy_pct, area_sqkm FROM mesh_block");
@@ -66,9 +66,20 @@ async function verify(file) {
     for (const code of selected) {
       const body = await get(`/api/v1/meshblocks/${code}`);
       assert.equal(body.block.mb_code16, code);
-      assert.deepEqual(body.simulator, { ...byCode.get(code), release_id: releaseId,
+      const { interactive, ...exported } = body.simulator;
+      assert.deepEqual(exported, { ...byCode.get(code), release_id: releaseId,
         schema_version: metadata.schema_version, inputs: metadata.inputs,
         ...(metadata.uncertainty ? { uncertainty: metadata.uncertainty } : {}) });
+      const raw = baseline.rows.find(row => String(row.mb_code16).trim() === code);
+      assert.equal(interactive.baseline_heat_c, raw.uhi_mean);
+      assert.equal(interactive.baseline_canopy_pct, raw.canopy_pct);
+      assert.equal(interactive.area_m2, raw.area_sqkm * 1e6);
+      assert.ok(Number.isSafeInteger(interactive.max_trees) && interactive.max_trees >= 0);
+      if (interactive.slope !== null) {
+        assert.ok(interactive.slope < 0);
+        const reached = raw.canopy_pct + interactive.max_trees * interactive.crown_area_m2 / interactive.area_m2 * 100;
+        assert.ok(reached <= interactive.canopy_ceiling_pct + 1e-8);
+      }
     }
     console.log(`PASS ${selected.size} block HTTP responses: exact baselines, scenarios, nulls, reasons and limits`);
 

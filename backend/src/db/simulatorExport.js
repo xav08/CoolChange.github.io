@@ -93,6 +93,10 @@ function validateExport(data) {
 
 function readExport(file) {
   const bytes = fs.readFileSync(file);
+  return parseExport(bytes);
+}
+
+function parseExport(bytes) {
   const data = validateExport(JSON.parse(bytes.toString("utf8")));
   return { ...data, releaseId: crypto.createHash("sha256").update(bytes).digest("hex") };
 }
@@ -111,4 +115,4 @@ function validateDatabaseBlocks(blocks, rows) {
   }
 }
 
-module.exports = { validateExport, readExport, validateDatabaseBlocks };
+module.exports = { validateExport, readExport, parseExport, validateDatabaseBlocks };
