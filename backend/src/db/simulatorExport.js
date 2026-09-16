@@ -1,3 +1,4 @@
+const { validateUncertainty } = require("./simulatorUncertainty");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 
@@ -85,12 +86,17 @@ function validateExport(data) {
       }
     }
   }
+  validateUncertainty(data);
   const { blocks, ...metadata } = data;
   return { blocks, metadata };
 }
 
 function readExport(file) {
   const bytes = fs.readFileSync(file);
+  return parseExport(bytes);
+}
+
+function parseExport(bytes) {
   const data = validateExport(JSON.parse(bytes.toString("utf8")));
   return { ...data, releaseId: crypto.createHash("sha256").update(bytes).digest("hex") };
 }
@@ -109,4 +115,4 @@ function validateDatabaseBlocks(blocks, rows) {
   }
 }
 
-module.exports = { validateExport, readExport, validateDatabaseBlocks };
+module.exports = { validateExport, readExport, parseExport, validateDatabaseBlocks };

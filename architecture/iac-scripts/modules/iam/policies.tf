@@ -43,3 +43,33 @@ resource "aws_iam_role_policy_attachment" "backend_secrets" {
   role       = aws_iam_role.backend.name
   policy_arn = aws_iam_policy.backend_secrets.arn
 }
+
+
+data "aws_iam_policy_document" "backend_s3" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject",
+    ]
+
+    # Least-privilege: only the simulator data bucket, not every bucket
+    # in the account.
+    resources = [
+      "arn:aws:s3:::coolchange-model-transfer-yipu-20260914/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "backend_s3" {
+  name_prefix = "${var.name_prefix}-backend-s3-"
+  description = "Allows the backend to read simulator export files from S3"
+  policy      = data.aws_iam_policy_document.backend_s3.json
+
+  tags = var.common_tags
+}
+
+resource "aws_iam_role_policy_attachment" "backend_s3" {
+  role       = aws_iam_role.backend.name
+  policy_arn = aws_iam_policy.backend_s3.arn
+}

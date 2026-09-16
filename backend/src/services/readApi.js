@@ -107,7 +107,7 @@ async function getMeshblock(mbCode16) {
   const coolest = shapeCoolest(coolestRow);
   return {
     block,
-    simulator: await getBlockSimulator(code),
+    simulator: await getBlockSimulator(code, blockResult.rows[0]),
     flags: shapeFlags(block, coolest),
     comparisons: comparisonRows.map(shapeComparison),
     coolest_in_lga: coolest,

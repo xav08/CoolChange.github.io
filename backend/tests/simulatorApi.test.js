@@ -51,7 +51,11 @@ test("bootstrap's legacy cache does not hide release activation", async () => {
 test.each(blocks)("serves exact screened data for $mb_code16 with release identifiers", async (block) => {
   const response = await request(app).get(`/api/v1/meshblocks/${block.mb_code16}`);
   expect(response.status).toBe(200);
-  expect(response.body.simulator).toEqual({ ...block, release_id: releaseId, schema_version: 3, inputs: metadata.inputs });
+  const { interactive, ...exported } = response.body.simulator;
+  expect(exported).toEqual({ ...block, release_id: releaseId, schema_version: 3, inputs: metadata.inputs });
+  expect(interactive.baseline_heat_c).toBe(block.observed_uhi);
+  expect(interactive.baseline_canopy_pct).toBe(block.observed_canopy_pct);
+  expect(interactive.area_m2).toBeCloseTo(block.tree_planting.area_m2, 6);
   expect(response.body.block.mb_code16).toBe(block.mb_code16);
   if (block.status === "unavailable") {
     expect(response.body.simulator.scenarios[1].cooling_c).toBeNull();
@@ -73,4 +77,48 @@ test("database errors are propagated rather than disguised as no estimate", asyn
   pool.query.mockRejectedValue(new Error("database disconnected"));
   await expect(getSimulatorMetadata()).rejects.toThrow("database disconnected");
   await expect(getBlockSimulator(blocks[0].mb_code16)).rejects.toThrow("database disconnected");
+});
+
+test.each([true, false])("fallback prefers an adjoining block, otherwise the nearest usable one (adjacent=%s)", async adjacent => {
+  const selected = blocks.find(b => b.status === "unavailable");
+  const donor = blocks.find(b => b.status === "indicative");
+  const baseImplementation = pool.query.getMockImplementation();
+  pool.query.mockImplementation(async (sql, params) => {
+    if (sql.includes("simulatorNeighbor")) {
+      return { rows: sql.includes("ST_Touches") && !adjacent ? [] : [{ payload: donor }] };
+    }
+    return baseImplementation(sql, params);
+  });
+  const baseline = { uhi_mean: 7.123456, canopy_pct: 20, area_sqkm: 0.01 };
+  const result = await getBlockSimulator(selected.mb_code16, baseline);
+  expect(result.interactive).toMatchObject({ baseline_heat_c: 7.123456, baseline_canopy_pct: 20,
+    area_m2: 10000, source_mb_code16: donor.mb_code16, source_kind: adjacent ? "adjacent" : "nearest" });
+  expect(result.tree_planting.simulation_slope).toBeNull();
+  const calls = pool.query.mock.calls.filter(([sql]) => sql.includes("simulatorNeighbor"));
+  expect(calls).toHaveLength(adjacent ? 1 : 2);
+  expect(calls[0][0]).toContain("ST_Touches");
+  expect(calls.every(([, params]) => params[1] === releaseId)).toBe(true);
+});
+
+test('HTTP exposes uncertainty metadata and preserves signed bounds and nulls', async () => {
+  const { blocks: sample, ...meta } = require('./helpers/uncertaintyFixture')();
+  const previous = pool.query.getMockImplementation();
+  pool.query.mockImplementation(async (sql, params) => {
+    if (sql.includes('simulatorMetadata')) return { rows: [{ release_id: releaseId, metadata: meta }] };
+    if (sql.includes('simulatorBlock')) return { rows: [{ release_id: releaseId, metadata: meta,
+      payload: sample.find(b => b.mb_code16 === params[0]) }] };
+    return previous(sql, params);
+  });
+  const bootstrap = await request(app).get('/api/v1/bootstrap');
+  expect(bootstrap.status).toBe(200);
+  expect(bootstrap.body.simulator.uncertainty).toEqual(meta.uncertainty);
+  for (const block of sample) {
+    const response = await request(app).get(`/api/v1/meshblocks/${block.mb_code16}`);
+    expect(response.status).toBe(200);
+    const { interactive, ...exported } = response.body.simulator;
+    expect(interactive).toBeDefined();
+    expect(interactive.coefficient_uncertainty).toEqual(block.tree_planting.coefficient_uncertainty);
+    expect(exported).toEqual({ ...block, release_id: releaseId, schema_version: 3,
+      inputs: meta.inputs, uncertainty: meta.uncertainty });
+  }
 });

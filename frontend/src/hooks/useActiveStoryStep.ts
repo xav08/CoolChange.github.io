@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 
-// return the story card currently in view
+// Return the story step currently in view.
 export function useActiveStoryStep() {
   const [activeStep, setActiveStep] = useState(0);
 
-  // observe story cards after the page mounts
+  // Observe story steps after the page mounts.
   useEffect(() => {
     const steps = Array.from(document.querySelectorAll<HTMLElement>("[data-story-step]"));
     if (!steps.length) return undefined;
 
-    // track the story card most visible in the viewport
+    // Track the most visible story step.
     const observer = new IntersectionObserver(
       (entries) => {
         const mostVisibleStep = entries

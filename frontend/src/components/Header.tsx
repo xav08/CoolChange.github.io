@@ -1,5 +1,5 @@
 // provide site navigation
-export function Header() {
+export function Header({ page }: { page: "story" | "map" | "about" }) {
   return (
     <header className="site-header">
       <div className="nav-shell">
@@ -11,9 +11,9 @@ export function Header() {
           </span>
         </a>
         <nav aria-label="Main navigation">
-          <a href="#story">The story</a>
-          <a className="nav-cta" href="#map">Explore the map <span aria-hidden="true">↗</span></a>
-          <a className="nav-about" href="#about">About</a>
+          <a href="#story" aria-current={page === "story" ? "page" : undefined}>The story</a>
+          <a className="nav-cta" href="#map" aria-current={page === "map" ? "page" : undefined}>Explore the map <span aria-hidden="true">↗</span></a>
+          <a className="nav-about" href="#about" aria-current={page === "about" ? "page" : undefined}>About</a>
         </nav>
       </div>
     </header>

@@ -18,6 +18,7 @@ const FUTURE_LAYER = "coolchange-future";
 
 type RgbColour = [number, number, number];
 
+// Map density bands to current and cooled colours.
 const heatStops = [
   { density: 0, colour: [0, 45, 58], cooledColour: [0, 45, 58], alpha: 0 },
   { density: 0.03, colour: [0, 82, 105], cooledColour: [0, 82, 105], alpha: 0.34 },
@@ -30,7 +31,7 @@ const heatStops = [
   { density: 1, colour: [244, 82, 30], cooledColour: [36, 158, 144], alpha: 0.96 },
 ] as const;
 
-// blend two colours by a fractional amount
+// Blend two colours by a given amount.
 function blendColour(start: readonly number[], end: readonly number[], amount: number): RgbColour {
   return [
     Math.round(start[0] + (end[0] - start[0]) * amount),
@@ -39,12 +40,12 @@ function blendColour(start: readonly number[], end: readonly number[], amount: n
   ];
 }
 
-// format a colour for mapbox paint rules
+// Format a colour for Mapbox paint rules.
 function rgba([red, green, blue]: RgbColour, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
-// shift the heat palette as simulated cooling increases
+// Shift the heat palette as cooling increases.
 function heatColours(cooling = 0): ExpressionSpecification {
   const colourShift = Math.min(cooling / 0.72, 1);
 
@@ -65,13 +66,13 @@ type MapboxBaseMapProps = {
   cooling: number;
 };
 
-// toggle a map layer when it is available
+// Toggle a map layer when it exists.
 function setLayerVisibility(map: mapboxgl.Map, layerId: string, visible: boolean) {
   if (!map.getLayer(layerId)) return;
   map.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
 }
 
-// fade heat layers out when the map is too zoomed out
+// Fade heat layers when the map is zoomed out.
 function heatZoomFade(map: mapboxgl.Map) {
   const fullyVisibleAt = 13.2;
   const hiddenAt = 12.6;
@@ -83,12 +84,13 @@ function heatZoomFade(map: mapboxgl.Map) {
   return (zoom - hiddenAt) / (fullyVisibleAt - hiddenAt);
 }
 
-// apply the selected story state to map layers
+// Apply the selected story state to the map layers.
 function updateMapLayers(map: mapboxgl.Map, layer: StoryLayer, cooling: number, locationFade = 1) {
   const showHeat = layer === "heat";
   const showFuture = layer === "future";
   const visibleOpacity = locationFade * heatZoomFade(map);
 
+  // keep the three story states mutually exclusive while retaining their sources
   setLayerVisibility(map, HEAT_LAYER, showHeat);
   setLayerVisibility(map, PARK_LAYER, layer === "canopy");
   setLayerVisibility(map, RESERVE_LAYER, layer === "canopy");
@@ -106,7 +108,7 @@ function updateMapLayers(map: mapboxgl.Map, layer: StoryLayer, cooling: number, 
 
 }
 
-// create and maintain the clyde north map
+// Create and maintain the Clyde North map.
 export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -141,6 +143,7 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
 
     mapRef.current = map;
 
+    // keep the case-study location visible while users move through the map story
     const markerElement = document.createElement("div");
     markerElement.className = "map-location-marker";
     markerElement.setAttribute("aria-label", "Clyde North");
@@ -154,6 +157,7 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
       .setLngLat(CLYDE_NORTH)
       .addTo(map);
 
+    // Update heat opacity when the map moves.
     const handleMapMove = () => {
       updateMapLayers(
         map,
@@ -204,7 +208,7 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
           },
         });
 
-        // reuse density points for the 2050 scenario
+        // use the same local points for the future state, then shift their palette
         map.addLayer({
           id: FUTURE_LAYER,
           type: "heatmap",

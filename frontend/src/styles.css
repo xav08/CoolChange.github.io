@@ -39,8 +39,8 @@ img { display: block; max-width: 100%; }
 .site-header nav { display: flex; align-items: center; gap: 4px; padding: 5px; }
 .site-header nav a { border-radius: 999px; padding: 10px 14px; color: #345646; text-decoration: none; font-size: 12px; font-weight: 800; transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease; }
 .site-header nav a:hover { background: #e2ece0; color: var(--deep-green); }
-.site-header nav .nav-cta { background: var(--deep-green); color: #f3f6ee; }
-.site-header nav .nav-cta:hover { background: #265a43; color: white; transform: translateY(-1px); }
+.site-header nav a[aria-current="page"] { background: var(--deep-green); color: #f3f6ee; }
+.site-header nav a[aria-current="page"]:hover { background: #265a43; color: white; transform: translateY(-1px); }
 .nav-cta span { margin-left: 8px; }
 
 /* style the about page and data lists */
@@ -300,6 +300,70 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
 .metric-help:hover { border-color: var(--deep-green); background: #e3ece2; color: var(--deep-green); }
 .metric-help-tooltip { position: absolute; top: 22px; right: 0; width: 200px; visibility: hidden; border: 1px solid rgba(23, 56, 44, 0.16); border-radius: 10px; background: #fbfcf8; box-shadow: 0 10px 24px rgba(23, 56, 44, 0.18); padding: 9px 10px; color: #416153; font-size: 10px; font-weight: 500; line-height: 1.4; letter-spacing: 0; opacity: 0; text-transform: none; transition: opacity 0.15s ease, visibility 0.15s ease; }
 .metric-help:hover .metric-help-tooltip { visibility: visible; opacity: 1; }
+.metric-help { border: 0; }
+.metric-help > button { display: grid; width: 20px; height: 20px; padding: 0; place-items: center; border: 1px solid #799083; border-radius: 50%; background: transparent; color: #416153; font: inherit; cursor: help; }
+.metric-help > button:focus-visible { outline: 2px solid #237966; outline-offset: 3px; }
+.metric-help:focus-within .metric-help-tooltip, .metric-help.is-open .metric-help-tooltip { visibility: visible; opacity: 1; }
+.block-planting { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 22px; }
+.planting-heading { position: relative; display: flex; align-items: center; justify-content: space-between; }
+.planting-heading h2 { margin: 5px 0 0; color: var(--deep-green); font-family: Georgia, serif; font-size: 29px; font-weight: 500; letter-spacing: -0.03em; }
+.planting-eyebrow { color: #61796c; font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.planting-heading .metric-help { top: 17px; right: 2px; }
+.block-planting .metric-help-tooltip { width: min(270px, 68vw); padding: 12px; font-size: 12px; line-height: 1.5; }
+.planting-slider-label { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 8px; color: #416153; font-size: 12px; font-weight: 650; }
+.planting-slider-label output { color: var(--deep-green); font-size: 27px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.planting-slider-row { display: flex; align-items: center; gap: 12px; }
+.planting-slider-row button { flex: 0 0 36px; height: 36px; border: 1px solid #bfd0c3; border-radius: 50%; background: #f8faf4; color: #235540; font-size: 22px; cursor: pointer; }
+.planting-slider-row button:disabled { opacity: 0.4; cursor: default; }
+.planting-slider-row input { flex: 1; width: 0; min-width: 0; height: 30px; accent-color: #237966; cursor: pointer; }
+.planting-slider-row input:disabled { cursor: default; opacity: 0.5; }
+.planting-slider-row :focus-visible, .planting-controls button:focus-visible { outline: 2px solid #237966; outline-offset: 3px; }
+.planting-note, .planting-ceiling, .planting-notice { color: #61796c; font-size: 11px; line-height: 1.55; }
+.planting-note { margin: 10px 0 18px; }
+.planting-ceiling { border-radius: 10px; background: #e8eedc; padding: 10px 12px; color: #41512b; }
+.planting-comparison { border: 1px solid #d3dfd2; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.55); }
+.planting-comparison > div { display: grid; grid-template-columns: 1.1fr 1fr 1fr; align-items: center; gap: 6px; padding: 10px 12px; font-size: 11px; color: #526e5e; }
+.planting-comparison > div + div { border-top: 1px solid #e2e9df; }
+.planting-comparison > div > :nth-child(n+2) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.planting-comparison strong { color: #1a6046; font-size: 13px; }
+.planting-comparison .planting-comparison-head { background: #eaf0e5; color: #61796c; font-size: 10px; font-weight: 750; }
+.planting-reference { margin: 7px 0 18px; color: #71877c; font-size: 9px; text-align: right; }
+.planting-cooling { display: flex; justify-content: space-between; align-items: center; color: #315b46; font-size: 12px; }
+.planting-cooling strong { font-size: 26px; font-weight: 650; letter-spacing: -0.04em; }
+.planting-range { position: relative; display: grid; gap: 5px; margin-top: 14px; padding: 13px 32px 13px 12px; border-radius: 10px; background: #eaf0e5; color: #526e5e; font-size: 10px; }
+.planting-range strong { color: #315b46; font-size: 12px; font-weight: 650; }
+.planting-range .metric-help { top: 12px; right: 10px; }
+.planting-range .metric-help-tooltip, .planting-fallback .metric-help-tooltip { top: auto; bottom: 28px; }
+.planting-fallback { position: relative; margin-top: 12px; padding-right: 28px; color: #61796c; font-size: 11px; line-height: 20px; }
+.planting-fallback .metric-help { top: 0; right: 2px; }
+.planting-controls { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+.planting-map-toggle { display: flex; gap: 3px; padding: 3px; border: 1px solid #d3dfd2; border-radius: 12px; background: #e8eee2; }
+.planting-map-toggle button { border: 0; border-radius: 9px; padding: 9px 17px; background: transparent; color: #526e5e; font-size: 12px; cursor: pointer; }
+.planting-map-toggle button[aria-pressed="true"] { background: #245c45; color: #fff; box-shadow: 0 2px 5px #17382c20; }
+.planting-reset { border: 0; padding: 10px 0 10px 8px; background: transparent; color: #416153; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.planting-reset:disabled { opacity: 0.45; cursor: default; }
+.planting-controls > p { flex-basis: 100%; margin: 0; color: #71877c; font-size: 10px; }
+.planting-notice { margin-bottom: 0; }
+.planting-tree-unit { font-size: 13px; font-weight: 600; color: #526e5e; }
+.planted-blocks { margin-top: 18px; border: 1px solid #d3dfd2; border-radius: 12px; background: rgba(255,255,255,0.55); }
+.planted-blocks summary { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 30px 14px 12px; color: #315b46; font-size: 12px; font-weight: 700; cursor: pointer; list-style: none; }
+.planted-blocks summary::-webkit-details-marker { display: none; }
+.planted-blocks summary::after { content: "+"; position: absolute; right: 12px; font-size: 18px; font-weight: 500; }
+.planted-blocks[open] summary::after { content: "−"; }
+.planted-blocks-count { flex-shrink: 0; border-radius: 12px; padding: 4px 7px; background: #eaf0e5; color: #526e5e; font-size: 10px; font-weight: 600; }
+.planted-blocks-hint, .planted-blocks-empty { margin: 0; padding: 0 12px 12px; color: #61796c; font-size: 11px; line-height: 1.5; }
+.planted-blocks ul { margin: 0; padding: 0 8px 8px; max-height: 250px; overflow-y: auto; list-style: none; }
+.planted-blocks li { display: flex; gap: 6px; align-items: center; border-top: 1px solid #e2e9df; padding: 5px 4px; }
+.planted-blocks li.is-selected { background: #eaf0e5; border-radius: 8px; }
+.planted-block-view { display: grid; gap: 5px; flex: 1; min-width: 0; border: 0; background: transparent; padding: 8px 4px; color: #526e5e; text-align: left; cursor: pointer; font-size: 11px; }
+.planted-block-view strong { color: #245c45; font-size: 12px; }
+.planted-block-reset { flex-shrink: 0; border: 0; background: transparent; padding: 12px 6px; color: #416153; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.planted-blocks :focus-visible { outline: 2px solid #237966; outline-offset: 2px; border-radius: 5px; }
+.map-explorer-panel.has-selected-block { padding: 24px; }
+.map-explorer-panel.has-selected-block h1 { font-size: 32px; }
+.map-explorer-panel.has-selected-block .map-page-intro { display: none; }
+.map-explorer-panel.has-selected-block .suburb-search { margin-top: 18px; }
+.mesh-detail-card .metric-item:nth-child(odd) .metric-help-tooltip { right: auto; left: -125px; width: 220px; }
 .map-heat-legend { position: absolute; right: max(26px, 3vw); bottom: 28px; z-index: 4; display: grid; grid-template-columns: auto 150px auto; align-items: center; gap: 9px; border: 1px solid rgba(255, 255, 255, 0.62); border-radius: 14px; background: rgba(248, 249, 242, 0.88); box-shadow: 0 10px 30px rgba(18, 48, 38, 0.14); padding: 11px 14px; color: #486457; backdrop-filter: blur(17px); font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .map-heat-legend i { height: 7px; border-radius: 99px; background: linear-gradient(90deg, #238f93, #78c794, #eed05e, #ed8142, #cf3e32); }
 .map-heat-legend small { grid-column: 1 / -1; color: #71867b; font-size: 8px; font-weight: 700; text-align: right; text-transform: none; }
@@ -379,6 +443,9 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
   footer { grid-template-columns: 1fr; gap: 28px; }
   .melbourne-map-page { min-height: 760px; }
   .map-explorer-panel { top: 88px; right: 12px; bottom: auto; left: 12px; width: auto; max-height: 46svh; border-radius: 22px; padding: 22px; }
+  .map-explorer-panel.has-selected-block { max-height: 58svh; padding: 18px; }
+  .map-explorer-panel.has-selected-block .mesh-detail-card dl { grid-template-columns: 1fr 1fr; overflow: visible; }
+  .map-explorer-panel.has-selected-block .mesh-detail-card dl div:nth-child(odd) { border-left: 0; padding-left: 0; }
   .map-explorer-panel h1 { font-size: 37px; }
   .map-page-intro { margin: 12px 0 17px; font-size: 12px; }
   .map-reset-button { top: 74px; right: 13px; }

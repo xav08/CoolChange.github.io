@@ -19,3 +19,5 @@ __pycache__/
 # one command. Delivered to the front end as a bundle, not through Git.
 frontend/public/data/
 *.textClipping
+
+data-pipeline/data/raw/*
