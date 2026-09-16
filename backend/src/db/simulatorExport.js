@@ -1,3 +1,4 @@
+const { validateUncertainty } = require("./simulatorUncertainty");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 
@@ -37,12 +38,6 @@ function validateExport(data) {
     check(finite(area) && area > 0, `profile ${name} crown area`);
   }
   check(Array.isArray(data.blocks) && data.blocks.length > 0, "blocks required");
-  if (data.uncertainty !== undefined) {
-    check(data.uncertainty.method === "gwr_coefficient_normal_v1" &&
-      data.uncertainty.level === 0.95 && data.uncertainty.coverage_validated === false &&
-      data.uncertainty.scope === "conditional_mean_cooling" &&
-      close(data.uncertainty.critical_value, 1.9599639845400534), "unsupported uncertainty method");
-  }
   const codes = new Set();
   for (const block of data.blocks) {
     const code = block.mb_code16;
@@ -59,14 +54,6 @@ function validateExport(data) {
     check(available ? finite(t.simulation_slope) && t.simulation_slope < 0 : t.simulation_slope === null,
       `${code} screened simulation_slope`);
     check(t.site_capacity_trees === null && t.site_capacity_status === "not_assessed", `${code} unknown site capacity must remain null`);
-    if (data.uncertainty) {
-      const u = t.coefficient_uncertainty;
-      check(available ? object(u) && u.method === data.uncertainty.method &&
-        u.level === 0.95 && u.coverage_validated === false && finite(u.standard_error) && u.standard_error >= 0 &&
-        close(u.lower, t.simulation_slope - data.uncertainty.critical_value * u.standard_error) &&
-        close(u.upper, t.simulation_slope + data.uncertainty.critical_value * u.standard_error) : u === null,
-      `${code} coefficient uncertainty`);
-    }
     for (const name of ["A", "B", "C"]) {
       const crown = assumptions.profiles[name].mature_canopy_area_m2;
       const domain = Math.floor(Math.max(0, t.local_canopy_max_pct - block.observed_canopy_pct) / 100 * t.area_m2 / crown + 1e-9);
@@ -82,15 +69,6 @@ function validateExport(data) {
       const delta = canopy - block.observed_canopy_pct;
       check(s.requested_delta_pp === index * 5 && close(s.canopy_pct, canopy) && close(s.applied_delta_pp, delta), `${code} scenario canopy`);
       check(reasonsValid(s.reason_codes), `${code} scenario reasons`);
-      if (data.uncertainty) {
-        const ci = s.cooling_interval;
-        const u = t.coefficient_uncertainty;
-        check(s.status === "indicative" ? object(ci) && object(u) &&
-          ci.method === data.uncertainty.method && ci.level === 0.95 && ci.coverage_validated === false &&
-          close(ci.lower_c, -u.upper * delta) && close(ci.upper_c, -u.lower * delta) &&
-          ci.includes_zero === (ci.lower_c <= 0 && ci.upper_c >= 0) : ci === null,
-        `${code} cooling interval`);
-      }
       if (delta === 0) {
         check(s.status === (index === 0 ? "baseline" : "no_change") && s.reason_codes.length === 0 &&
           s.cooling_c === 0 && s.predicted_uhi === block.observed_uhi, `${code} baseline/no change`);
@@ -108,6 +86,7 @@ function validateExport(data) {
       }
     }
   }
+  validateUncertainty(data);
   const { blocks, ...metadata } = data;
   return { blocks, metadata };
 }

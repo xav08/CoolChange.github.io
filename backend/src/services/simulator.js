@@ -25,7 +25,8 @@ async function getBlockSimulator(code, baseline) {
   if (!payload) {
     throw new ApiError(503, "SIMULATOR_UNAVAILABLE", "Active simulator release is missing this block.");
   }
-  const result = { ...payload, release_id, schema_version: metadata.schema_version, inputs: metadata.inputs };
+  const result = { ...payload, release_id, schema_version: metadata.schema_version, inputs: metadata.inputs,
+    ...(metadata.uncertainty ? { uncertainty: metadata.uncertainty } : {}) };
   if (!baseline) return result;
   let donor = null;
   const t = payload.tree_planting;

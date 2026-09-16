@@ -99,3 +99,26 @@ test.each([true, false])("fallback prefers an adjoining block, otherwise the nea
   expect(calls[0][0]).toContain("ST_Touches");
   expect(calls.every(([, params]) => params[1] === releaseId)).toBe(true);
 });
+
+test('HTTP exposes uncertainty metadata and preserves signed bounds and nulls', async () => {
+  const { blocks: sample, ...meta } = require('./helpers/uncertaintyFixture')();
+  const previous = pool.query.getMockImplementation();
+  pool.query.mockImplementation(async (sql, params) => {
+    if (sql.includes('simulatorMetadata')) return { rows: [{ release_id: releaseId, metadata: meta }] };
+    if (sql.includes('simulatorBlock')) return { rows: [{ release_id: releaseId, metadata: meta,
+      payload: sample.find(b => b.mb_code16 === params[0]) }] };
+    return previous(sql, params);
+  });
+  const bootstrap = await request(app).get('/api/v1/bootstrap');
+  expect(bootstrap.status).toBe(200);
+  expect(bootstrap.body.simulator.uncertainty).toEqual(meta.uncertainty);
+  for (const block of sample) {
+    const response = await request(app).get(`/api/v1/meshblocks/${block.mb_code16}`);
+    expect(response.status).toBe(200);
+    const { interactive, ...exported } = response.body.simulator;
+    expect(interactive).toBeDefined();
+    expect(interactive.coefficient_uncertainty).toEqual(block.tree_planting.coefficient_uncertainty);
+    expect(exported).toEqual({ ...block, release_id: releaseId, schema_version: 3,
+      inputs: meta.inputs, uncertainty: meta.uncertainty });
+  }
+});

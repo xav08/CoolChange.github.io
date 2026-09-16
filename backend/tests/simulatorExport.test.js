@@ -47,7 +47,7 @@ test("rejects missing or extra database blocks", () => {
   expect(() => validateDatabaseBlocks(fixture.blocks, baselines(fixture).slice(1))).toThrow("count differs");
 });
 
-const uncertaintyFixture = require("./fixtures/simulator-uncertainty-v1.json");
+const uncertaintyFixture = require("./helpers/uncertaintyFixture")();
 test("accepts the new conditional mean uncertainty export", () => {
   expect(() => validateExport(uncertaintyFixture)).not.toThrow();
 });
