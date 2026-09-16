@@ -74,3 +74,23 @@ test("database errors are propagated rather than disguised as no estimate", asyn
   await expect(getSimulatorMetadata()).rejects.toThrow("database disconnected");
   await expect(getBlockSimulator(blocks[0].mb_code16)).rejects.toThrow("database disconnected");
 });
+
+test('HTTP exposes uncertainty metadata and preserves signed bounds and nulls', async () => {
+  const { blocks: sample, ...meta } = require('./helpers/uncertaintyFixture')();
+  const previous = pool.query.getMockImplementation();
+  pool.query.mockImplementation(async (sql, params) => {
+    if (sql.includes('simulatorMetadata')) return { rows: [{ release_id: releaseId, metadata: meta }] };
+    if (sql.includes('simulatorBlock')) return { rows: [{ release_id: releaseId, metadata: meta,
+      payload: sample.find(b => b.mb_code16 === params[0]) }] };
+    return previous(sql, params);
+  });
+  const bootstrap = await request(app).get('/api/v1/bootstrap');
+  expect(bootstrap.status).toBe(200);
+  expect(bootstrap.body.simulator.uncertainty).toEqual(meta.uncertainty);
+  for (const block of sample) {
+    const response = await request(app).get(`/api/v1/meshblocks/${block.mb_code16}`);
+    expect(response.status).toBe(200);
+    expect(response.body.simulator).toEqual({ ...block, release_id: releaseId, schema_version: 3,
+      inputs: meta.inputs, uncertainty: meta.uncertainty });
+  }
+});

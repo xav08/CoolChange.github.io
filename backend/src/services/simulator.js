@@ -24,7 +24,8 @@ async function getBlockSimulator(code) {
   if (!payload) {
     throw new ApiError(503, "SIMULATOR_UNAVAILABLE", "Active simulator release is missing this block.");
   }
-  return { ...payload, release_id, schema_version: metadata.schema_version, inputs: metadata.inputs };
+  return { ...payload, release_id, schema_version: metadata.schema_version, inputs: metadata.inputs,
+    ...(metadata.uncertainty ? { uncertainty: metadata.uncertainty } : {}) };
 }
 
 module.exports = { getSimulatorMetadata, getBlockSimulator };
