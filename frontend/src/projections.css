@@ -1,0 +1,58 @@
+.projection-controls { position: absolute; top: 112px; right: max(30px, 4vw); z-index: 6; width: 350px; border: 1px solid #ffffffc9; border-radius: 22px; padding: 18px 20px; background: #f8f9f2f2; box-shadow: 0 14px 40px #12302624; backdrop-filter: blur(18px); }
+.projection-switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.projection-switch-row strong { display: block; font-size: 16px; }
+.projection-kicker { display: block; margin-bottom: 5px; color: #667b6b; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; }
+.vision-switch { position: relative; display: flex; align-items: center; justify-content: space-around; flex-shrink: 0; width: 100px; height: 48px; padding: 4px; border: 1px solid #b8c9b2; border-radius: 28px; background: #e0e7da; cursor: pointer; }
+.vision-switch > span:not(.vision-switch-thumb) { z-index: 1; font-size: 23px; line-height: 1; }
+.vision-switch-thumb { position: absolute; top: 4px; left: 51px; width: 40px; height: 38px; border-radius: 22px; background: #bad3a4; box-shadow: 0 2px 7px #163c2d30; transition: left .2s, background .2s; }
+.vision-switch.is-future { background: #f3e8d7; border-color: #d5bc91; }
+.vision-switch.is-future .vision-switch-thumb { left: 5px; background: #f5c164; }
+.projection-controls > p { margin: 10px 0 0; color: #556952; font-size: 11px; }
+.warming-selector { margin: 15px 0 0; padding: 0; border: 0; }
+.warming-selector legend { margin-bottom: 8px; font-size: 11px; font-weight: 750; }
+.warming-selector > div { display: flex; gap: 5px; }
+.warming-selector button { min-height: 40px; flex: 1; border: 1px solid #d8daca; border-radius: 9px; padding: 7px; background: #fffdf8; color: #385447; font-size: 11px; cursor: pointer; }
+.warming-selector button[aria-pressed="true"] { border-color: #975a28; background: #8b481f; color: white; }
+.projection-detail { margin-top: 22px; border-top: 1px solid #d8daca; padding-top: 18px; }
+.projection-failure { padding: 12px; border-radius: 12px; background: #ffedda; color: #864015; font-weight: 750; font-size: 13px; }
+.projection-detail > span { font-size: 11px; color: #8b481f; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.projection-detail h2 { margin: 14px 0 6px; font-size: 20px; }
+.projection-detail p { font-size: 13px; line-height: 1.5; }
+.projection-detail .projection-days { margin: 5px 0; font-family: Georgia, serif; font-size: 46px; color: #8b481f; line-height: 1.15; }
+.projection-days small { display: block; margin-top: 7px; font-family: Inter, sans-serif; font-size: 13px; }
+.projection-detail .projection-context { margin-top: 20px; color: #68796a; font-size: 11px; }
+.projection-detail .projection-saved { padding: 11px; border-radius: 12px; background: #e3ecd9; color: #34563c; font-size: 12px; }
+.projection-legend { position: absolute; right: max(30px, 4vw); bottom: 28px; z-index: 4; max-width: 380px; padding: 16px 18px; border: 1px solid #ffffffcf; border-radius: 18px; background: #fafbf5f2; box-shadow: 0 10px 30px #12302620; }
+.projection-legend > strong { display: block; font-size: 14px; }
+.projection-legend > span { display: block; margin-top: 4px; color: #697763; font-size: 11px; }
+.projection-legend ul { display: flex; flex-wrap: wrap; gap: 11px; margin: 12px 0 9px; padding: 0; list-style: none; }
+.projection-legend li { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+.projection-legend i { width: 15px; height: 15px; border: 1px solid #86582b35; border-radius: 4px; }
+.projection-legend small { color: #68796a; font-size: 10px; }
+.melbourne-map-page.is-future-view .mapboxgl-ctrl-bottom-right { bottom: 175px; }
+.melbourne-map-page .map-reset-button { top: auto; }
+.melbourne-map-page.is-future-view .map-reset-button { bottom: 190px; }
+@media (max-width: 980px) {
+  .projection-controls { right: 22px; width: 295px; }
+  .projection-kicker { display: none; }
+  .projection-switch-row strong { font-size: 14px; }
+}
+@media (max-width: 760px) {
+  .projection-controls { top: 88px; right: 12px; left: 12px; width: auto; padding: 10px 14px; border-radius: 18px; }
+  .projection-controls > p { margin-top: 4px; }
+  .vision-switch { height: 42px; }
+  .vision-switch-thumb { height: 32px; }
+  .warming-selector { margin-top: 9px; }
+  .warming-selector legend { margin-bottom: 5px; }
+  .melbourne-map-page .map-explorer-panel { top: 188px; bottom: auto; left: 12px; right: 12px; width: auto; max-height: 39svh; padding: 20px; }
+  .melbourne-map-page.is-future-view .map-explorer-panel { top: 257px; max-height: 33svh; }
+  .melbourne-map-page .map-explorer-panel.has-selected-block { max-height: 47svh; }
+  .is-future-view .map-explorer-panel h1 { font-size: 30px; }
+  .is-future-view .map-page-intro { margin: 12px 0; font-size: 12px; }
+  .is-future-view .has-projection-suburb .map-page-intro { display: none; }
+  .has-projection-suburb .suburb-search { margin-top: 14px; }
+  .projection-detail { margin-top: 14px; padding-top: 14px; }
+  .projection-legend { right: 12px; bottom: 26px; left: 12px; max-width: none; padding: 12px 14px; }
+  .projection-legend ul { gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .vision-switch-thumb { transition: none; } }
