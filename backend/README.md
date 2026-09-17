@@ -159,3 +159,29 @@ Git: `main` → `development` → `backend`. Keep backend work on this branch un
 | `NODE_ENV` | `development` / `production` | `development` |
 | `DATABASE_URL` | Postgres connection string | local Docker URL above |
 | `DATABASE_SSL` | `true` for RDS | `false` |
+
+## 2050 suburb projections
+
+`GET /api/v1/map/projections` returns `scale`, `bands`, and `suburbs` for all
+four warming levels (1.2, 1.5, 2.0, 3.0). It is independent of the observed map
+endpoint, so a projection failure returns `503 PROJECTION_UNAVAILABLE` without
+preventing the current map from loading. No migration or seed reload is needed.
+
+Each suburb uses the most frequent mesh-block band; ties choose the higher
+lower bound, then higher upper bound (open-ended first). Missing suburb/level
+values use a valid original donor at that level, preferring the longest shared
+boundary, then geographic distance and suburb code. If no bordering donor
+exists, the nearest valid suburb is used. Donors never borrow from other donors.
+`source_sa2_code16` retains provenance for auditing; it is not shown in the UI.
+With no valid donor at a level, bounds stay null and the UI says `not available`.
+
+The successful response is cached until API restart, including the global
+minimum/maximum of all non-null lower and upper bounds and all distinct source
+classes. Failed reads are not cached. NULL upper bounds mean an open-ended band,
+not zero or an inferred cap. The frontend uses one solid colour per band, drawn
+from this fixed domain, across every suburb and warming level.
+
+The sun view displays climate projections at suburb scale. The tree view
+restores the existing map and saved planting simulation. Added canopy does not
+alter hot-day counts: the dataset contains no canopy-to-hot-days model. The
+3.0°C level is labeled as a scenario, not a dated prediction.

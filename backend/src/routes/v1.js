@@ -1,6 +1,7 @@
 const express = require("express");
 const { asyncHandler } = require("../http/errors");
 const readApi = require("../services/readApi");
+const { getSuburbProjections } = require("../services/suburbProjections");
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.get(
         "GET /api/v1/search?q=",
         "GET /api/v1/street-search?street=&suburb=",
         "GET /api/v1/map/suburbs",
+        "GET /api/v1/map/projections",
         "GET /api/v1/map/suburbs/:sa2_code16/meshblocks",
       ],
     });
@@ -71,6 +73,10 @@ router.get(
     res.json(await readApi.searchStreets(req.query.street, req.query.suburb));
   })
 );
+
+router.get("/map/projections", asyncHandler(async (req, res) => {
+  res.json(await getSuburbProjections());
+}));
 
 router.get(
   "/map/suburbs",

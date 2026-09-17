@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import mapboxgl, { type GeoJSONSource, type MapMouseEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { resolveMapStyle } from "../utils/mapStyle";
 import { BlockPlanting } from "./BlockPlanting";
 import { MetricHelp } from "./MetricHelp";
+import { ProjectionControls, ProjectionLegend } from "./ProjectionControls";
+import { daysBand, isProjectionData, projectionColor, warmingLabel, UNAVAILABLE_COLOR, type ProjectionData, type WarmingLevel } from "../utils/projections";
 import { calculatePlanting, keepSuburbPlanting, restorePlanting, updatePlanting, PLANTING_STORAGE_KEY, type PlantingModel, type PlantingScenario } from "../utils/planting";
 
 // resolve the backend endpoint for map data
@@ -27,6 +29,7 @@ const SUBURB_LINE = "melbourne-suburbs-line";
 const MESH_FILL = "suburb-meshblocks-fill";
 const MESH_LINE = "suburb-meshblocks-line";
 const MESH_SELECTED = "suburb-meshblocks-selected";
+const PROJECTION_FILL = "suburb-projection-fill";
 
 type SearchResult = {
   sa2_code16: string;
@@ -129,6 +132,13 @@ export function MelbourneMapPage() {
   const detailRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const meshDataRef = useRef<MapFeatureCollection>(EMPTY_COLLECTION);
+  const suburbDataRef = useRef<MapFeatureCollection>(EMPTY_COLLECTION);
+  const loadedSuburbRef = useRef<string | null>(null);
+  const futureRef = useRef(false);
+  const [future, setFuture] = useState(false);
+  const [warmingLevel, setWarmingLevel] = useState<WarmingLevel>(2);
+  const [projectionData, setProjectionData] = useState<ProjectionData | null>(null);
+  const [projectionStatus, setProjectionStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
   const [loadingSuburb, setLoadingSuburb] = useState(false);
@@ -150,6 +160,46 @@ export function MelbourneMapPage() {
   const addedTrees = activeScenario?.trees ?? 0;
   const displayed = model ? calculatePlanting(model, comparison === "after" ? addedTrees : 0) : null;
   const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+  const projectionRows = useMemo(() => new Map(projectionData?.suburbs
+    .filter(row => row.warming_level === warmingLevel).map(row => [row.sa2_code16, row])), [projectionData, warmingLevel]);
+  const projectionSuburb = suburb ?? hoveredSuburb;
+  const selectedProjection = projectionSuburb ? projectionRows.get(projectionSuburb.sa2_code16) : undefined;
+  const savedTrees = scenarios.reduce((sum, item) => sum + item.trees, 0);
+
+  useEffect(() => {
+    if (!future || projectionData) return;
+    const controller = new AbortController();
+    setProjectionStatus("loading");
+    const timeout = window.setTimeout(() => {
+      setProjectionStatus("error");
+      controller.abort();
+    }, 20000);
+    fetch(`${API_BASE}/map/projections`, { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error("Projection unavailable");
+        const data: unknown = await response.json();
+        if (!isProjectionData(data)) throw new Error("Invalid projection response");
+        if (!controller.signal.aborted) { setProjectionData(data); setProjectionStatus("ready"); }
+      }).catch(() => { if (!controller.signal.aborted) setProjectionStatus("error"); })
+      .finally(() => window.clearTimeout(timeout));
+    return () => { window.clearTimeout(timeout); controller.abort(); };
+  }, [future, projectionData]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map?.getLayer(PROJECTION_FILL)) return;
+    const colors = Object.fromEntries([...projectionRows].map(([code, band]) => [code, projectionColor(band, projectionData!.scale)]));
+    map.setPaintProperty(PROJECTION_FILL, "fill-color", ["coalesce", ["get", ["get", "sa2_code16"], ["literal", colors]], UNAVAILABLE_COLOR]);
+    map.setFilter(PROJECTION_FILL, suburb ? ["==", ["get", "sa2_code16"], suburb.sa2_code16] : null);
+    map.setFilter(SUBURB_LINE, future && suburb ? ["==", ["get", "sa2_code16"], suburb.sa2_code16] : null);
+    map.setLayoutProperty(PROJECTION_FILL, "visibility", future ? "visible" : "none");
+    map.setLayoutProperty(SUBURB_FILL, "visibility", !future && !suburb ? "visible" : "none");
+    const meshReady = suburb && loadedSuburbRef.current === suburb.sa2_code16;
+    map.setLayoutProperty(SUBURB_LINE, "visibility", future || !meshReady ? "visible" : "none");
+    for (const layer of [MESH_FILL, MESH_LINE, MESH_SELECTED]) {
+      map.setLayoutProperty(layer, "visibility", !future && meshReady ? "visible" : "none");
+    }
+  }, [future, mapReady, suburb, projectionRows, projectionData, loadingSuburb]);
 
   useEffect(() => {
     try { localStorage.setItem(PLANTING_STORAGE_KEY, JSON.stringify(scenarios)); } catch { /* Private browsing may disable storage. */ }
@@ -194,13 +244,25 @@ export function MelbourneMapPage() {
   // Load and display mesh blocks for one suburb.
   const openSuburb = useCallback(async (selection: SearchResult | SuburbSummary) => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map?.getLayer(MESH_FILL)) return;
 
     suburbRequest.current?.abort();
     blockRequest.current?.abort();
     const controller = new AbortController();
     suburbRequest.current = controller;
     setBlockLoading(false);
+    if (futureRef.current) {
+      // The future view never requests or drills into mesh-block geometry.
+      const feature = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === selection.sa2_code16);
+      setSuburb({ ...selection, ...(feature?.properties ?? {}) } as SuburbSummary);
+      setHoveredSuburb(null);
+      setLoadingSuburb(false);
+      setMapError("");
+      suburbRequest.current = null;
+      const bounds = feature ? boundsFor({ type: "FeatureCollection", features: [feature] }) : null;
+      if (bounds) map.fitBounds(bounds, { padding: 70, duration: 1000, maxZoom: 14.7 });
+      return true;
+    }
     setLoadingSuburb(true);
     setSelectedBlock(null);
     setMapError("");
@@ -216,6 +278,7 @@ export function MelbourneMapPage() {
       const source = map.getSource(MESH_SOURCE) as GeoJSONSource | undefined;
       source?.setData(data as SourceData);
       meshDataRef.current = data;
+      loadedSuburbRef.current = selection.sa2_code16;
       setScenarios(current => keepSuburbPlanting(current, selection.sa2_code16));
       setPlantingNotice("");
       setComparison("after");
@@ -243,10 +306,27 @@ export function MelbourneMapPage() {
     }
   }, []);
 
+  function toggleFuture() {
+    const next = !futureRef.current;
+    panelRef.current?.scrollTo({ top: 0 });
+    futureRef.current = next;
+    setFuture(next);
+    setMapError("");
+    if (next) {
+      suburbRequest.current?.abort();
+      blockRequest.current?.abort();
+      setLoadingSuburb(false);
+      setBlockLoading(false);
+    } else {
+      setComparison("after");
+      if (suburb && loadedSuburbRef.current !== suburb.sa2_code16) void openSuburb(suburb);
+    }
+  }
+
   // Load details for the selected mesh block.
   const openBlock = useCallback(async (mbCode16: string) => {
     const map = mapRef.current;
-    if (!map || (suburbRequest.current && !suburbRequest.current.signal.aborted)) return;
+    if (!map || futureRef.current || (suburbRequest.current && !suburbRequest.current.signal.aborted)) return;
     blockRequest.current?.abort();
     const controller = new AbortController();
     blockRequest.current = controller;
@@ -284,7 +364,7 @@ export function MelbourneMapPage() {
   // Highlight blocks matched by a street search.
   const highlightBlocks = useCallback((mbCodes: string[]) => {
     const map = mapRef.current;
-    if (!map || !mbCodes.length) return;
+    if (!map || futureRef.current || !mbCodes.length) return;
     map.setFilter(MESH_SELECTED, ["in", ["get", "mb_code16"], ["literal", mbCodes]]);
     map.setLayoutProperty(MESH_SELECTED, "visibility", "visible");
     map.setPaintProperty(MESH_FILL, "fill-opacity", [
@@ -367,6 +447,13 @@ export function MelbourneMapPage() {
         paint: { "line-color": "rgba(255,255,255,0.82)", "line-width": 0.75 },
       });
       map.addLayer({
+        id: PROJECTION_FILL,
+        type: "fill",
+        source: SUBURB_SOURCE,
+        layout: { visibility: "none" },
+        paint: { "fill-color": UNAVAILABLE_COLOR, "fill-opacity": 0.8 },
+      }, SUBURB_LINE);
+      map.addLayer({
         id: MESH_FILL,
         type: "fill",
         source: MESH_SOURCE,
@@ -395,36 +482,38 @@ export function MelbourneMapPage() {
         paint: { "line-color": "#102f24", "line-width": 3 },
       });
 
-      map.on("mouseenter", SUBURB_FILL, () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", SUBURB_FILL, () => {
-        map.getCanvas().style.cursor = "";
-        setHoveredSuburb(null);
-      });
-      map.on("mousemove", SUBURB_FILL, (event: MapMouseEvent) => {
-        // update the hover card without committing the user to a suburb selection
-        const properties = eventProperties(event);
-        if (!properties) return;
-        setHoveredSuburb({
-          sa2_code16: propertyText(properties, "sa2_code16"),
-          sa2_name: propertyText(properties, "sa2_name"),
-          lga_name: propertyText(properties, "lga_name"),
-          n_blocks: propertyNumber(properties, "n_blocks"),
-          uhi_mean: propertyNumber(properties, "uhi_mean"),
-          canopy_mean: propertyNumber(properties, "canopy_mean"),
+      for (const layer of [SUBURB_FILL, PROJECTION_FILL]) {
+        map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
+        map.on("mouseleave", layer, () => {
+          map.getCanvas().style.cursor = "";
+          setHoveredSuburb(null);
         });
-      });
-      map.on("click", SUBURB_FILL, (event: MapMouseEvent) => {
-        const properties = eventProperties(event);
-        if (!properties) return;
-        void openSuburb({
-          sa2_code16: propertyText(properties, "sa2_code16"),
-          sa2_name: propertyText(properties, "sa2_name"),
-          lga_name: propertyText(properties, "lga_name"),
-          n_blocks: propertyNumber(properties, "n_blocks"),
-          uhi_mean: propertyNumber(properties, "uhi_mean"),
-          canopy_mean: propertyNumber(properties, "canopy_mean"),
+        map.on("mousemove", layer, (event: MapMouseEvent) => {
+          // update the hover card without committing the user to a suburb selection
+          const properties = eventProperties(event);
+          if (!properties) return;
+          setHoveredSuburb({
+            sa2_code16: propertyText(properties, "sa2_code16"),
+            sa2_name: propertyText(properties, "sa2_name"),
+            lga_name: propertyText(properties, "lga_name"),
+            n_blocks: propertyNumber(properties, "n_blocks"),
+            uhi_mean: propertyNumber(properties, "uhi_mean"),
+            canopy_mean: propertyNumber(properties, "canopy_mean"),
+          });
         });
-      });
+        map.on("click", layer, (event: MapMouseEvent) => {
+          const properties = eventProperties(event);
+          if (!properties) return;
+          void openSuburb({
+            sa2_code16: propertyText(properties, "sa2_code16"),
+            sa2_name: propertyText(properties, "sa2_name"),
+            lga_name: propertyText(properties, "lga_name"),
+            n_blocks: propertyNumber(properties, "n_blocks"),
+            uhi_mean: propertyNumber(properties, "uhi_mean"),
+            canopy_mean: propertyNumber(properties, "canopy_mean"),
+          });
+        });
+      }
       map.on("mouseenter", MESH_FILL, () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", MESH_FILL, () => { map.getCanvas().style.cursor = ""; });
       map.on("click", MESH_FILL, (event: MapMouseEvent) => {
@@ -445,6 +534,7 @@ export function MelbourneMapPage() {
         if (!response.ok) throw new Error("Melbourne map geometry is unavailable.");
         const data = (await response.json()) as MapFeatureCollection;
         if (cancelled) return;
+        suburbDataRef.current = data;
         (map.getSource(SUBURB_SOURCE) as GeoJSONSource).setData(data as SourceData);
       } catch (error) {
         setMapError(error instanceof Error ? error.message : "Could not load Melbourne suburbs.");
@@ -471,6 +561,8 @@ export function MelbourneMapPage() {
     setBlockLoading(false);
     setLoadingSuburb(false);
     setSuburb(null);
+    loadedSuburbRef.current = null;
+    setHoveredSuburb(null);
     setSelectedBlock(null);
     setSearchResetToken((token) => token + 1);
     // Clear detailed geometry before restoring the overview.
@@ -486,32 +578,48 @@ export function MelbourneMapPage() {
   }
 
   return (
-    <main className="melbourne-map-page">
+    <main className={`melbourne-map-page${future ? " is-future-view" : ""}`}>
       <div ref={containerRef} className="melbourne-map-canvas" aria-label="Interactive urban heat map of metropolitan Melbourne" />
+      <ProjectionControls future={future} onToggle={toggleFuture} level={warmingLevel} onLevel={setWarmingLevel} />
 
-      <section ref={panelRef} className={`map-explorer-panel${selectedBlock ? " has-selected-block" : ""}`} aria-label="Map explorer">
-        <p className="map-page-eyebrow">Melbourne · 2018 mesh blocks</p>
-        <h1>{suburb ? suburb.sa2_name : "See the heat beneath your suburb."}</h1>
+      <section ref={panelRef} className={`map-explorer-panel${selectedBlock && !future ? " has-selected-block" : ""}${future && suburb ? " has-projection-suburb" : ""}`} aria-label="Map explorer">
+        <p className="map-page-eyebrow">{future ? "2050 vision · Melbourne suburbs" : "Melbourne · 2018 mesh blocks"}</p>
+        {future && projectionStatus === "error" && <p className="projection-failure" role="alert">2050 projection failed to load</p>}
+        <h1>{suburb ? suburb.sa2_name : future ? "A hotter future. A reason to plant." : "See the heat beneath your suburb."}</h1>
         <p className="map-page-intro">
-          {suburb
+          {future ? "Without planting today, we miss the chance to grow shade for a warmer future. Explore projected extreme heat across our suburbs."
+          : suburb
             ? `${suburb.n_blocks.toLocaleString()} mesh blocks in ${suburb.lga_name}. Select a block to inspect its heat and canopy.`
             : "Explore all 54,239 mapped neighbourhood blocks. Choose a suburb on the map or search by name to reveal its local pattern."}
         </p>
         <UnifiedSearch
-          key={searchResetToken}
+          key={`${searchResetToken}-${future}`}
+          suburbsOnly={future}
           onSelectSuburb={(result) => void openSuburb(result)}
           onStreetMatch={(sa2Code16, mbCodes) => void openStreetMatch(sa2Code16, mbCodes)}
         />
         {suburb && <button className="map-back-button" type="button" onClick={showAllSuburbs}>← Back to all suburbs</button>}
 
-        {(hoveredSuburb && !suburb) && (
+        {future && <div className="projection-detail" aria-live="polite">
+          <span>{warmingLabel(warmingLevel)} global warming</span>
+          {projectionStatus === "error" ? null
+            : projectionStatus !== "ready" ? <p>Loading 2050 projections…</p>
+            : projectionSuburb ? <>
+              {!suburb && <h2>{projectionSuburb.sa2_name}</h2>}<p className="projection-days">{daysBand(selectedProjection)}<small>{selectedProjection?.days_lower != null ? "days/year ≥35°C" : ""}</small></p>
+              <p>Predominant suburb band</p>
+            </> : <p>Choose a suburb to see its projected hot-day band.</p>}
+          <p className="projection-context">Climate projections by warming level, not an exact forecast for 2050. Added trees provide shade; this dataset does not measure their effect on hot-day counts.</p>
+          {savedTrees > 0 && <p className="projection-saved">Your {savedTrees.toLocaleString()} added {savedTrees === 1 ? "tree is" : "trees are"} saved. Switch to 🌳 to explore canopy and cooling.</p>}
+        </div>}
+
+        {(!future && hoveredSuburb && !suburb) && (
           <div className="suburb-hover-card" aria-live="polite">
             <strong>{hoveredSuburb.sa2_name}</strong>
             <span>{hoveredSuburb.n_blocks.toLocaleString()} mesh blocks · {hoveredSuburb.lga_name}</span>
           </div>
         )}
 
-        {(blockLoading || selectedBlock) && (
+        {!future && (blockLoading || selectedBlock) && (
           <div ref={detailRef} className="mesh-detail-card">
             {blockLoading && !selectedBlock ? <p>Reading this mesh block…</p> : selectedBlock && (
               <>
@@ -535,14 +643,14 @@ export function MelbourneMapPage() {
             )}
           </div>
         )}
-        {suburb && (selectedBlock || scenarios.length > 0) && <div className="planting-controls">
+        {!future && suburb && (selectedBlock || scenarios.length > 0) && <div className="planting-controls">
           <div className="planting-map-toggle" role="group" aria-label="Compare map before and after planting">
             <button type="button" aria-pressed={comparison === "before"} onClick={() => setComparison("before")}>Before</button>
             <button type="button" aria-pressed={comparison === "after"} onClick={() => setComparison("after")}>After</button>
           </div>
           <button className="planting-reset" type="button" disabled={scenarios.length === 0} onClick={resetPlanting}>Reset all</button>
         </div>}
-        {suburb && (selectedBlock || scenarios.length > 0) && <details className="planted-blocks" key={suburb.sa2_code16}>
+        {!future && suburb && (selectedBlock || scenarios.length > 0) && <details className="planted-blocks" key={suburb.sa2_code16}>
           <summary><span>Added trees in {suburb.sa2_name}</span><span className="planted-blocks-count">{scenarios.length} {scenarios.length === 1 ? "block" : "blocks"}</span></summary>
           <p className="planted-blocks-hint">Keep adding trees across this suburb. Switching to another suburb clears these additions.</p>
           {scenarios.length ? <ul>
@@ -554,13 +662,14 @@ export function MelbourneMapPage() {
             </li>)}
           </ul> : <p className="planted-blocks-empty">Blocks appear here when you add trees.</p>}
         </details>}
-        {plantingNotice && <p className="planting-notice" role="status">{plantingNotice}</p>}
+        {!future && plantingNotice && <p className="planting-notice" role="status">{plantingNotice}</p>}
       </section>
 
-      <div className="map-heat-legend" aria-label="Surface heat legend">
+      {future && projectionData && <ProjectionLegend data={projectionData} />}
+      {!future && <div className="map-heat-legend" aria-label="Surface heat legend">
         <span>Cooler</span><i /><span>Hotter</span>
         <small>{suburb && scenarios.length > 0 ? `${comparison === "after" ? "After planting · modelled" : "Before planting · observed"} · ` : ""}°C above non-urban baseline</small>
-      </div>
+      </div>}
 
       {(!mapReady || loadingSuburb) && <div className="map-page-loading">{loadingSuburb ? "Drawing mesh blocks…" : "Mapping Melbourne…"}</div>}
       {!resolveMapStyle(accessToken).accessToken && <div className="map-page-error">Add a public Mapbox token (pk.*) to frontend/.env.local.</div>}
@@ -577,9 +686,11 @@ type StreetStatus =
 function UnifiedSearch({
   onSelectSuburb,
   onStreetMatch,
+  suburbsOnly = false,
 }: {
   onSelectSuburb: (result: SearchResult) => void;
   onStreetMatch: (sa2Code16: string, mbCodes: string[]) => void;
+  suburbsOnly?: boolean;
 }) {
   const [query, setQuery] = useState(() => {
     const saved = sessionStorage.getItem("coolchange-suburb-query") || "";
@@ -593,7 +704,7 @@ function UnifiedSearch({
   const [streetStatus, setStreetStatus] = useState<StreetStatus | null>(null);
 
   const commaIndex = query.indexOf(",");
-  const isStreetMode = commaIndex >= 0;
+  const isStreetMode = !suburbsOnly && commaIndex >= 0;
   const streetPart = isStreetMode ? query.slice(0, commaIndex).trim() : "";
   const suburbPart = isStreetMode ? query.slice(commaIndex + 1).trim() : "";
 
@@ -715,7 +826,7 @@ function UnifiedSearch({
 
   return (
     <div className="suburb-search">
-      <label htmlFor="unified-search-input">Find a suburb, or type "street, suburb"</label>
+      <label htmlFor="unified-search-input">{suburbsOnly ? "Find a suburb" : 'Find a suburb, or type "street, suburb"'}</label>
       <div className="suburb-search-input-wrap">
         <span aria-hidden="true">⌕</span>
         <input
@@ -727,7 +838,7 @@ function UnifiedSearch({
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeys}
-          placeholder="Try Brunswick, or Smith Street, Ringwood"
+          placeholder={suburbsOnly ? "Try Brunswick or Melton" : "Try Brunswick, or Smith Street, Ringwood"}
           autoComplete="off"
           role={isStreetMode ? undefined : "combobox"}
           aria-autocomplete={isStreetMode ? undefined : "list"}
