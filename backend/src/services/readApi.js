@@ -17,6 +17,7 @@ const {
   shapeProjection,
   shapeArea,
   shapeStreetSearch,
+  shapeBlockStreets,
   round2,
 } = require("./shape");
 
@@ -83,15 +84,18 @@ async function getMeshblock(mbCode16) {
   let comparisonRows;
   let coolestRow;
   let projectionRows;
+  let streetRows;
   try {
-    const [comparisons, coolest, projections] = await Promise.all([
+    const [comparisons, coolest, projections, streets] = await Promise.all([
       query(sql.blockComparisons, [code]),
       query(sql.blockCoolest, [code]),
       query(sql.blockProjections, [code]),
+      query(sql.blockStreets, [code]),
     ]);
     comparisonRows = comparisons.rows;
     coolestRow = coolest.rows[0] || null;
     projectionRows = projections.rows;
+    streetRows = streets.rows;
   } catch (error) {
     if (/mesh_block_projection|projection_metro/i.test(error.message)) {
       throw projectionUnavailable();
@@ -107,6 +111,7 @@ async function getMeshblock(mbCode16) {
   const coolest = shapeCoolest(coolestRow);
   return {
     block,
+    streets: shapeBlockStreets(streetRows),
     simulator: await getBlockSimulator(code, blockResult.rows[0]),
     flags: shapeFlags(block, coolest),
     comparisons: comparisonRows.map(shapeComparison),

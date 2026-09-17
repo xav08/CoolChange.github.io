@@ -74,7 +74,18 @@ SELECT b.coolest_mb_code, b.coolest_uhi, b.coolest_canopy_pct
     ON b.area_type = 'LGA' AND b.scope = 'RESIDENTIAL' AND b.area_code = m.lga_name
  WHERE m.mb_code16 = $1;
 
--- 4. projections for this block, with the US3.2.5 fallback built in.
+-- 4. street(s) this block sits on, for display in place of the raw
+--    mb_code16 (the block's sa2_name/lga_name from query 1 cover the
+--    suburb side of "streets and suburb details"). DISTINCT because a
+--    block can border more than one street, and a street can appear
+--    more than once in street_mesh_block for the same block.
+SELECT DISTINCT s.road_name, s.road_type
+  FROM street s
+  JOIN street_mesh_block smb ON smb.street_id = s.street_id
+ WHERE smb.mb_code16 = $1
+ ORDER BY s.road_name;
+
+-- 5. projections for this block, with the US3.2.5 fallback built in.
 --    A block outside every ACS polygon (3,106 coastal blocks) gets the
 --    city-wide figure and is_fallback = true. The UI must then say the number
 --    is for Melbourne as a whole, not for this block.

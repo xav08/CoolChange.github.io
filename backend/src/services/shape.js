@@ -95,6 +95,14 @@ function shapeCoolest(row) {
   };
 }
 
+// A mesh block can border more than one street, so this returns every
+// distinct "Road Name Road Type" touching it (e.g. "Smith Street"),
+// in the same road_name + ' ' + road_type shape street-search already
+// uses -- not the mb_code16, which is what the frontend used to show.
+function shapeBlockStreets(rows) {
+  return rows.map((row) => `${row.road_name} ${row.road_type}`.trim());
+}
+
 function shapeArea(row) {
   return {
     area_type: row.area_type,
@@ -204,6 +212,7 @@ module.exports = {
   shapeCoolest,
   shapeArea,
   shapeStreetSearch,
+  shapeBlockStreets,
   shapeBootstrap,
   shapeMeshblockList,
 };

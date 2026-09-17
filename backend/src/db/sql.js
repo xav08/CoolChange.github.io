@@ -73,6 +73,15 @@ SELECT RTRIM(b.coolest_mb_code) AS coolest_mb_code,
  WHERE m.mb_code16 = $1
 `;
 
+const blockStreets = `
+-- name: blockStreets
+SELECT DISTINCT s.road_name, s.road_type
+  FROM street s
+  JOIN street_mesh_block smb ON smb.street_id = s.street_id
+ WHERE smb.mb_code16 = $1
+ ORDER BY s.road_name
+`;
+
 const blockProjections = `
 -- name: blockProjections
 SELECT pm.warming_level,
@@ -168,6 +177,7 @@ module.exports = {
   blockByCode,
   blockComparisons,
   blockCoolest,
+  blockStreets,
   blockProjections,
   areaByKey,
   searchSuburbs,

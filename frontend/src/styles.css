@@ -280,6 +280,8 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
 .mesh-detail-heading { display: grid; gap: 3px; }
 .mesh-detail-heading span { color: #71877c; font-size: 9px; font-weight: 850; letter-spacing: 0.1em; text-transform: uppercase; }
 .mesh-detail-heading strong { font-family: Georgia, serif; font-size: 23px; font-weight: 500; }
+.mesh-detail-heading strong.mesh-detail-streets { font-family: inherit; font-size: 13px; font-weight: 700; color: var(--deep-green); line-height: 1.35; }
+.mesh-detail-heading small.mesh-detail-suburb { display: block; margin-top: 1px; color: #71877c; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
 .mesh-detail-card dl { display: grid; grid-template-columns: 1fr 1fr; margin: 16px 0 0; border-top: 1px solid var(--line); }
 .mesh-detail-card .metric-item { position: relative; display: grid; gap: 4px; min-height: 56px; padding: 13px 24px 10px 0; }
 .mesh-detail-card .metric-item:nth-child(even) { border-left: 1px solid var(--line); padding-left: 14px; }

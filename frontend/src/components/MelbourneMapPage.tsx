@@ -72,6 +72,7 @@ type MeshblockDetail = {
     dwellings: number | null;
     area_sqkm: number | null;
   };
+  streets: string[];
   comparisons: BlockComparison[];
   coolest_in_lga: CoolestBlock | null;
 };
@@ -650,7 +651,11 @@ export function MelbourneMapPage() {
           <div ref={detailRef} className="mesh-detail-card">
             {blockLoading && !selectedBlock ? <p>Reading this mesh block…</p> : selectedBlock && (
               <>
-                <div className="mesh-detail-heading"><span>Selected mesh block</span><strong>{selectedBlock.block.mb_code16}</strong></div>
+                <div className="mesh-detail-heading">
+                  <span>Selected mesh block details</span>
+                  <strong className="mesh-detail-streets">{selectedBlock.streets.length ? selectedBlock.streets.join(", ") : `Block ${selectedBlock.block.mb_code16}`}</strong>
+                  <small className="mesh-detail-suburb">{selectedBlock.block.sa2_name}, {selectedBlock.block.lga_name}</small>
+                </div>
                 <dl>
                   <div className="metric-item">
                     <dt>{comparison === "after" && addedTrees ? "Modelled heat" : "Surface heat"}</dt>
