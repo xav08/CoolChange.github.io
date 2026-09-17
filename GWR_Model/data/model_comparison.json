@@ -1,0 +1,250 @@
+{
+  "target": "uhi_mean",
+  "intervention": "canopy_pct + 10, clipped at 100 (percentage bound only), other features held constant",
+  "gwr_k": 400,
+  "inputs": {
+    "mesh_block_sha256": "c9b2ea471b60a1a5983b46066b0d76bad4b1cfa847c3e631cb10923dd8c18f0f",
+    "points_sha256": "d6e1c65cf598c0bb7c57c487221cb283d4c04f3806b72b07c34660a6304d54e1"
+  },
+  "splits": [
+    {
+      "split": "random_80_20",
+      "n_train": 43391,
+      "n_test": 10848,
+      "models": [
+        {
+          "id": "ols_canopy",
+          "label": "Global OLS (canopy only, Iteration 1)",
+          "r2": 0.3244,
+          "rmse": 1.6858,
+          "median_delta_uhi_plus10": -1.2306,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.12306
+        },
+        {
+          "id": "ols_multi",
+          "label": "Multivariate OLS (canopy + grass + density)",
+          "r2": 0.325,
+          "rmse": 1.685,
+          "median_delta_uhi_plus10": -1.2437,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.12437
+        },
+        {
+          "id": "ols_veg_bands",
+          "label": "OLS on tree-height bands + grass + shrub",
+          "r2": 0.3358,
+          "rmse": 1.6715,
+          "median_delta_uhi_plus10": -1.5753,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "coefs": {
+            "tree_03_10_pct": -0.15753,
+            "tree_10_15_pct": -0.02697,
+            "tree_15plus_pct": -0.16028,
+            "grass_pct": -0.00684,
+            "shrub_pct": -0.00445
+          }
+        },
+        {
+          "id": "ols_spatial_trend",
+          "label": "OLS canopy + projected coordinates",
+          "r2": 0.3685,
+          "rmse": 1.6298,
+          "median_delta_uhi_plus10": -1.2301,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.12301
+        },
+        {
+          "id": "ols_lga",
+          "label": "OLS per LGA (fallback to global if unseen)",
+          "r2": 0.6254,
+          "rmse": 1.2553,
+          "median_delta_uhi_plus10": -0.6988,
+          "pct_cools": 90.98,
+          "pct_heats": 9.02,
+          "median_lga_slope": -0.06988
+        },
+        {
+          "id": "gwr_k400",
+          "label": "GWR adaptive bisquare k=400",
+          "r2": 0.7897,
+          "rmse": 0.9405,
+          "median_delta_uhi_plus10": -0.5797,
+          "pct_cools": 92.29,
+          "pct_heats": 7.71,
+          "median_slope": -0.05797,
+          "pct_negative_slope": 92.29
+        },
+        {
+          "id": "gwr_k400_ols_fallback",
+          "label": "GWR k=400, OLS fallback if slope ≥ 0",
+          "r2": 0.7897,
+          "rmse": 0.9405,
+          "median_delta_uhi_plus10": -0.6534,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "median_slope_used": -0.06534
+        },
+        {
+          "id": "ridge_spatial",
+          "label": "Ridge (canopy, grass, shrub, density, coordinates)",
+          "r2": 0.3695,
+          "rmse": 1.6285,
+          "median_delta_uhi_plus10": -1.2379,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.12379
+        },
+        {
+          "id": "hgb_spatial",
+          "label": "Gradient boosting (same features as ridge)",
+          "r2": 0.846,
+          "rmse": 0.8048,
+          "median_delta_uhi_plus10": -0.706,
+          "pct_cools": 93.28,
+          "pct_heats": 6.2
+        },
+        {
+          "id": "rf_spatial",
+          "label": "Random forest (same features as ridge)",
+          "r2": 0.785,
+          "rmse": 0.951,
+          "median_delta_uhi_plus10": -0.7494,
+          "pct_cools": 96.63,
+          "pct_heats": 3.07
+        }
+      ]
+    },
+    {
+      "split": "holdout_casey",
+      "n_train": 51265,
+      "n_test": 2974,
+      "models": [
+        {
+          "id": "ols_canopy",
+          "label": "Global OLS (canopy only, Iteration 1)",
+          "r2": -0.7068,
+          "rmse": 2.8973,
+          "median_delta_uhi_plus10": -1.1815,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.11815
+        },
+        {
+          "id": "ols_multi",
+          "label": "Multivariate OLS (canopy + grass + density)",
+          "r2": -0.7476,
+          "rmse": 2.9317,
+          "median_delta_uhi_plus10": -1.1951,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.11951
+        },
+        {
+          "id": "ols_veg_bands",
+          "label": "OLS on tree-height bands + grass + shrub",
+          "r2": -0.7747,
+          "rmse": 2.9544,
+          "median_delta_uhi_plus10": -1.4931,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "coefs": {
+            "tree_03_10_pct": -0.14931,
+            "tree_10_15_pct": -0.02322,
+            "tree_15plus_pct": -0.15732,
+            "grass_pct": -0.01019,
+            "shrub_pct": -0.01943
+          }
+        },
+        {
+          "id": "ols_spatial_trend",
+          "label": "OLS canopy + projected coordinates",
+          "r2": -1.5012,
+          "rmse": 3.5074,
+          "median_delta_uhi_plus10": -1.0742,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.10742
+        },
+        {
+          "id": "ols_lga",
+          "label": "OLS per LGA (fallback to global if unseen)",
+          "r2": -0.7068,
+          "rmse": 2.8973,
+          "median_delta_uhi_plus10": -1.1815,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "median_lga_slope": -0.11815
+        },
+        {
+          "id": "gwr_k400",
+          "label": "GWR adaptive bisquare k=400",
+          "r2": 0.2469,
+          "rmse": 1.9246,
+          "median_delta_uhi_plus10": -1.0853,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "median_slope": -0.10853,
+          "pct_negative_slope": 100.0
+        },
+        {
+          "id": "gwr_k400_ols_fallback",
+          "label": "GWR k=400, OLS fallback if slope ≥ 0",
+          "r2": 0.2469,
+          "rmse": 1.9246,
+          "median_delta_uhi_plus10": -1.0853,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "median_slope_used": -0.10853
+        },
+        {
+          "id": "ridge_spatial",
+          "label": "Ridge (canopy, grass, shrub, density, coordinates)",
+          "r2": -1.545,
+          "rmse": 3.5379,
+          "median_delta_uhi_plus10": -1.0815,
+          "pct_cools": 100.0,
+          "pct_heats": 0.0,
+          "canopy_coef": -0.10815
+        },
+        {
+          "id": "hgb_spatial",
+          "label": "Gradient boosting (same features as ridge)",
+          "r2": -0.0241,
+          "rmse": 2.2443,
+          "median_delta_uhi_plus10": -0.8081,
+          "pct_cools": 93.61,
+          "pct_heats": 6.39
+        },
+        {
+          "id": "rf_spatial",
+          "label": "Random forest (same features as ridge)",
+          "r2": -0.4041,
+          "rmse": 2.6279,
+          "median_delta_uhi_plus10": -1.2776,
+          "pct_cools": 99.09,
+          "pct_heats": 0.91
+        }
+      ]
+    }
+  ],
+  "not_run": [
+    {
+      "id": "mgwr",
+      "why": "Multiscale GWR needs a separate bandwidth per covariate and is slow at n=54k. Same simulator contract as GWR; try only if k=400 GWR is accepted first."
+    },
+    {
+      "id": "spatial_lag_sar",
+      "why": "A spatial lag of UHI predicts neighbours' heat, not the effect of planting in this block. Poor fit for a tap-to-add-trees control."
+    },
+    {
+      "id": "llm_finetune",
+      "why": "Wrong task class. Already rejected in the AI design experiment."
+    }
+  ],
+  "reading_guide": "Prefer a model that (1) cools when canopy rises on held-out blocks, (2) beats global OLS on a spatial holdout, (3) yields a coefficient or a stable counterfactual the UI can show. High R2 alone is not enough."
+}

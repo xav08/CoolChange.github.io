@@ -1,0 +1,93 @@
+{
+  "release": "uncertainty-v1-5905ff7a1736",
+  "files": {
+    "data/cooling_reliability_report.json": {
+      "bytes": 1207,
+      "sha256": "4080058029477e46b5c5ba1922f35bf51f24465ba119c15b4ad0095c727da992"
+    },
+    "data/coordinate_changes.csv": {
+      "bytes": 5221858,
+      "sha256": "ba19ded26f5184bf08caa1bb5d274c720cf75d6ff888a01c5c446ec227ec269d"
+    },
+    "data/coordinate_provenance.json": {
+      "bytes": 8969,
+      "sha256": "49bdf6656d68735a5d37506f95cb61fd3c41601bf4f383c811fdb70e78850a3d"
+    },
+    "data/data_quality_flags.csv": {
+      "bytes": 1979709,
+      "sha256": "82cbe8366c89fbcb436c96038a2056b2221618938ee03f3e338f55e39b2a44e1"
+    },
+    "data/data_quality_report.json": {
+      "bytes": 5434,
+      "sha256": "d9e69ec0dd3b3fcb1dab375f6da6e1b5924b9f5399018c695795af79210f5a98"
+    },
+    "data/gwr_coefficients.csv": {
+      "bytes": 31728418,
+      "sha256": "33030cf9c533f6a4c9c320024963ba85b708e25a8545d05c30adca1111b313b8"
+    },
+    "data/gwr_model.json": {
+      "bytes": 7999,
+      "sha256": "b4ddaea8a1c86b1787d77353ca1832c17a59116abd5e6f670f2dd6d539cde48b"
+    },
+    "data/mesh_block.csv": {
+      "bytes": 9691812,
+      "sha256": "598973b13decf2becb1a7a3aa31df5cd459a8cdbe0adf928f0e17e8c68d99828"
+    },
+    "data/mesh_block_points.csv": {
+      "bytes": 2278056,
+      "sha256": "40fcb55236f2d44fa89a5926608bc3047a39f6c48085846db9b8bb601c895507"
+    },
+    "data/mesh_block_projection.csv": {
+      "bytes": 5397849,
+      "sha256": "2a939703dea4e7e63651934a22c052218cd88891bcd6fd19ed14d88b37aa857f"
+    },
+    "data/model.json": {
+      "bytes": 717,
+      "sha256": "c053e88c0bd1fe7973313c2c93e410da3946d2cf53bda01dc9acbb39a6de39d6"
+    },
+    "data/model_coefficient.csv": {
+      "bytes": 317,
+      "sha256": "1b393ac35d731a1398d1cd24731f90dd02973df53c9fc656d2d3e6e5f1be34eb"
+    },
+    "data/model_comparison.json": {
+      "bytes": 7764,
+      "sha256": "27f9a27ce899ff74e4ebe09b81fbc3c5246cb60c7e43cb6728d35e432866da6b"
+    },
+    "data/simulator_scenarios.json": {
+      "bytes": 68688299,
+      "sha256": "e18c8f7acd632a98b6aa4024bbed7fa6920361c7f906bc4ab53eef1959c4ad32"
+    },
+    "data/tree_planting_examples.json": {
+      "bytes": 9076,
+      "sha256": "d4d8d040d1da64c6d483c848fc7cf4d0e5742981ca968a5dea6fbb72bf85d4b4"
+    },
+    "data/uncertainty_v1/SHA256SUMS": {
+      "bytes": 465,
+      "sha256": "4d9b3066b451715738f8cdf92d9c5ec10a2db799220141305eb414ae7d2b5c57"
+    },
+    "data/uncertainty_v1/gwr_coefficient_uncertainty.csv": {
+      "bytes": 6212731,
+      "sha256": "07390ac39b77209fb6c30bcfb913a7d47765c249f36295b6e231173826261267"
+    },
+    "data/uncertainty_v1/simulator_scenarios.json": {
+      "bytes": 98846829,
+      "sha256": "5905ff7a173680ca545f4a1e18fd179eb497636d4c4bba54d120b547bfde8df6"
+    },
+    "data/uncertainty_v1/simulator_scenarios.json.gz": {
+      "bytes": 10053265,
+      "sha256": "658dfd7ae5f402ade9490ec92ea7727fbe6d953d21caf932c4acb279413e4730"
+    },
+    "data/uncertainty_v1/tree_planting_example.json": {
+      "bytes": 1379,
+      "sha256": "c8ca330235d8291435838742ed1be665c592f1ee4d4af9dfe8e864e9c9b3cd1a"
+    },
+    "data/uncertainty_v1/validation_report.json": {
+      "bytes": 4793,
+      "sha256": "d83be904bbaf41f58371ce70dcdf8bdeab14e3519ebb48d76364f04a2cdf4b02"
+    },
+    "config/planting_assumptions.json": {
+      "bytes": 4258,
+      "sha256": "cd8e88d03111b17ab0aec6384c1f6bba189196a013ebe716d62ee8c873967e8e"
+    }
+  }
+}

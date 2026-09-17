@@ -1,0 +1,180 @@
+{
+  "model_type": "GWR",
+  "scope": "METRO",
+  "target": "uhi_mean",
+  "feature": "canopy_pct",
+  "kernel": "adaptive_bisquare",
+  "n_neighbors": 400,
+  "n_blocks": 54239,
+  "output_schema_version": 3,
+  "cooling_reliability": {
+    "policy": {
+      "version": "cooling-screen-v2",
+      "min_local_r2": 0.1,
+      "min_effective_neighbors": 30.0,
+      "min_weighted_canopy_sd_pp": 1.0,
+      "bandwidth_multipliers": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "canopy_ceiling_pct": 100.0,
+      "ceiling_meaning": "Mathematical percentage bound only; site planting capacity is unknown.",
+      "validated_uncertainty_interval": false,
+      "interpretation": "Provisional engineering display rules; passing is an indicative association, not validated reliability or causal cooling."
+    },
+    "neighborhood_sizes": [
+      200,
+      400,
+      800
+    ],
+    "block_status_counts": {
+      "indicative": 37222,
+      "unavailable": 17017
+    },
+    "reason_counts_overlapping": {
+      "weak_local_fit": 16034,
+      "unstable_direction": 6056,
+      "nonnegative_slope": 4238
+    },
+    "scenario_status_counts": {
+      "0": {
+        "baseline": 54239
+      },
+      "5": {
+        "indicative": 37011,
+        "unavailable": 17228
+      },
+      "10": {
+        "indicative": 36751,
+        "unavailable": 17488
+      },
+      "15": {
+        "indicative": 36135,
+        "unavailable": 18104
+      }
+    },
+    "local_r2_threshold_sensitivity": {
+      "0.05": 42427,
+      "0.1": 37222,
+      "0.2": 25762
+    }
+  },
+  "inputs": {
+    "planting_assumptions_sha256": "cd8e88d03111b17ab0aec6384c1f6bba189196a013ebe716d62ee8c873967e8e",
+    "mesh_block_sha256": "c9b2ea471b60a1a5983b46066b0d76bad4b1cfa847c3e631cb10923dd8c18f0f",
+    "points_sha256": "d6e1c65cf598c0bb7c57c487221cb283d4c04f3806b72b07c34660a6304d54e1",
+    "bandwidth_selection": "explicit --k"
+  },
+  "function": "uhi_hat(block) = intercept[block] + slope[block] * canopy_pct. Raw association: uhi_new = uhi_mean + slope * (canopy_new - canopy_pct). Public scenario values are null when display screening fails; see cooling_reliability. Percentage scenarios bounded by 100.0% mathematically; this is not planting capacity. Whole-tree requests beyond the percentage bound are rejected, not clipped.",
+  "global_ols": {
+    "intercept": 10.050744,
+    "slope": -0.122852,
+    "r2": 0.3256,
+    "rmse": 1.6657
+  },
+  "gwr": {
+    "quasi_global_r2": 0.8014,
+    "rmse": 0.9039,
+    "slope_median": -0.057064,
+    "slope_p05": -0.129209,
+    "slope_p95": 0.020183,
+    "pct_negative_slopes": 92.19,
+    "local_r2_median": 0.1917,
+    "fit_seconds": 3.66
+  },
+  "benchmark": {
+    "sun_et_al_2019_ols_slope": -0.1274,
+    "sun_et_al_2019_ols_r2": 0.34,
+    "sun_et_al_2019_gwr_adj_r2": 0.9,
+    "note": "OLS here should sit near slope -0.1274 / R2 0.34. GWR quasi-global R2 is not identical to their adjusted R2 (n=54,239 vs 55,603; see inputs.bandwidth_selection, not ESRI/GWmodel AICc)."
+  },
+  "planting": {
+    "assumptions": {
+      "version": "planting-v1",
+      "reviewed_on": "2026-09-12",
+      "default_profile": "B",
+      "profiles": {
+        "A": {
+          "label": "Small reference canopy",
+          "diameter_m": 4.0,
+          "mature_canopy_area_m2": 12.6,
+          "reference_deep_soil_area_m2": 12.0,
+          "reference_min_soil_width_m": 2.5
+        },
+        "B": {
+          "label": "Medium reference canopy",
+          "diameter_m": 8.0,
+          "mature_canopy_area_m2": 50.3,
+          "reference_deep_soil_area_m2": 49.0,
+          "reference_min_soil_width_m": 4.5
+        },
+        "C": {
+          "label": "Large reference canopy",
+          "diameter_m": 12.0,
+          "mature_canopy_area_m2": 113.1,
+          "reference_deep_soil_area_m2": 121.0,
+          "reference_min_soil_width_m": 6.5
+        }
+      },
+      "profile_basis": "Minimum mature canopy areas in a Victorian residential design reference, adopted as representative simulation sizes, not measured street-tree averages, species recommendations or universal street-planting rules.",
+      "default_choice_basis": "Product assumption: B is the middle reference size. Users may choose A or C; B is not a learned or population-average crown size.",
+      "maturity": {
+        "display_label": "At maturity",
+        "illustrative_horizon_years": [
+          20,
+          30
+        ],
+        "basis": "Cockburn council lists approximate mature dimensions at 20–30 years for its street-tree list. This is an Australian planning example, not a validated Melbourne growth curve or a guarantee for the three reference profiles.",
+        "species_specific_years": null,
+        "annual_growth_curve": null,
+        "guaranteed_by_2050": false
+      },
+      "canopy_accounting": {
+        "default_net_canopy_fraction": 1.0,
+        "interpretation": "Assumes all added trees survive to the selected mature size, their new crown areas do not overlap existing or other new canopy, and all credited canopy lies inside the selected block. A smaller explicit net fraction can describe a scenario; it is not estimated from our data.",
+        "overlap_rule": "Count overlapping canopy only once. No tree positions or crown polygons are available, so actual overlap cannot be calculated.",
+        "physical_percentage_bound": 100.0
+      },
+      "capacity": {
+        "physical_capacity_from_current_data": null,
+        "reason": "Mesh-block area, grass and canopy percentages do not identify permitted planting locations, underground services, crown overlap, clearances or suitable soil geometry.",
+        "model_limit": "Floor of additional canopy supported by the local model, in square metres, divided by the assumed net crown area per tree. This is a simulation limit, not a planting-space assessment.",
+        "optional_site_capacity": "A separately supplied integer capacity and its source can further restrict the scenario. The simulator does not certify that assessment.",
+        "deep_soil_use": "Display the reference soil requirements for site planning, but do not divide total mesh-block or grass area by these numbers to invent planting capacity."
+      },
+      "sources": [
+        {
+          "id": "vic_mid_rise_2026",
+          "title": "Mid-Rise Code Guidelines, Version 1, March 2026",
+          "publisher": "Victorian Department of Transport and Planning",
+          "url": "https://www.planning.vic.gov.au/__data/assets/pdf_file/0037/767836/Mid-Rise-Code-Guidelines.pdf",
+          "locator": "Printed page 23 Table E2-6.2 (PDF page 22); printed page 26 canopy overlap guidance (PDF page 25)",
+          "scope": "Clause 57 residential design guidance; used as a reference-size basis only, not applied as a mesh-block planting law."
+        },
+        {
+          "id": "casey_tree_guide",
+          "title": "City of Casey Summary Tree Guide",
+          "url": "https://www.casey.vic.gov.au/policies-strategies/city-of-casey-summary-tree-guide",
+          "locator": "Tree selection and planting; offsets and spacing",
+          "scope": "Site-specific species selection, 6–20 m spacing depending on tree size, and clearances to infrastructure; does not give a universal mesh-block capacity."
+        },
+        {
+          "id": "cockburn_street_trees",
+          "title": "Request a street tree for your verge",
+          "url": "https://www.cockburn.wa.gov.au/Environment-and-Waste/Street-Trees-and-Verges/Request-a-Street-Tree",
+          "locator": "List of street tree species, approximate mature height and width at 20–30 years",
+          "scope": "Western Australian council example supporting an illustrative horizon, not local growth calibration."
+        }
+      ]
+    },
+    "percentage_bound_pct": 100.0,
+    "scenario_deltas_pct": [
+      0,
+      5,
+      10,
+      15
+    ]
+  },
+  "note": "Association, not a planting experiment. Do not treat ACS 2050 heat-day bands as this model's Y. A positive local slope is a data flag, not a reason to plant fewer trees."
+}

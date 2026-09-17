@@ -1,0 +1,206 @@
+{
+  "generated_at_utc": "2026-09-12T10:37:08.949739+00:00",
+  "n_blocks": 54239,
+  "coordinate_changes": {
+    "old_outside_bounds": 9,
+    "valid_old_shift_over_10m": 1302,
+    "valid_old_shift_over_100m": 368,
+    "valid_old_shift_over_1000m": 25,
+    "valid_old_median_shift_m": 2.0745742297239707,
+    "valid_old_max_shift_m": 7131.986685970119
+  },
+  "source_geometry_repairs": [
+    {
+      "mb_code16": "20479371000",
+      "reason": "Self-intersection[145.196262042004 -38.262390058998]",
+      "relative_area_change": 4.414885750060169e-08,
+      "centroid_shift_m": 2.1644705402350218e-05,
+      "method": "shapely.make_valid in EPSG:3111"
+    }
+  ],
+  "source_measurement_max_difference": {
+    "uhi_mean": 5.000000000077165e-05,
+    "canopy_pct": 5.000000000165983e-05
+  },
+  "coordinate_nulls": 0,
+  "duplicate_coordinate_rows": 0,
+  "coordinate_range": {
+    "lon": {
+      "min": 144.5357153091,
+      "max": 145.7510026894
+    },
+    "lat": {
+      "min": -38.4791169935,
+      "max": -37.3926551474
+    }
+  },
+  "numeric_infinite_cells": 0,
+  "invalid_area_rows": 0,
+  "invalid_percentage_rows": {
+    "canopy_pct": 0,
+    "grass_pct": 0,
+    "shrub_pct": 0,
+    "any_veg_pct": 0,
+    "shrub_tree_pct": 0,
+    "tree_03_10_pct": 0,
+    "tree_10_15_pct": 0,
+    "tree_15plus_pct": 0
+  },
+  "missing_values": {
+    "irsd_score": 1477,
+    "irsd_decile": 1477
+  },
+  "missing_seifa_categories": {
+    "Industrial": 670,
+    "Parkland": 414,
+    "Commercial": 203,
+    "Transport": 97,
+    "Residential": 34,
+    "Education": 29,
+    "Water": 12,
+    "Other": 9,
+    "Hospital/Medical": 7,
+    "Primary Production": 2
+  },
+  "missing_seifa_residents": 13870,
+  "projection_rows": 204532,
+  "projection_missing_by_level": {
+    "1.2": 3106,
+    "1.5": 3106,
+    "2.0": 3106,
+    "3.0": 3106
+  },
+  "projection_open_upper_labels": {
+    "15+": 45606
+  },
+  "projection_note": "Missing projection rows require source/join audit; not inferred from GWR coordinates. Empty upper bound for 15+ is intentional, not zero.",
+  "zero_resident_blocks": 9164,
+  "vegetation_rounding_max_residual": 0.00010000000001753051,
+  "old_gwr": {
+    "quasi_global_r2": 0.8016,
+    "rmse": 0.9035,
+    "slope_median": -0.057081,
+    "slope_p05": -0.128992,
+    "slope_p95": 0.020255,
+    "pct_negative_slopes": 92.16,
+    "local_r2_median": 0.192,
+    "fit_seconds": 4.08
+  },
+  "new_gwr": {
+    "quasi_global_r2": 0.8014,
+    "rmse": 0.9039,
+    "slope_median": -0.057064,
+    "slope_p05": -0.129209,
+    "slope_p95": 0.020183,
+    "pct_negative_slopes": 92.19,
+    "local_r2_median": 0.1917,
+    "fit_seconds": 3.66
+  },
+  "new_metrics_recomputed": {
+    "r2": 0.8014008802333425,
+    "rmse": 0.9038924870116445
+  },
+  "positive_slope_blocks": 4238,
+  "cooling_screening": {
+    "policy": {
+      "version": "cooling-screen-v2",
+      "min_local_r2": 0.1,
+      "min_effective_neighbors": 30.0,
+      "min_weighted_canopy_sd_pp": 1.0,
+      "bandwidth_multipliers": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "canopy_ceiling_pct": 100.0,
+      "ceiling_meaning": "Mathematical percentage bound only; site planting capacity is unknown.",
+      "validated_uncertainty_interval": false,
+      "interpretation": "Provisional engineering display rules; passing is an indicative association, not validated reliability or causal cooling."
+    },
+    "neighborhood_sizes": [
+      200,
+      400,
+      800
+    ],
+    "block_status_counts": {
+      "indicative": 37222,
+      "unavailable": 17017
+    },
+    "reason_counts_overlapping": {
+      "weak_local_fit": 16034,
+      "unstable_direction": 6056,
+      "nonnegative_slope": 4238
+    },
+    "scenario_status_counts": {
+      "0": {
+        "baseline": 54239
+      },
+      "5": {
+        "indicative": 37011,
+        "unavailable": 17228
+      },
+      "10": {
+        "indicative": 36751,
+        "unavailable": 17488
+      },
+      "15": {
+        "indicative": 36135,
+        "unavailable": 18104
+      }
+    },
+    "local_r2_threshold_sensitivity": {
+      "0.05": 42427,
+      "0.1": 37222,
+      "0.2": 25762
+    }
+  },
+  "scenario_formula_max_error": {
+    "0": 0.0,
+    "5": 3.552713678800501e-15,
+    "10": 3.552713678800501e-15,
+    "15": 3.552713678800501e-15
+  },
+  "comparison": [
+    {
+      "split": "random_80_20",
+      "gwr": {
+        "id": "gwr_k400",
+        "label": "GWR adaptive bisquare k=400",
+        "r2": 0.7897,
+        "rmse": 0.9405,
+        "median_delta_uhi_plus10": -0.5797,
+        "pct_cools": 92.29,
+        "pct_heats": 7.71,
+        "median_slope": -0.05797,
+        "pct_negative_slope": 92.29
+      }
+    },
+    {
+      "split": "holdout_casey",
+      "gwr": {
+        "id": "gwr_k400",
+        "label": "GWR adaptive bisquare k=400",
+        "r2": 0.2469,
+        "rmse": 1.9246,
+        "median_delta_uhi_plus10": -1.0853,
+        "pct_cools": 100.0,
+        "pct_heats": 0.0,
+        "median_slope": -0.10853,
+        "pct_negative_slope": 100.0
+      }
+    }
+  ],
+  "planting_audit": {
+    "blocks_checked": 54239,
+    "profiles_per_block": 3,
+    "checks": "Zero, maximum supported integer count, and one over maximum; unavailable blocks tested at zero and one tree",
+    "site_capacity_unknown_blocks": 54239,
+    "assumptions_version": "planting-v1"
+  },
+  "current_assumptions": {
+    "percentage_bound_pct": 100.0,
+    "gwr_k": 400,
+    "uncertainty_intervals_implemented": false,
+    "positive_slope_fallback_exported": false
+  }
+}

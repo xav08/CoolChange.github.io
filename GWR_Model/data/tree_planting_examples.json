@@ -1,0 +1,239 @@
+{
+  "schema_version": 3,
+  "inputs": {
+    "planting_assumptions_sha256": "cd8e88d03111b17ab0aec6384c1f6bba189196a013ebe716d62ee8c873967e8e",
+    "points_sha256": "d6e1c65cf598c0bb7c57c487221cb283d4c04f3806b72b07c34660a6304d54e1",
+    "mesh_block_sha256": "c9b2ea471b60a1a5983b46066b0d76bad4b1cfa847c3e631cb10923dd8c18f0f"
+  },
+  "notice": "Historical UHI-based mature canopy scenarios, not absolute air temperatures or site capacity assessments.",
+  "examples": [
+    {
+      "label": "Casey baseline",
+      "result": {
+        "mb_code16": "20631942810",
+        "assumptions_version": "planting-v1",
+        "requested_trees": 0,
+        "evaluated_trees": 0,
+        "tree_profile": "B",
+        "mature_canopy_per_tree_m2": 50.3,
+        "net_canopy_fraction": 1.0,
+        "area_m2": 79100.0,
+        "limits": {
+          "max_trees_with_estimate": 542,
+          "canopy_domain_max_trees": 542,
+          "percentage_bound_max_trees": 1547,
+          "site_capacity_trees": null,
+          "site_capacity_source": null,
+          "site_capacity_status": "not_assessed",
+          "limit_meaning": "Maximum whole-tree count supported by this scenario calculation, not a site planting capacity."
+        },
+        "horizon_label": "At maturity",
+        "illustrative_horizon_years": [
+          20,
+          30
+        ],
+        "maturity_is_guaranteed": false,
+        "status": "baseline",
+        "reason_codes": [],
+        "new_canopy_area_m2": 0.0,
+        "canopy_pct": 1.563,
+        "delta_canopy_pp": 0.0,
+        "predicted_uhi": 15.6781,
+        "cooling_c": 0.0,
+        "feasibility_status": "not_assessed",
+        "notice": "Mature-canopy scenario assuming survival and the stated net canopy contribution. Planting locations and growth timing require site-specific assessment."
+      }
+    },
+    {
+      "label": "Casey ten medium reference trees",
+      "result": {
+        "mb_code16": "20631942810",
+        "assumptions_version": "planting-v1",
+        "requested_trees": 10,
+        "evaluated_trees": 10,
+        "tree_profile": "B",
+        "mature_canopy_per_tree_m2": 50.3,
+        "net_canopy_fraction": 1.0,
+        "area_m2": 79100.0,
+        "limits": {
+          "max_trees_with_estimate": 542,
+          "canopy_domain_max_trees": 542,
+          "percentage_bound_max_trees": 1547,
+          "site_capacity_trees": null,
+          "site_capacity_source": null,
+          "site_capacity_status": "not_assessed",
+          "limit_meaning": "Maximum whole-tree count supported by this scenario calculation, not a site planting capacity."
+        },
+        "horizon_label": "At maturity",
+        "illustrative_horizon_years": [
+          20,
+          30
+        ],
+        "maturity_is_guaranteed": false,
+        "status": "indicative",
+        "reason_codes": [],
+        "new_canopy_area_m2": 503.0,
+        "canopy_pct": 2.1989039190897595,
+        "delta_canopy_pp": 0.6359039190897597,
+        "predicted_uhi": 15.575724524690257,
+        "cooling_c": 0.10237547530974396,
+        "feasibility_status": "not_assessed",
+        "notice": "Mature-canopy scenario assuming survival and the stated net canopy contribution. Planting locations and growth timing require site-specific assessment."
+      }
+    },
+    {
+      "label": "Casey ten small reference trees",
+      "result": {
+        "mb_code16": "20631942810",
+        "assumptions_version": "planting-v1",
+        "requested_trees": 10,
+        "evaluated_trees": 10,
+        "tree_profile": "A",
+        "mature_canopy_per_tree_m2": 12.6,
+        "net_canopy_fraction": 1.0,
+        "area_m2": 79100.0,
+        "limits": {
+          "max_trees_with_estimate": 2164,
+          "canopy_domain_max_trees": 2164,
+          "percentage_bound_max_trees": 6179,
+          "site_capacity_trees": null,
+          "site_capacity_source": null,
+          "site_capacity_status": "not_assessed",
+          "limit_meaning": "Maximum whole-tree count supported by this scenario calculation, not a site planting capacity."
+        },
+        "horizon_label": "At maturity",
+        "illustrative_horizon_years": [
+          20,
+          30
+        ],
+        "maturity_is_guaranteed": false,
+        "status": "indicative",
+        "reason_codes": [],
+        "new_canopy_area_m2": 126.0,
+        "canopy_pct": 1.72229203539823,
+        "delta_canopy_pp": 0.1592920353982301,
+        "predicted_uhi": 15.652455248729568,
+        "cooling_c": 0.025644751270432895,
+        "feasibility_status": "not_assessed",
+        "notice": "Mature-canopy scenario assuming survival and the stated net canopy contribution. Planting locations and growth timing require site-specific assessment."
+      }
+    },
+    {
+      "label": "Casey ten large reference trees",
+      "result": {
+        "mb_code16": "20631942810",
+        "assumptions_version": "planting-v1",
+        "requested_trees": 10,
+        "evaluated_trees": 10,
+        "tree_profile": "C",
+        "mature_canopy_per_tree_m2": 113.1,
+        "net_canopy_fraction": 1.0,
+        "area_m2": 79100.0,
+        "limits": {
+          "max_trees_with_estimate": 241,
+          "canopy_domain_max_trees": 241,
+          "percentage_bound_max_trees": 688,
+          "site_capacity_trees": null,
+          "site_capacity_source": null,
+          "site_capacity_status": "not_assessed",
+          "limit_meaning": "Maximum whole-tree count supported by this scenario calculation, not a site planting capacity."
+        },
+        "horizon_label": "At maturity",
+        "illustrative_horizon_years": [
+          20,
+          30
+        ],
+        "maturity_is_guaranteed": false,
+        "status": "indicative",
+        "reason_codes": [],
+        "new_canopy_area_m2": 1131.0,
+        "canopy_pct": 2.9928356510745893,
+        "delta_canopy_pp": 1.429835651074589,
+        "predicted_uhi": 15.447907827882068,
+        "cooling_c": 0.23019217211793336,
+        "feasibility_status": "not_assessed",
+        "notice": "Mature-canopy scenario assuming survival and the stated net canopy contribution. Planting locations and growth timing require site-specific assessment."
+      }
+    },
+    {
+      "label": "One tree beyond model domain",
+      "result": {
+        "mb_code16": "20631942810",
+        "assumptions_version": "planting-v1",
+        "requested_trees": 543,
+        "evaluated_trees": 543,
+        "tree_profile": "B",
+        "mature_canopy_per_tree_m2": 50.3,
+        "net_canopy_fraction": 1.0,
+        "area_m2": 79100.0,
+        "limits": {
+          "max_trees_with_estimate": 542,
+          "canopy_domain_max_trees": 542,
+          "percentage_bound_max_trees": 1547,
+          "site_capacity_trees": null,
+          "site_capacity_source": null,
+          "site_capacity_status": "not_assessed",
+          "limit_meaning": "Maximum whole-tree count supported by this scenario calculation, not a site planting capacity."
+        },
+        "horizon_label": "At maturity",
+        "illustrative_horizon_years": [
+          20,
+          30
+        ],
+        "maturity_is_guaranteed": false,
+        "status": "unavailable",
+        "reason_codes": [
+          "outside_local_canopy_range"
+        ],
+        "new_canopy_area_m2": 27312.899999999998,
+        "canopy_pct": 36.09258280657396,
+        "delta_canopy_pp": 34.529582806573956,
+        "predicted_uhi": null,
+        "cooling_c": null,
+        "feasibility_status": "not_assessed",
+        "notice": "Mature-canopy scenario assuming survival and the stated net canopy contribution. Planting locations and growth timing require site-specific assessment."
+      }
+    },
+    {
+      "label": "Unreliable block",
+      "result": {
+        "mb_code16": "20046872000",
+        "assumptions_version": "planting-v1",
+        "requested_trees": 10,
+        "evaluated_trees": 10,
+        "tree_profile": "B",
+        "mature_canopy_per_tree_m2": 50.3,
+        "net_canopy_fraction": 1.0,
+        "area_m2": 17000.0,
+        "limits": {
+          "max_trees_with_estimate": null,
+          "canopy_domain_max_trees": 167,
+          "percentage_bound_max_trees": 336,
+          "site_capacity_trees": null,
+          "site_capacity_source": null,
+          "site_capacity_status": "not_assessed",
+          "limit_meaning": "Maximum whole-tree count supported by this scenario calculation, not a site planting capacity."
+        },
+        "horizon_label": "At maturity",
+        "illustrative_horizon_years": [
+          20,
+          30
+        ],
+        "maturity_is_guaranteed": false,
+        "status": "unavailable",
+        "reason_codes": [
+          "weak_local_fit",
+          "unstable_direction",
+          "invalid_local_fit"
+        ],
+        "new_canopy_area_m2": 503.0,
+        "canopy_pct": 3.518923529411765,
+        "delta_canopy_pp": 2.958823529411765,
+        "predicted_uhi": null,
+        "cooling_c": null,
+        "feasibility_status": "not_assessed",
+        "notice": "Mature-canopy scenario assuming survival and the stated net canopy contribution. Planting locations and growth timing require site-specific assessment."
+      }
+    }
+  ]
+}

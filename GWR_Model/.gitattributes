@@ -1,0 +1,6 @@
+# Model provenance hashes refer to exact bytes; preserve distributed snapshots.
+data/*.csv -text
+data/*.json -text
+config/*.json -text
+*.py text eol=lf
+*.md text eol=lf
