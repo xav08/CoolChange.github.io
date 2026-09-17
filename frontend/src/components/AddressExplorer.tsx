@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 
 // collect a place query before opening the map
 export function AddressExplorer() {
-  const [query, setQuery] = useState("Clyde North VIC 3978");
+  const [query, setQuery] = useState("Clayton VIC 3168");
 
   // save the query and open the map page
   function handleSubmit(event: FormEvent<HTMLFormElement>) {

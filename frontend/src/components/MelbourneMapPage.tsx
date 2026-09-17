@@ -51,6 +51,19 @@ type MeshblockProperties = {
   persons: number | null;
 };
 
+type BlockComparison = {
+  area_type: "METRO" | "LGA";
+  area_name: string;
+  uhi_mean: number | null;
+  canopy_mean: number | null;
+};
+
+type CoolestBlock = {
+  mb_code16: string;
+  uhi_mean: number | null;
+  canopy_pct: number | null;
+};
+
 type MeshblockDetail = {
   simulator?: { release_id: string; interactive?: PlantingModel } | null;
   block: MeshblockProperties & {
@@ -59,6 +72,8 @@ type MeshblockDetail = {
     dwellings: number | null;
     area_sqkm: number | null;
   };
+  comparisons: BlockComparison[];
+  coolest_in_lga: CoolestBlock | null;
 };
 
 type StreetBlock = {
@@ -567,7 +582,9 @@ export function MelbourneMapPage() {
     setSearchResetToken((token) => token + 1);
     // Clear detailed geometry before restoring the overview.
     (map.getSource(MESH_SOURCE) as GeoJSONSource)?.setData(EMPTY_COLLECTION as SourceData);
-    map.setLayoutProperty(SUBURB_FILL, "visibility", "visible");
+    map.setLayoutProperty(SUBURB_FILL, "visibility", futureRef.current ? "none" : "visible");
+    map.setFilter(PROJECTION_FILL, null);
+    map.setFilter(SUBURB_LINE, null);
     map.setLayoutProperty(SUBURB_LINE, "visibility", "visible");
     map.setLayoutProperty(MESH_FILL, "visibility", "none");
     map.setLayoutProperty(MESH_LINE, "visibility", "none");
@@ -581,6 +598,16 @@ export function MelbourneMapPage() {
     <main className={`melbourne-map-page${future ? " is-future-view" : ""}`}>
       <div ref={containerRef} className="melbourne-map-canvas" aria-label="Interactive urban heat map of metropolitan Melbourne" />
       <ProjectionControls future={future} onToggle={toggleFuture} level={warmingLevel} onLevel={setWarmingLevel} />
+      <button
+        className="map-reset-button"
+        type="button"
+        onClick={showAllSuburbs}
+        disabled={!mapReady}
+        aria-label="Reset map view"
+        title="Reset map view"
+      >
+        <span>Reset view</span>
+      </button>
 
       <section ref={panelRef} className={`map-explorer-panel${selectedBlock && !future ? " has-selected-block" : ""}${future && suburb ? " has-projection-suburb" : ""}`} aria-label="Map explorer">
         <p className="map-page-eyebrow">{future ? "2050 vision · Melbourne suburbs" : "Melbourne · 2018 mesh blocks"}</p>
@@ -638,6 +665,27 @@ export function MelbourneMapPage() {
                   <div className="metric-item"><dt>Category</dt><dd>{selectedBlock.block.mb_category || "Not classified"}</dd></div>
                   <div className="metric-item"><dt>Population</dt><dd>{selectedBlock.block.persons?.toLocaleString() ?? "Not published"}</dd></div>
                 </dl>
+                <section className="block-comparisons" aria-labelledby="block-comparisons-heading">
+                  <div className="block-comparisons-heading">
+                    <span id="block-comparisons-heading">Compare this block</span>
+                    <small>Residential blocks</small>
+                  </div>
+                  <div className="comparison-grid">
+                    {selectedBlock.comparisons.map((comparison) => (
+                      <ComparisonCard
+                        key={comparison.area_type}
+                        label={comparison.area_type === "METRO" ? "Metro average" : `${comparison.area_name} average`}
+                        uhiMean={comparison.uhi_mean}
+                        canopyMean={comparison.canopy_mean}
+                      />
+                    ))}
+                    <ComparisonCard
+                      label="Coolest block in council"
+                      uhiMean={selectedBlock.coolest_in_lga?.uhi_mean ?? null}
+                      canopyMean={selectedBlock.coolest_in_lga?.canopy_pct ?? null}
+                    />
+                  </div>
+                </section>
                 <BlockPlanting model={model} trees={addedTrees} onChange={changeTrees} />
               </>
             )}
@@ -678,6 +726,26 @@ export function MelbourneMapPage() {
   );
 }
 
+function ComparisonCard({
+  label,
+  uhiMean,
+  canopyMean,
+}: {
+  label: string;
+  uhiMean: number | null;
+  canopyMean: number | null;
+}) {
+  return (
+    <div className="comparison-card">
+      <span>{label}</span>
+      <strong>{uhiMean == null ? "—" : `${uhiMean.toFixed(1)}°C`}</strong>
+      <small>{canopyMean == null ? "Canopy unavailable" : `${canopyMean.toFixed(1)}% canopy`}</small>
+    </div>
+  );
+}
+
+// search a suburb by name, or "street, suburb" to highlight matching blocks
+// on the currently loaded suburb's mesh -- a comma is what decides the mode
 type StreetStatus =
   | { kind: "match"; count: number; label: string }
   | { kind: "empty"; label: string };

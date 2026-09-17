@@ -30,6 +30,8 @@
 .projection-legend i { width: 15px; height: 15px; border: 1px solid #86582b35; border-radius: 4px; }
 .projection-legend small { color: #68796a; font-size: 10px; }
 .melbourne-map-page.is-future-view .mapboxgl-ctrl-bottom-right { bottom: 175px; }
+.melbourne-map-page .map-reset-button { top: auto; }
+.melbourne-map-page.is-future-view .map-reset-button { bottom: 190px; }
 @media (max-width: 980px) {
   .projection-controls { right: 22px; width: 295px; }
   .projection-kicker { display: none; }

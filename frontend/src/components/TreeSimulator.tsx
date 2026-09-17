@@ -17,7 +17,7 @@ export function TreeSimulator() {
         <p className="eyebrow">Try the idea</p>
         <h2>What if this block planted more shade?</h2>
         <p>Add trees to this illustrative Clyde North scenario. In the real tool, each tree would be translated through the block’s area and local cooling coefficient. The 2050 layer shows why starting in 2026 matters.</p>
-        <label htmlFor="trees">Mature trees added <strong>{trees} acres</strong></label>
+        <label htmlFor="trees">Mature trees added <strong>{trees} Trees</strong></label>
         <input id="trees" type="range" min="0" max="36" value={trees} onChange={(event) => setTrees(Number(event.target.value))} />
         <div className="sim-results">
           <div><span>Canopy concept</span><strong>{scenario.canopy}%</strong><small>from 1.3%</small></div>

@@ -102,7 +102,7 @@ img { display: block; max-width: 100%; }
 /* style the opening context */
 .lead-copy { padding: 18vh 10vw 21vh; background: var(--paper); }
 .lead-copy .eyebrow { margin-bottom: 38px; color: #6b8277; }
-.lede { max-width: 1180px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(42px, 5.7vw, 86px); line-height: 1.04; letter-spacing: -0.044em; text-wrap: balance; }
+.lede { max-width: 1180px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 4.4vw, 64px); line-height: 1.08; letter-spacing: -0.044em; text-wrap: balance; }
 
 /* style the sticky story map */
 .scrolly { position: relative; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(350px, 0.7fr); gap: 6vw; padding: 12vh 5vw 20vh; background: #e6eade; }
@@ -128,6 +128,10 @@ img { display: block; max-width: 100%; }
 .map-tools { top: 20px; right: 20px; display: grid; gap: 4px; padding: 6px; border-radius: 18px; }
 .map-tools button { display: flex; min-width: 88px; align-items: center; gap: 8px; border: 0; border-radius: 12px; background: transparent; padding: 9px 11px; color: #315748; font-size: 11px; font-weight: 800; cursor: pointer; }
 .map-tools button.active { background: rgba(34, 86, 65, 0.12); color: var(--deep-green); }
+.map-reset-button { position: absolute; bottom: 120px; right: 100px; font-size: 13px; z-index: 8; display: flex; min-height: 42px; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.58); border-radius: 14px; background: rgba(246, 250, 246, 0.86); box-shadow: 0 8px 28px rgba(24, 60, 46, 0.16); padding: 9px 12px; color: #315748; font-size: 11px; font-weight: 800; cursor: pointer; backdrop-filter: blur(18px); }
+.map-reset-button:hover { background: rgba(255, 255, 255, 0.96); color: var(--deep-green); }
+.map-reset-button:focus-visible { outline: 3px solid rgba(227, 74, 45, 0.65); outline-offset: 3px; }
+.map-reset-button:disabled { cursor: wait; opacity: 0.55; }
 .tool-icon { display: inline-block; width: 15px; height: 15px; border-radius: 50%; }
 .heat-icon { background: linear-gradient(135deg, #39a8b7 12%, #efcf35 53%, #e53624 86%); }
 .canopy-icon { background: radial-gradient(circle at 32% 32%, #c5dfcf 0 22%, transparent 24%), radial-gradient(circle at 65% 40%, #72aa92 0 29%, transparent 31%), #237966; }
@@ -282,6 +286,16 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
 .mesh-detail-card .metric-item:nth-child(even) .metric-help { right: 0; }
 .mesh-detail-card dt { color: #71877c; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
 .mesh-detail-card dd { margin: 0; color: var(--deep-green); font-size: 14px; font-weight: 800; }
+.block-comparisons { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 15px; }
+.block-comparisons-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.block-comparisons-heading span { color: #38584a; font-size: 10px; font-weight: 850; letter-spacing: 0.08em; text-transform: uppercase; }
+.block-comparisons-heading small { color: #71877c; font-size: 9px; }
+.comparison-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 10px; border: 1px solid var(--line); }
+.comparison-card { display: grid; min-width: 0; gap: 4px; padding: 11px 10px; }
+.comparison-card + .comparison-card { border-left: 1px solid var(--line); }
+.comparison-card span { min-height: 25px; color: #71877c; font-size: 9px; font-weight: 800; line-height: 1.25; text-transform: uppercase; }
+.comparison-card strong { color: var(--deep-green); font-size: 15px; }
+.comparison-card small { color: #61796c; font-size: 9px; }
 .metric-help { position: absolute; top: 10px; right: 9px; z-index: 4; display: grid; width: 17px; height: 17px; place-items: center; border: 1px solid #799083; border-radius: 50%; color: #4d6d5d; font-size: 11px; font-weight: 850; line-height: 1; cursor: help; }
 .metric-help:hover { border-color: var(--deep-green); background: #e3ece2; color: var(--deep-green); }
 .metric-help-tooltip { position: absolute; top: 22px; right: 0; width: 200px; visibility: hidden; border: 1px solid rgba(23, 56, 44, 0.16); border-radius: 10px; background: #fbfcf8; box-shadow: 0 10px 24px rgba(23, 56, 44, 0.18); padding: 9px 10px; color: #416153; font-size: 10px; font-weight: 500; line-height: 1.4; letter-spacing: 0; opacity: 0; text-transform: none; transition: opacity 0.15s ease, visibility 0.15s ease; }
@@ -403,7 +417,7 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
   .hero-copy { font-size: 17px; }
   .hero-cta { margin-top: 30px; }
   .lead-copy { padding: 110px 22px; }
-  .lede { font-size: 41px; }
+  .lede { font-size: 32px; }
   .map-shell { height: 56vh; min-height: 430px; }
   .map-label { top: 13px; left: 13px; }
   .map-tools { top: 13px; right: 13px; }
@@ -434,9 +448,11 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
   .map-explorer-panel.has-selected-block .mesh-detail-card dl div:nth-child(odd) { border-left: 0; padding-left: 0; }
   .map-explorer-panel h1 { font-size: 37px; }
   .map-page-intro { margin: 12px 0 17px; font-size: 12px; }
+  .map-reset-button { top: 74px; right: 13px; }
   .mesh-detail-card dl { grid-template-columns: repeat(4, minmax(95px, 1fr)); overflow-x: auto; }
   .mesh-detail-card dl div:nth-child(n) { border-left: 1px solid var(--line); padding-left: 10px; }
   .mesh-detail-card dl div:first-child { border-left: 0; padding-left: 0; }
+  .comparison-grid { grid-template-columns: repeat(3, minmax(125px, 1fr)); overflow-x: auto; }
   .map-heat-legend { right: 12px; bottom: 22px; grid-template-columns: auto 110px auto; }
   .map-page-loading { top: 64%; left: 50%; }
   .map-page-error { right: 12px; bottom: 102px; left: 12px; }
