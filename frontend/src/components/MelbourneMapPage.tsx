@@ -540,7 +540,6 @@ export function MelbourneMapPage() {
           <div ref={detailRef} className="mesh-detail-card">
             {blockLoading && !selectedBlock ? <p>Reading this mesh block…</p> : selectedBlock && (
               <>
-                <div className="mesh-detail-heading"><span>Selected mesh block</span><strong>{selectedBlock.block.mb_code16}</strong></div>
                 <dl>
                   <div className="metric-item">
                     <dt>{comparison === "after" && addedTrees ? "Modelled heat" : "Surface heat"}</dt>
