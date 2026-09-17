@@ -1,0 +1,53 @@
+{
+  "policy": {
+    "version": "cooling-screen-v2",
+    "min_local_r2": 0.1,
+    "min_effective_neighbors": 30.0,
+    "min_weighted_canopy_sd_pp": 1.0,
+    "bandwidth_multipliers": [
+      0.5,
+      1.0,
+      2.0
+    ],
+    "canopy_ceiling_pct": 100.0,
+    "ceiling_meaning": "Mathematical percentage bound only; site planting capacity is unknown.",
+    "validated_uncertainty_interval": false,
+    "interpretation": "Provisional engineering display rules; passing is an indicative association, not validated reliability or causal cooling."
+  },
+  "neighborhood_sizes": [
+    200,
+    400,
+    800
+  ],
+  "block_status_counts": {
+    "indicative": 37222,
+    "unavailable": 17017
+  },
+  "reason_counts_overlapping": {
+    "weak_local_fit": 16034,
+    "unstable_direction": 6056,
+    "nonnegative_slope": 4238
+  },
+  "scenario_status_counts": {
+    "0": {
+      "baseline": 54239
+    },
+    "5": {
+      "indicative": 37011,
+      "unavailable": 17228
+    },
+    "10": {
+      "indicative": 36751,
+      "unavailable": 17488
+    },
+    "15": {
+      "indicative": 36135,
+      "unavailable": 18104
+    }
+  },
+  "local_r2_threshold_sensitivity": {
+    "0.05": 42427,
+    "0.1": 37222,
+    "0.2": 25762
+  }
+}

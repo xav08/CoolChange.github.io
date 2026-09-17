@@ -1,0 +1,267 @@
+{
+  "retrieved_at_utc": "2026-09-12T03:21:47.783324+00:00",
+  "source": "https://plan-gis.mapshare.vic.gov.au/arcgis/rest/services/CoolingGreening/CoolingGreening/MapServer/55/query",
+  "query": {
+    "where": "1=1",
+    "outFields": "MB_CODE16,UHI18_M,PERANYTREE,OBJECTID",
+    "returnGeometry": "true",
+    "outSR": 4326,
+    "orderByFields": "OBJECTID",
+    "resultRecordCount": 1000,
+    "f": "geojson"
+  },
+  "n_blocks": 54239,
+  "method": "Full GeoJSON -> EPSG:3111 -> area-weighted centroid of all parts and holes -> EPSG:4326",
+  "coordinate_role": "GWR distance anchor; centroid need not lie inside polygon",
+  "model_field_max_abs_difference_from_source": {
+    "uhi_mean": 5.000000000077165e-05,
+    "canopy_pct": 5.000000000165983e-05
+  },
+  "model_field_comparison_tolerance": "0.000051 absolute, accounting for four-decimal seed rounding",
+  "geometry_repairs": [
+    {
+      "mb_code16": "20479371000",
+      "reason": "Self-intersection[145.196262042004 -38.262390058998]",
+      "relative_area_change": 4.414885750060169e-08,
+      "centroid_shift_m": 2.1644705402350218e-05,
+      "method": "shapely.make_valid in EPSG:3111"
+    }
+  ],
+  "geometry_repair_tolerance": {
+    "max_relative_area_change": 1e-06,
+    "max_centroid_shift_m": 0.01
+  },
+  "source_pages": [
+    {
+      "file": "page_000000.json",
+      "sha256": "9e2c0ac5c41d4557cc7612b0cca83efeda539fd651705f96f406f9b152eb1065"
+    },
+    {
+      "file": "page_001000.json",
+      "sha256": "ce949dd8e764c1f26e640dcb48f4d84d92fe91e4bf29704d7e1efb0190ed3731"
+    },
+    {
+      "file": "page_002000.json",
+      "sha256": "26974b9fae70e97f006e1033916865957f72c21052ef55752ae4fe744d9ab4b9"
+    },
+    {
+      "file": "page_003000.json",
+      "sha256": "ffe8a0ff9b1f2696930f7fc339d1dd1d89b42430ea0553fd6f92e2afca2024b3"
+    },
+    {
+      "file": "page_004000.json",
+      "sha256": "77243021e403c1fc2f70a2b45fe6db2f5169879e2f2b1016a7761b3d41e2117f"
+    },
+    {
+      "file": "page_005000.json",
+      "sha256": "b46a4a0578fb7ebc100b0503778a7ff1428ae3b47a07d6b03a025edbec19c1fd"
+    },
+    {
+      "file": "page_006000.json",
+      "sha256": "2f1124d86c0e29e136733e83179163b29fa7283064b0f7bf94604dee81277271"
+    },
+    {
+      "file": "page_007000.json",
+      "sha256": "bd5deb221664c2882cb1f90f9512ac6425e1f22ef466b6f786691ca649cd933e"
+    },
+    {
+      "file": "page_008000.json",
+      "sha256": "f9c6744afc12c7a95c5abdc40c396dee0d5a932c1070729c6c87e50c520ed10f"
+    },
+    {
+      "file": "page_009000.json",
+      "sha256": "8b734a559233dd6d67e3b3bae2c391d8aec3cc67ff5c4a5bc55f21874055a952"
+    },
+    {
+      "file": "page_010000.json",
+      "sha256": "3ca18c7876d93de244d7ca91e0bb55fc7794658b4c4e58e969d39adca4eacb77"
+    },
+    {
+      "file": "page_011000.json",
+      "sha256": "301f3e671f87328952dac66da01a7efacecd922dd9bbcf0e4a588299d75368d6"
+    },
+    {
+      "file": "page_012000.json",
+      "sha256": "890e2b86617c98db186af959c388cff61bc70668deffda25f5e7cfee7294f5a8"
+    },
+    {
+      "file": "page_013000.json",
+      "sha256": "feab1e5c9d174040c6908f144c26fc6480842f4afe6a2784c1934d96e9cd3ad3"
+    },
+    {
+      "file": "page_014000.json",
+      "sha256": "efd556ce3cd3e9324315da59942a73018decbe7e80b9cdd12efbcff0b8ef7026"
+    },
+    {
+      "file": "page_015000.json",
+      "sha256": "d68497648efdf009c72c6a7cafb785209f81fccdd8db1192dc88a3102e0a6e56"
+    },
+    {
+      "file": "page_016000.json",
+      "sha256": "8cebd2668d1fc3529a595e1d6c2ba2d1ad401159d5b1e3dd9672dc35795d4448"
+    },
+    {
+      "file": "page_017000.json",
+      "sha256": "bc059abb21babdee174d46a85dd11407df618336e2c43963eeed978cd78ee9de"
+    },
+    {
+      "file": "page_018000.json",
+      "sha256": "d45be4cc4417867bcb0c4099fb188016979c59532604510d6103d87274f71781"
+    },
+    {
+      "file": "page_019000.json",
+      "sha256": "301181bacaebcb5c7b8e388f88ea7276f4e614b419b19f575731a16f2df199f5"
+    },
+    {
+      "file": "page_020000.json",
+      "sha256": "aef2178274ba0f7b2a9de60f3cc97959379dd9e04fa7d77e85fde1b7cf45c61f"
+    },
+    {
+      "file": "page_021000.json",
+      "sha256": "ab050d6e7f9ea31426a4a801227741fbd8d89ac4f9f509bec7f19028fc8aa3fa"
+    },
+    {
+      "file": "page_022000.json",
+      "sha256": "a0a18aac66c0d99581f7ebae77e72a38923f77afaa512c49a3ef0b88fab22092"
+    },
+    {
+      "file": "page_023000.json",
+      "sha256": "54fcd2c9ec698a59fca35190976aa645909432a51e8edd81b926602572a5067f"
+    },
+    {
+      "file": "page_024000.json",
+      "sha256": "a28143295e6aadd9b12c2efe29954d50c43604192919ab44df3960a175295142"
+    },
+    {
+      "file": "page_025000.json",
+      "sha256": "bdcbf0e78f0d11bc962e6537e7dde01dc051ee7bab8ac5201b1aa096b5640f9d"
+    },
+    {
+      "file": "page_026000.json",
+      "sha256": "eb855b23ff23a059e53003a0c1303e77f570da743543b30b40fb97cc2a7800fe"
+    },
+    {
+      "file": "page_027000.json",
+      "sha256": "ea1ead6026b24e773aee9195918e58950a05009720eed0364a3aa50c0b037a74"
+    },
+    {
+      "file": "page_028000.json",
+      "sha256": "4da9a8af31a1a0a4357b2b0de0fa2772080426e92a5f9e7d0930342e1786bf73"
+    },
+    {
+      "file": "page_029000.json",
+      "sha256": "b239424f74b1a78c0ca5682c879ee62bf159bb909a36fede2ed6a5f7efb33cbb"
+    },
+    {
+      "file": "page_030000.json",
+      "sha256": "19716a7dcc40a37ed820c145b4da2d3a40370404552db14eca7a6b8ea2d371a4"
+    },
+    {
+      "file": "page_031000.json",
+      "sha256": "37423d5cef2a3f4753c635873b53626c4fed6e98da1fa3e9dec7b3b759a61020"
+    },
+    {
+      "file": "page_032000.json",
+      "sha256": "c2c86e05898d35d965111818938c16bb5dfbc5131226d31224227017cd0ae66a"
+    },
+    {
+      "file": "page_033000.json",
+      "sha256": "9706950ef7b8b245a45063a53159cb86ad7490a0dc575ab17d3a2951a83db83f"
+    },
+    {
+      "file": "page_034000.json",
+      "sha256": "836e4bf8adf55ce8d05a616fdcb2cf00f302852c761eccde12728b545e3ad23d"
+    },
+    {
+      "file": "page_035000.json",
+      "sha256": "c6b8deb866c114ae4c1117cb51c3d9776c1cdd418341606492cf41f6dbe34fe6"
+    },
+    {
+      "file": "page_036000.json",
+      "sha256": "84984a85bf0a498742b590bc6fe69d10aa3f914f2f2c1a5a9f60c2012085d357"
+    },
+    {
+      "file": "page_037000.json",
+      "sha256": "d1dce1fe619e6e55522655cade2a9ca6e2fbecdac7797457711a6bed27d783d5"
+    },
+    {
+      "file": "page_038000.json",
+      "sha256": "78d7ba7f170869f77aaa1ed81b78fc57926a84da3220de539a5194bd3608dc25"
+    },
+    {
+      "file": "page_039000.json",
+      "sha256": "b661ac2166930bb9b4563303b0f595c81cd1a3872c84ce1370b8b2a2d9abf89f"
+    },
+    {
+      "file": "page_040000.json",
+      "sha256": "991465d3317fe9b3a95f9684221c787ae0edb7743744c843c5d7f9b8d6ca27f2"
+    },
+    {
+      "file": "page_041000.json",
+      "sha256": "021381cc2094acc54f009705d8d3ab3e4ab17c68dd67386855b178c86f7f8cb5"
+    },
+    {
+      "file": "page_042000.json",
+      "sha256": "8cbfc15cbddc599cff434bcc5e8cc1c8d6fd7e8969974eabc871c50c68444d38"
+    },
+    {
+      "file": "page_043000.json",
+      "sha256": "d37aecbdd15bc0505bf8931efcbc5f05d8f5446d2d565835543d050499074396"
+    },
+    {
+      "file": "page_044000.json",
+      "sha256": "f1f8cb6572ce655ca14eef698c78e0e92fcd5363ce4c1e7d21faf79ac5206e2e"
+    },
+    {
+      "file": "page_045000.json",
+      "sha256": "97a5d4a4c4f85fdc2642622a6114dab198141c87542d9ad857b05891496fe845"
+    },
+    {
+      "file": "page_046000.json",
+      "sha256": "adc0a8f24e1116bd12a12fd5fe4fb48377d7179935fa821aebc72418f0778a69"
+    },
+    {
+      "file": "page_047000.json",
+      "sha256": "5545fcfd876470709c7d6e16d971456c4e164966187dd839801e135a35857c3b"
+    },
+    {
+      "file": "page_048000.json",
+      "sha256": "3b102cddabac04650c57a68d3fdfbbe170c5344a7e3fac30dcff0d200ab0e419"
+    },
+    {
+      "file": "page_049000.json",
+      "sha256": "93c7ef0297ce455d2b211fa210de2b05d1d714f208b1dd9edf9cccd3aeab4ece"
+    },
+    {
+      "file": "page_050000.json",
+      "sha256": "22e8a35b58d30f8fa458c087ea8643a181866d3e3e0b469415507aedde9a19a4"
+    },
+    {
+      "file": "page_051000.json",
+      "sha256": "e83f8df490e503faf308b6420a0555ae4ce79510ad720fcc29bda2453a738ce6"
+    },
+    {
+      "file": "page_052000.json",
+      "sha256": "3d817f7b97d89815e59aac5ed1a993ca3a74d548638830af6d7b152388b4599b"
+    },
+    {
+      "file": "page_053000.json",
+      "sha256": "4aeee1d4da827775a3103b033e338a9788b968c721c85c885fc8f54c9b634cc9"
+    },
+    {
+      "file": "page_054000.json",
+      "sha256": "38b064ad67bf98eef171d6a0cafb9a23d91e6a70982f241eb289832cb42d0e48"
+    }
+  ],
+  "object_ids_sha256": "7001242978c933364bac2cf111ac7162d15809a4a49a33100a5a1711136371d0",
+  "mesh_block_sha256": "c9b2ea471b60a1a5983b46066b0d76bad4b1cfa847c3e631cb10923dd8c18f0f",
+  "changes": {
+    "old_outside_bounds": 9,
+    "valid_old_shift_over_10m": 1302,
+    "valid_old_shift_over_100m": 368,
+    "valid_old_shift_over_1000m": 25,
+    "valid_old_median_shift_m": 2.0745742297239707,
+    "valid_old_max_shift_m": 7131.986685970119
+  },
+  "points_sha256": "d6e1c65cf598c0bb7c57c487221cb283d4c04f3806b72b07c34660a6304d54e1"
+}

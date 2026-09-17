@@ -1,0 +1,25 @@
+.venv*/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+
+# Local copies of inputs already versioned under backend/src/db/seeds.
+/data/mesh_block.csv
+/data/mesh_block_projection.csv
+/data/model_coefficient.csv
+
+# Large generated artifacts are distributed separately; see docs/ARTIFACTS.md.
+/data/gwr_coefficients.csv
+/data/simulator_scenarios.json
+/data/uncertainty_*/
+/data/coordinate_source/
+/data/backups/
+/data/api_*
+/data/audit_runs/
+/releases/

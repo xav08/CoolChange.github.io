@@ -1,0 +1,128 @@
+{
+  "method": {
+    "version": "uncertainty-v1",
+    "method": "gwr_coefficient_normal_v1",
+    "level": 0.95,
+    "critical_value": 1.9599639845400534,
+    "coverage_validated": false,
+    "scope": "conditional_mean_cooling",
+    "pointwise": true,
+    "source_export_sha256": "e18c8f7acd632a98b6aa4024bbed7fa6920361c7f906bc4ab53eef1959c4ad32",
+    "source_coefficients_sha256": "33030cf9c533f6a4c9c320024963ba85b708e25a8545d05c30adca1111b313b8",
+    "source_model_sha256": "b4ddaea8a1c86b1787d77353ca1832c17a59116abd5e6f670f2dd6d539cde48b",
+    "input_file_verification": {
+      "mesh_block_sha256": {
+        "sha256": "598973b13decf2becb1a7a3aa31df5cd459a8cdbe0adf928f0e17e8c68d99828",
+        "match": "newline_only_to_crlf",
+        "matched_sha256": "c9b2ea471b60a1a5983b46066b0d76bad4b1cfa847c3e631cb10923dd8c18f0f"
+      },
+      "points_sha256": {
+        "sha256": "40fcb55236f2d44fa89a5926608bc3047a39f6c48085846db9b8bb601c895507",
+        "match": "newline_only_to_crlf",
+        "matched_sha256": "d6e1c65cf598c0bb7c57c487221cb283d4c04f3806b72b07c34660a6304d54e1"
+      },
+      "planting_assumptions_sha256": {
+        "sha256": "cd8e88d03111b17ab0aec6384c1f6bba189196a013ebe716d62ee8c873967e8e",
+        "match": "exact"
+      }
+    },
+    "coefficient_units": "degrees_C_per_canopy_percentage_point",
+    "variance_assumption": "independent_homoskedastic_errors",
+    "conditioned_on": [
+      "fixed_bandwidth",
+      "coordinates",
+      "observed_baseline",
+      "canopy_change"
+    ],
+    "excludes": [
+      "spatial_error_correlation",
+      "local_smoothing_bias",
+      "bandwidth_selection",
+      "screening_selection",
+      "measurement_error",
+      "tree_growth_and_survival",
+      "site_capacity",
+      "causal_effect_uncertainty",
+      "future_observation_noise"
+    ],
+    "notice": "Approximate nominal pointwise 95% model-based interval for the conditional mean association. Coverage is not validated. Spatial error correlation is excluded and can make intervals too narrow. Not a future-temperature prediction interval or a causal cooling guarantee. Negative bounds are retained.",
+    "fit": {
+      "n_blocks": 54239,
+      "n_neighbors": 400,
+      "trace_s": 730.5134354577806,
+      "trace_sts": 465.35087373011453,
+      "residual_df": 53243.32400281455,
+      "residual_sum_squares": 44314.43608521935,
+      "residual_variance": 0.8323003290117048,
+      "residual_variance_formula": "RSS / (n - 2*trace(S) + trace(S.T*S))",
+      "maximum_absolute_coefficient_difference": 2.6645352591003757e-14,
+      "residual_spatial_autocorrelation": {
+        "status": "diagnostic_only",
+        "neighbors": 8,
+        "weights": "directed_row_standardized",
+        "moran_i": 0.4167041023041687,
+        "permutation_p_two_sided": 0.005,
+        "permutations": 199,
+        "seed": 42
+      }
+    }
+  },
+  "block_status_counts": {
+    "indicative": 37222,
+    "unavailable": 17017
+  },
+  "scenario_intervals": 109897,
+  "intervals_including_zero": 0,
+  "slope_se_quantiles_05_50_95": [
+    0.005701720537532584,
+    0.00962485372419267,
+    0.017511195426177264
+  ],
+  "python_version": "3.12.14",
+  "numpy_version": "2.3.5",
+  "pandas_version": "2.2.3",
+  "sklearn_version": "1.9.1",
+  "export_sha256": "5905ff7a173680ca545f4a1e18fd179eb497636d4c4bba54d120b547bfde8df6",
+  "example": {
+    "mb_code16": "20631942810",
+    "assumptions_version": "planting-v1",
+    "requested_trees": 10,
+    "evaluated_trees": 10,
+    "tree_profile": "B",
+    "mature_canopy_per_tree_m2": 50.3,
+    "net_canopy_fraction": 1.0,
+    "area_m2": 79100.0,
+    "limits": {
+      "max_trees_with_estimate": 542,
+      "canopy_domain_max_trees": 542,
+      "percentage_bound_max_trees": 1547,
+      "site_capacity_trees": null,
+      "site_capacity_source": null,
+      "site_capacity_status": "not_assessed",
+      "limit_meaning": "Maximum whole-tree count supported by this scenario calculation, not a site planting capacity."
+    },
+    "horizon_label": "At maturity",
+    "illustrative_horizon_years": [
+      20,
+      30
+    ],
+    "maturity_is_guaranteed": false,
+    "status": "indicative",
+    "reason_codes": [],
+    "new_canopy_area_m2": 503.0,
+    "canopy_pct": 2.1989039190897595,
+    "delta_canopy_pp": 0.6359039190897597,
+    "predicted_uhi": 15.575724524690257,
+    "cooling_c": 0.10237547530974396,
+    "feasibility_status": "not_assessed",
+    "notice": "Mature-canopy scenario assuming survival and the stated net canopy contribution. Planting locations and growth timing require site-specific assessment.",
+    "cooling_interval": {
+      "method": "gwr_coefficient_normal_v1",
+      "level": 0.95,
+      "coverage_validated": false,
+      "lower_c": 0.08726916376756363,
+      "upper_c": 0.11748178685192436,
+      "includes_zero": false
+    }
+  }
+}

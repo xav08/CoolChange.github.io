@@ -1,0 +1,30 @@
+{
+  "target": "uhi_mean",
+  "features": [
+    "canopy_pct",
+    "grass_pct",
+    "pop_density"
+  ],
+  "n_blocks": 54239,
+  "function": "uhi_hat = 10.180461 + (-0.124039)*canopy_pct + (-0.006399)*grass_pct + (-0.00001076)*pop_density",
+  "coefficients": {
+    "const": 10.18046065,
+    "canopy_pct": -0.12403876,
+    "grass_pct": -0.00639863,
+    "pop_density": -1.076e-05
+  },
+  "full_r_squared": 0.3275,
+  "test": {
+    "multivariate": {
+      "r2": 0.325,
+      "rmse": 1.685,
+      "mae": 1.1391
+    },
+    "univariate_canopy": {
+      "r2": 0.3244,
+      "rmse": 1.6858,
+      "mae": 1.1394
+    }
+  },
+  "note": "Association, not a controlled experiment. Do not treat ACS 2050 heat-day bands as this model's Y."
+}
