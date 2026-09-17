@@ -1,0 +1,58 @@
+:root { color-scheme: light; --surface: #fafbf5; }
+.theme-toggle { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; padding: 9px; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; }
+.theme-toggle:hover { background: var(--line); }
+.theme-toggle svg { width: 19px; height: 19px; }
+.projection-help { position: relative; margin-top: 14px; }
+.projection-help button { border: 0; padding: 4px 0; background: transparent; color: var(--green); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: help; }
+.projection-help [role="tooltip"] { position: absolute; top: 100%; left: 0; z-index: 6; width: 100%; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 8px 22px #0003; color: var(--ink); font-size: 12px; }
+.projection-planting-link { display: grid; width: 100%; gap: 9px; margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: #e3ecd9; color: #244b33; text-align: left; cursor: pointer; }
+.projection-planting-link span { font-size: 13px; line-height: 1.5; }
+.projection-planting-link strong { font-size: 12px; }
+.projection-planting-link:hover { background: #d5e4c9; }
+.about-section h3 { margin: 28px 0 0; font-size: 18px; }
+html[data-theme="dark"] { color-scheme: dark; --ink: #e4eee5; --paper: #101d19; --green: #a8d5af; --deep-green: #b9dfbd; --line: #a7c5b52e; --surface: #20322a; }
+html[data-theme="dark"] :is(.nav-shell, .map-explorer-panel, .projection-controls, .projection-legend, .map-glass, .map-label, .heat-scale, .map-heat-legend, .map-reset-button) { background: #17291ff2; border-color: var(--line); color: var(--ink); box-shadow: 0 12px 32px #0004; }
+html[data-theme="dark"] :is(.site-header nav a, .wordmark small, .about-hero > p:last-child, .about-section div > p, .about-notes li, .about-sources small, .about-section-label, .about-sources li > span, .chapter, .eyebrow, .story-step > p, .map-page-intro, .map-page-eyebrow, .projection-kicker, .projection-controls > p, .projection-detail .projection-context, .projection-legend > span, .projection-legend small) { color: #b0c6b7; }
+html[data-theme="dark"] .site-header nav a:hover { background: #314a39; color: #e4eee5; }
+html[data-theme="dark"] .site-header nav a[aria-current="page"] { background: #b9dfbd; color: #17382c; }
+html[data-theme="dark"] .wordmark-mark { background: #214833; }
+html[data-theme="dark"] :is(.scrolly, .trust-section, .simulator-section, .evidence-section) { background: #15261e; }
+html[data-theme="dark"] .case-study { background: #483915; color: #f6e3b5; }
+html[data-theme="dark"] :is(.suburb-search-input-wrap, .suburb-search-results, .street-search-results, .comparison-card, .block-planting, .planting-comparison, .planted-blocks, .sim-controls, .map-config-message, .map-data-note, .map-tools button) { background: var(--surface); border-color: var(--line); color: var(--ink); }
+html[data-theme="dark"] :is(input, select) { color: var(--ink); background: var(--surface); }
+html[data-theme="dark"] input::placeholder { color: #a4bbac; }
+html[data-theme="dark"] :is(.suburb-search-results button, .street-search-results button, .map-back-button, .search-clear-button, .planting-slider-row button, .planting-reset, .planting-map-toggle button, .warming-selector button) { background: var(--surface); border-color: var(--line); color: var(--ink); }
+html[data-theme="dark"] :is(.suburb-search-results button:hover, .street-search-results button:hover, .planting-map-toggle button[aria-pressed="true"]) { background: #3b5946; color: #eff7ee; }
+html[data-theme="dark"] :is(.mesh-detail-heading span, .mesh-detail-heading small, .mesh-detail-card dt, .block-comparisons-heading p, .comparison-card span, .comparison-card p, .planting-eyebrow, .planting-note, .planting-ceiling, .planting-range, .planting-fallback, .planted-blocks-hint, .planted-blocks-empty, .street-search-status, .planting-notice, .map-heat-legend small) { color: #b0c6b7; }
+html[data-theme="dark"] :is(.planting-heading h2, .mesh-detail-card dd, .comparison-card strong, .planting-comparison strong, .planting-slider-label output, .planted-blocks summary) { color: var(--ink); }
+html[data-theme="dark"] :is(.metric-help-tooltip, .projection-detail .projection-saved, .projection-planting-link) { background: #294632; color: #dcf0d8; border-color: var(--line); }
+html[data-theme="dark"] .projection-planting-link:hover { background: #35583e; }
+html[data-theme="dark"] .projection-detail { border-color: var(--line); }
+html[data-theme="dark"] :is(.projection-detail > span, .projection-detail .projection-days) { color: #ffc887; }
+html[data-theme="dark"] .warming-selector button[aria-pressed="true"] { background: #f4bc7b; border-color: #f4bc7b; color: #40280e; }
+html[data-theme="dark"] .vision-switch { background: #304434; border-color: #657e66; }
+html[data-theme="dark"] .vision-switch.is-future { background: #574529; border-color: #997946; }
+html[data-theme="dark"] :is(.projection-failure, .map-page-error) { background: #513422; color: #ffdeb6; }
+html[data-theme="dark"] .mapboxgl-ctrl-group { background: #20322a; }
+html[data-theme="dark"] .mapboxgl-ctrl-icon { filter: invert(1); }
+html[data-theme="dark"] :is(.mapboxgl-ctrl-attrib, .mapboxgl-ctrl-scale) { background-color: #20322ae6; color: #d3e3d8; border-color: #a6bdad; }
+html[data-theme="dark"] .mapboxgl-ctrl-attrib a { color: #d3e3d8; }
+html[data-theme="dark"] :is(.suburb-search > label, .suburb-search-results small, .suburb-search-results em, .suburb-hover-card span, .mesh-detail-card > p, .comparison-card small, .block-comparisons-heading span, .block-comparisons-heading small, .planting-slider-label, .planting-reference, .planting-tree-unit, .planting-controls > p, .planting-comparison > div, .planting-cooling, .planting-range strong, .metric-help > button, .stat-line span, .simulator-copy > p:not(.eyebrow):not(.prototype-note), .sim-results span, .sim-results small, .prototype-note, .evidence-heading > p:not(.eyebrow), .journey-list p, .trust-list details p) { color: #b0c6b7; }
+html[data-theme="dark"] :is(.planting-range, .planting-ceiling, .planting-map-toggle, .planting-comparison .planting-comparison-head, .input-row) { background: var(--surface); border-color: var(--line); }
+html[data-theme="dark"] .planting-comparison > div + div { border-color: var(--line); }
+html[data-theme="dark"] .suburb-search-results li[aria-selected="true"] button { background: #3b5946; }
+html[data-theme="dark"] .map-back-button { background: transparent; }
+html[data-theme="dark"] :is(.planted-blocks li.is-selected, .planted-blocks-count) { background: #294632; color: #dcf0d8; }
+html[data-theme="dark"] :is(.planted-block-view, .planted-block-view strong, .planted-block-reset) { color: #b0c6b7; }
+@media (max-width: 980px) { html[data-theme="dark"] .story-step > * { background: #1b2e25f5; } }
+@media (max-width: 380px) {
+  .site-header { padding: 12px 8px; }
+  .wordmark { gap: 5px; padding: 6px; }
+  .wordmark strong { font-size: 12px; }
+  .wordmark-mark { width: 28px; height: 28px; }
+  .site-header nav { gap: 0; }
+  .site-header nav a { padding: 9px 8px; font-size: 11px; }
+  .site-header nav .nav-cta { padding: 9px 8px; }
+  .nav-cta span { margin-left: 3px; }
+  .theme-toggle { width: 32px; height: 32px; flex-basis: 32px; padding: 6px; }
+}

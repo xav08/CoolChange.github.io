@@ -8,6 +8,8 @@ import {
   loadPopulationDensityPoints,
 } from "../utils/mapOverlayData";
 import { resolveMapStyle } from "../utils/mapStyle";
+import { useTheme } from "../hooks/useTheme";
+import { applyMapTheme } from "../utils/mapTheme";
 
 const HEAT_SOURCE = "coolchange-heat-source";
 const CANOPY_SOURCE = "coolchange-canopy-source";
@@ -110,6 +112,7 @@ function updateMapLayers(map: mapboxgl.Map, layer: StoryLayer, cooling: number, 
 
 // Create and maintain the Clyde North map.
 export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
+  const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const currentLayerRef = useRef(layer);
@@ -117,6 +120,11 @@ export function MapboxBaseMap({ label, layer, cooling }: MapboxBaseMapProps) {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [layersReady, setLayersReady] = useState(false);
   const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (hasLoaded && map) applyMapTheme(map, theme);
+  }, [hasLoaded, theme]);
 
   // keep current controls without recreating the map
   currentLayerRef.current = layer;

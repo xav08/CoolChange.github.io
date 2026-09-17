@@ -64,6 +64,18 @@ export function AboutPage() {
           </div>
         </section>
 
+        <section className="about-section" aria-labelledby="methodology-heading">
+          <p className="about-section-label">Methodology</p>
+          <div>
+            <h2 id="methodology-heading">From future heat to local shade.</h2>
+            <h3>Projecting hot days</h3>
+            <p>We use Australian Climate Service projections of days reaching 35°C or hotter at four global warming levels: 1.2, 1.5, 2.0 and 3.0°C above the 1850–1900 average. Each suburb shows the most common band among its mapped blocks. Colours stay consistent between levels, and gaps use a nearby suburb's estimate. These are warming scenarios, rather than fixed dates.</p>
+            <h3>Exploring tree planting</h3>
+            <p>Each added tree represents about 50.3 m² of mature canopy. We combine that extra cover with the block's area and a local statistical relationship between canopy and surface heat to estimate cooling under the 2018 baseline climate. The simulator stays within the model's supported canopy range and shows uncertainty where available.</p>
+            <p>The two views answer different questions: how extreme heat may change, and how mature trees could cool a local block. Planting estimates do not change the projected number of hot days.</p>
+          </div>
+        </section>
+
         <section className="about-section">
           <p className="about-section-label">Limitations</p>
           <div>

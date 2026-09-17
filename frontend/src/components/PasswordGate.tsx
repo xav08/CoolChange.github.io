@@ -44,7 +44,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
         <form
           onSubmit={handleSubmit}
           style={{
-            background: "white",
+            background: "var(--surface)",
             padding: "2rem",
             borderRadius: "12px",
             width: "min(90vw, 360px)",

@@ -4,6 +4,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { resolveMapStyle } from "../utils/mapStyle";
 import { BlockPlanting } from "./BlockPlanting";
 import { MetricHelp } from "./MetricHelp";
+import { useTheme } from "../hooks/useTheme";
+import { applyMapTheme } from "../utils/mapTheme";
+import { ProjectionHelp } from "./ProjectionHelp";
 import { ProjectionControls, ProjectionLegend } from "./ProjectionControls";
 import { daysBand, isProjectionData, projectionColor, warmingLabel, UNAVAILABLE_COLOR, type ProjectionData, type WarmingLevel } from "../utils/projections";
 import { calculatePlanting, keepSuburbPlanting, restorePlanting, updatePlanting, PLANTING_STORAGE_KEY, type PlantingModel, type PlantingScenario } from "../utils/planting";
@@ -143,6 +146,7 @@ function propertyNumber(properties: MapProperties | undefined, key: string) {
 
 // Render the suburb and mesh block explorer.
 export function MelbourneMapPage() {
+  const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const detailRef = useRef<HTMLDivElement>(null);
@@ -181,6 +185,11 @@ export function MelbourneMapPage() {
   const projectionSuburb = suburb ?? hoveredSuburb;
   const selectedProjection = projectionSuburb ? projectionRows.get(projectionSuburb.sa2_code16) : undefined;
   const savedTrees = scenarios.reduce((sum, item) => sum + item.trees, 0);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (mapReady && map) applyMapTheme(map, theme);
+  }, [mapReady, theme]);
 
   useEffect(() => {
     if (!future || projectionData) return;
@@ -322,7 +331,7 @@ export function MelbourneMapPage() {
     }
   }, []);
 
-  function toggleFuture() {
+  async function toggleFuture() {
     const next = !futureRef.current;
     panelRef.current?.scrollTo({ top: 0 });
     futureRef.current = next;
@@ -335,7 +344,7 @@ export function MelbourneMapPage() {
       setBlockLoading(false);
     } else {
       setComparison("after");
-      if (suburb && loadedSuburbRef.current !== suburb.sa2_code16) void openSuburb(suburb);
+      if (suburb && loadedSuburbRef.current !== suburb.sa2_code16) await openSuburb(suburb);
     }
   }
 
@@ -347,6 +356,7 @@ export function MelbourneMapPage() {
     const controller = new AbortController();
     blockRequest.current = controller;
     setSelectedBlock(null);
+    setPlantingNotice("");
     setMapError("");
     map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], mbCode16]);
     // clicking any block -- highlighted or not -- resolves the street search's
@@ -634,10 +644,20 @@ export function MelbourneMapPage() {
             : projectionStatus !== "ready" ? <p>Loading 2050 projections…</p>
             : projectionSuburb ? <>
               {!suburb && <h2>{projectionSuburb.sa2_name}</h2>}<p className="projection-days">{daysBand(selectedProjection)}<small>{selectedProjection?.days_lower != null ? "days/year ≥35°C" : ""}</small></p>
-              <p>Predominant suburb band</p>
+              {suburb && <ProjectionHelp band={selectedProjection} level={warmingLevel} suburbName={suburb.sa2_name} />}
             </> : <p>Choose a suburb to see its projected hot-day band.</p>}
           <p className="projection-context">Climate projections by warming level, not an exact forecast for 2050. Added trees provide shade; this dataset does not measure their effect on hot-day counts.</p>
           {savedTrees > 0 && <p className="projection-saved">Your {savedTrees.toLocaleString()} added {savedTrees === 1 ? "tree is" : "trees are"} saved. Switch to 🌳 to explore canopy and cooling.</p>}
+          {suburb && <button className="projection-planting-link" type="button" onClick={async () => {
+            await toggleFuture();
+            if (!futureRef.current && loadedSuburbRef.current === suburb.sa2_code16) {
+              setPlantingNotice(selectedBlock ? "" : `Pick a block in ${suburb.sa2_name} to add trees and explore its mature canopy and cooling.`);
+              panelRef.current?.querySelector<HTMLElement>('.block-planting')?.scrollIntoView({ block: 'nearest' });
+            }
+          }}>
+            <span>What could trees change in {suburb.sa2_name}?</span>
+            <strong>Try planting today <span aria-hidden="true">↗</span></strong>
+          </button>}
         </div>}
 
         {(!future && hoveredSuburb && !suburb) && (
