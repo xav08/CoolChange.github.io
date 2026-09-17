@@ -25,6 +25,5 @@ export function ProjectionLegend({ data }: { data: ProjectionData }) {
     <ul>{data.bands.map(band => <li key={`${band.days_lower}-${band.days_upper}-${band.days_label}`}>
       <i style={{ background: projectionColor(band, data.scale) }} /><span>{bandLabel(band)}</span>
     </li>)}</ul>
-    <small>Same colour scale at every warming level</small>
   </aside>;
 }
