@@ -1,30 +1,28 @@
 import { AddressExplorer } from "./AddressExplorer";
-import { ClosingImage, Footer } from "./Footer";
-import { Hero, LeadCopy } from "./Hero";
-import { CaseStudy, EvidenceSection, StorySteps, TreeTimeline } from "./StorySections";
-import { TreeSimulator } from "./TreeSimulator";
+import { Footer } from "./Footer";
+import { StreetExperience } from "./street/StreetExperience";
 import { TrustSection } from "./TrustSection";
-import { useActiveStoryStep } from "../hooks/useActiveStoryStep";
+import "../street-story.css";
 
 // compose the full scroll-led home page
 export function StoryPage() {
-  const activeStoryStep = useActiveStoryStep();
-
   return (
-    <>
-      <main>
-        <Hero />
-        <LeadCopy />
-        <StorySteps activeStep={activeStoryStep} />
-        <CaseStudy />
-        <TreeTimeline />
-        <TreeSimulator />
-        <EvidenceSection />
+    <div className="street-page">
+      <main id="story">
+        <StreetExperience />
         <AddressExplorer />
         <TrustSection />
-        <ClosingImage />
       </main>
       <Footer />
-    </>
+      <img
+        className="street-closing-image"
+        src={`${import.meta.env.BASE_URL}images/cool-change-closing.webp`}
+        alt="Cool Change. See the heat. Change the street. An aerial neighbourhood heat illustration meets green tree canopy."
+        width="1732"
+        height="908"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
   );
 }

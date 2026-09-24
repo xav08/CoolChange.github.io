@@ -161,6 +161,7 @@ export function MelbourneMapPage() {
   const [projectionStatus, setProjectionStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
+  const [basemapUnavailable, setBasemapUnavailable] = useState(false);
   const [loadingSuburb, setLoadingSuburb] = useState(false);
   const [suburb, setSuburb] = useState<SuburbSummary | null>(null);
   // bumped whenever the search field should clear itself (remounts UnifiedSearch)
@@ -434,6 +435,20 @@ export function MelbourneMapPage() {
     const mapConfig = resolveMapStyle(accessToken);
     if (!container || !mapConfig.accessToken) return undefined;
     let cancelled = false;
+    let layersInitialized = false;
+    let usingFallback = false;
+    const dataRequest = new AbortController();
+    // Fetch real boundaries independently of the external basemap request.
+    const dataTimeout = window.setTimeout(() => dataRequest.abort(), 20000);
+    const boundaries = fetch(`${API_BASE}/map/suburbs`, { signal: dataRequest.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error("Suburb data is unavailable. Check the API connection and reload the map.");
+        const data = await response.json() as MapFeatureCollection;
+        if (data.type !== "FeatureCollection" || !Array.isArray(data.features)) throw new Error("Invalid suburb data received.");
+        return { data, error: "" };
+      })
+      .catch(() => ({ data: null, error: "Suburb data could not load. Check the API connection and reload the map." }))
+      .finally(() => window.clearTimeout(dataTimeout));
 
     const map = new mapboxgl.Map({
       container,
@@ -449,7 +464,21 @@ export function MelbourneMapPage() {
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
     map.addControl(new mapboxgl.ScaleControl({ unit: "metric" }), "bottom-left");
 
+    // A failed/blocked style must not prevent the local GeoJSON from rendering.
+    const useDataOnlyMap = () => {
+      if (cancelled || layersInitialized || usingFallback) return;
+      usingFallback = true;
+      setBasemapUnavailable(true);
+      map.setStyle({ version: 8, sources: {}, layers: [
+        { id: "background", type: "background", paint: { "background-color": "#e8ece4" } },
+      ] });
+    };
+    const styleTimeout = window.setTimeout(useDataOnlyMap, 8000);
+    map.on("error", useDataOnlyMap);
     map.on("load", async () => {
+      if (cancelled || layersInitialized) return;
+      layersInitialized = true;
+      window.clearTimeout(styleTimeout);
       // sources must exist before their layers are added
       map.addSource(SUBURB_SOURCE, { type: "geojson", data: EMPTY_COLLECTION as SourceData });
       map.addSource(MESH_SOURCE, { type: "geojson", data: EMPTY_COLLECTION as SourceData, promoteId: "mb_code16" });
@@ -556,14 +585,13 @@ export function MelbourneMapPage() {
 
       try {
         // load lightweight suburb outlines for the first view
-        const response = await fetch(`${API_BASE}/map/suburbs`);
-        if (!response.ok) throw new Error("Melbourne map geometry is unavailable.");
-        const data = (await response.json()) as MapFeatureCollection;
+        const { data, error } = await boundaries;
+        if (!data) throw new Error(error);
         if (cancelled) return;
         suburbDataRef.current = data;
         (map.getSource(SUBURB_SOURCE) as GeoJSONSource).setData(data as SourceData);
       } catch (error) {
-        setMapError(error instanceof Error ? error.message : "Could not load Melbourne suburbs.");
+        if (!cancelled) setMapError(error instanceof Error ? error.message : "Could not load Melbourne suburbs.");
       } finally {
         if (!cancelled) setMapReady(true);
       }
@@ -571,6 +599,10 @@ export function MelbourneMapPage() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(styleTimeout);
+      window.clearTimeout(dataTimeout);
+      dataRequest.abort();
+      map.off("error", useDataOnlyMap);
       blockRequest.current?.abort();
       suburbRequest.current?.abort();
       mapRef.current = null;
@@ -747,6 +779,7 @@ export function MelbourneMapPage() {
       {(!mapReady || loadingSuburb) && <div className="map-page-loading">{loadingSuburb ? "Drawing mesh blocks…" : "Mapping Melbourne…"}</div>}
       {!resolveMapStyle(accessToken).accessToken && <div className="map-page-error">Add a public Mapbox token (pk.*) to frontend/.env.local.</div>}
       {mapError && <div className="map-page-error" role="alert">{mapError}</div>}
+      {basemapUnavailable && !mapError && <div className="map-basemap-notice" role="status">Background map unavailable. Suburb and block data remain available.</div>}
     </main>
   );
 }

@@ -32,7 +32,7 @@ html[data-theme="dark"] :is(.projection-detail > span, .projection-detail .proje
 html[data-theme="dark"] .warming-selector button[aria-pressed="true"] { background: #f4bc7b; border-color: #f4bc7b; color: #40280e; }
 html[data-theme="dark"] .vision-switch { background: #304434; border-color: #657e66; }
 html[data-theme="dark"] .vision-switch.is-future { background: #574529; border-color: #997946; }
-html[data-theme="dark"] :is(.projection-failure, .map-page-error) { background: #513422; color: #ffdeb6; }
+html[data-theme="dark"] :is(.projection-failure, .map-page-error, .map-basemap-notice) { background: #513422; color: #ffdeb6; }
 html[data-theme="dark"] .mapboxgl-ctrl-group { background: #20322a; }
 html[data-theme="dark"] .mapboxgl-ctrl-icon { filter: invert(1); }
 html[data-theme="dark"] :is(.mapboxgl-ctrl-attrib, .mapboxgl-ctrl-scale) { background-color: #20322ae6; color: #d3e3d8; border-color: #a6bdad; }
