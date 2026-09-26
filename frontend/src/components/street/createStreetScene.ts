@@ -8,8 +8,6 @@ export type StreetSceneController = {
   setTrees: (trees: number, immediate?: boolean) => void;
   setBefore: (before: boolean) => void;
   setTheme: (theme: Theme) => void;
-  setReducedMotion: (reduced: boolean) => void;
-  resize: () => void;
   getStillViews: () => string[];
   dispose: () => void;
 };
@@ -236,7 +234,7 @@ export function createStreetScene(
   let progress = 0;
   let treeCount = clampTreeCount(options.trees);
   let before = options.before ?? false;
-  let reduced = options.reduced;
+  const reduced = options.reduced;
   let mobile = false;
   let disposed = false;
   let frame = 0;
@@ -324,8 +322,6 @@ export function createStreetScene(
     setTrees(value, immediate = false) { treeCount = clampTreeCount(value); immediateTrees = immediate; invalidate(); },
     setBefore(value) { before = value; immediateTrees = true; invalidate(); },
     setTheme,
-    setReducedMotion(value) { reduced = value; immediateTrees = true; invalidate(); },
-    resize,
     getStillViews() {
       const savedProgress = progress;
       const views: string[] = [];

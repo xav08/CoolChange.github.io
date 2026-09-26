@@ -12,7 +12,6 @@ export type StreetChapter = {
   id: string;
   title: string;
   body: string;
-  place: string;
   object: string;
   view: StreetView;
 };
@@ -23,7 +22,6 @@ export const streetChapters: readonly StreetChapter[] = [
     id: "top",
     title: "A cooler street starts with what we can see.",
     body: "Take a closer look at the heat we share, and the shade we can grow.",
-    place: "A Melbourne neighbourhood",
     object: "One street. A shared future.",
     view: { camera: [32, 30, 37], target: [0, 0, 0], heat: 0, growth: 0.16, planting: 0 },
   },
@@ -31,7 +29,6 @@ export const streetChapters: readonly StreetChapter[] = [
     id: "street-heat",
     title: "Same city. Different heat.",
     body: "Across Melbourne, heat is uneven. Look closer and the differences become part of an everyday street.",
-    place: "The exposed road",
     object: "Heat gathers on exposed surfaces",
     view: { camera: [22, 22, 27], target: [1, 0, 0], heat: 0.85, growth: 0.16, planting: 0 },
   },
@@ -39,7 +36,6 @@ export const streetChapters: readonly StreetChapter[] = [
     id: "street-shade",
     title: "A little shade changes the street.",
     body: "A tree-lined footpath. A sheltered place to wait. Where the canopy stops, the shade stops too.",
-    place: "Along the footpath",
     object: "Follow the edge of the tree shade",
     view: { camera: [13, 13, 17], target: [0, 0.8, 3], heat: 0.8, growth: 0.16, planting: 0 },
   },
@@ -47,7 +43,6 @@ export const streetChapters: readonly StreetChapter[] = [
     id: "street-shared",
     title: "We share the heat. And the street.",
     body: "You can choose where to stand. Changing a roof, a rental home or a public footpath takes more than one person's choice.",
-    place: "At the neighbourhood bus stop",
     object: "A place everyone should be able to use",
     view: { camera: [8, 8.5, 15], target: [0.5, 1, 3.5], heat: 0.75, growth: 0.16, planting: 0 },
   },
@@ -55,7 +50,6 @@ export const streetChapters: readonly StreetChapter[] = [
     id: "street-time",
     title: "Tomorrow's shade starts small.",
     body: "Picture this same place in 2050. The tree beside the bus stop has room to grow. So does the shade beneath it.",
-    place: "The same street, looking towards 2050",
     object: "The little tree becomes a place of shade",
     view: { camera: [11, 12, 19], target: [1, 1.4, 3], heat: 0, growth: 1, planting: 0 },
   },
@@ -63,7 +57,6 @@ export const streetChapters: readonly StreetChapter[] = [
     id: "street-plant",
     title: "What could you grow here?",
     body: "Start beside the bus stop. Add trees and watch exposed heat retreat beneath their growing canopy.",
-    place: "Your version of the neighbourhood",
     object: "More trees. More places in the shade.",
     view: { camera: [26, 28, 32], target: [0, 0, 0], heat: 0.85, growth: 1, planting: 1 },
   },
@@ -98,11 +91,6 @@ export function plantedTreeScale(index: number, count: number, planting: number,
 
 export function clampTreeCount(value: number): number {
   return Number.isFinite(value) ? Math.min(MAX_STORY_TREES, Math.max(0, Math.round(value))) : 0;
-}
-
-export function chapterAtProgress(progress: number): number {
-  const safe = Number.isFinite(progress) ? progress : 0;
-  return Math.min(streetChapters.length - 1, Math.max(0, Math.floor(safe + 0.001)));
 }
 
 export function sampleStreetView(progress: number, mobile = false, reducedMotion = false): StreetView {

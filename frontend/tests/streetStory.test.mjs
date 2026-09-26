@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canopyFootprint, plantedTreeScale, clampTreeCount, chapterAtProgress, sampleStreetView, plantingLocations, streetChapters } from '../src/data/streetStory.ts';
+import { canopyFootprint, plantedTreeScale, clampTreeCount, sampleStreetView, plantingLocations, streetChapters } from '../src/data/streetStory.ts';
 
 test('planting counts handle slider boundaries and invalid input', () => {
   assert.deepEqual([-5, 0, 12, 36, 50, NaN].map(clampTreeCount), [0, 0, 12, 36, 36, 0]);
@@ -15,9 +15,6 @@ test('planting counts handle slider boundaries and invalid input', () => {
 });
 
 test('story sampling clamps progress and can be traversed backwards without history', () => {
-  assert.equal(chapterAtProgress(-10), 0);
-  assert.equal(chapterAtProgress(100), 5);
-  assert.equal(chapterAtProgress(NaN), 0);
   assert.deepEqual(sampleStreetView(-1), streetChapters[0].view);
   assert.deepEqual(sampleStreetView(99), streetChapters[5].view);
   const forward = sampleStreetView(2.15);
