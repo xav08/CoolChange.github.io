@@ -1,5 +1,7 @@
 import { calculatePlanting, type PlantingModel } from "../utils/planting";
 import { MetricHelp } from "./MetricHelp";
+import { AnimatedMetric } from "./AnimatedMetric";
+import "./planting-feedback.css";
 
 export function BlockPlanting({ model, trees, onChange }: {
   model: PlantingModel | null;
@@ -13,10 +15,11 @@ export function BlockPlanting({ model, trees, onChange }: {
   return (
     <section className="block-planting" aria-label="Tree planting simulator">
       <div className="planting-heading">
-        <div><span className="planting-eyebrow">Explore a cooler block</span><h2>Add trees</h2></div>
-        <MetricHelp label="About mature tree simulation">Each tree adds 50.3 m² of mature canopy, assuming full survival and no crown overlap. This explores mature trees under the 2018 baseline climate conditions. It is not immediate cooling or a 2050 forecast. The ceiling is the local model's supported canopy range, not assessed planting space.</MetricHelp>
+        <h2>Add trees</h2>
+        <MetricHelp label="About mature tree simulation">{`Each tree adds ${model.crown_area_m2.toFixed(1)} m² of mature canopy, assuming full survival and no crown overlap. This explores mature trees under the 2018 baseline climate conditions. It is not immediate cooling or a 2050 forecast. The ceiling is the local model's supported canopy range, not assessed planting space.`}</MetricHelp>
       </div>
-      <div className="planting-slider-label"><label htmlFor="added-trees">Trees added</label><output htmlFor="added-trees">{result.trees.toLocaleString()} <span className="planting-tree-unit">{result.trees === 1 ? "tree" : "trees"}</span></output></div>
+      <p className="planting-intro">Explore how mature tree canopy could change this block.</p>
+      <div className="planting-slider-label"><label htmlFor="added-trees">Trees added</label><output htmlFor="added-trees" aria-live="off">{result.trees.toLocaleString()} <span className="planting-tree-unit">{result.trees === 1 ? "tree" : "trees"}</span></output></div>
       <div className="planting-slider-row">
         <button type="button" aria-label="Remove one added tree" disabled={result.trees === 0} onClick={() => onChange(result.trees - 1)}>−</button>
         <input id="added-trees" type="range" min="0" max={model.max_trees} step="1" value={result.trees}
@@ -27,13 +30,15 @@ export function BlockPlanting({ model, trees, onChange }: {
       {model.unavailable_reason ? <p className="planting-note" role="status">{model.unavailable_reason}</p> : atCeiling ? (
         <p className="planting-ceiling" role="status">You've reached this block's tree limit for this estimate. Adding more would take tree cover above {model.canopy_ceiling_pct.toFixed(1)}%, where we don't have enough data to estimate cooling.</p>
       ) : <p className="planting-note">Move the slider to explore mature tree cover.</p>}
-      <div className="planting-comparison" aria-label="Before and after planting">
-        <div className="planting-comparison-head"><span /><span>Before</span><span>After</span></div>
-        <div><span>Tree canopy</span><span>{model.baseline_canopy_pct.toFixed(1)}%</span><strong>{result.canopy.toFixed(1)}%</strong></div>
-        <div><span>Surface heat</span><span>{heat(model.baseline_heat_c)}</span><strong>{heat(result.heat)}</strong></div>
-      </div>
+      <p className="planting-impact" aria-live="polite" aria-atomic="true">{result.trees === 0
+        ? "No trees added. This block is showing its baseline canopy and surface heat."
+        : `${result.trees.toLocaleString()} mature ${result.trees === 1 ? "tree could" : "trees could"} raise canopy from ${model.baseline_canopy_pct.toFixed(1)}% to ${result.canopy.toFixed(1)}%, with ${result.cooling.toFixed(2)}°C modelled cooling.`}</p>
+      <div className="planting-cooling"><span>Modelled cooling</span><strong><AnimatedMetric value={result.cooling} decimals={2} unit="°C" negative /></strong></div>
+      <dl className="planting-result-rows" aria-label="Before to after planting">
+        <div><dt>Canopy</dt><dd><span>{model.baseline_canopy_pct.toFixed(1)}%</span><span aria-hidden="true">→</span><span className="metric-screen-reader"> to </span><strong><AnimatedMetric value={result.canopy} unit="%" /></strong></dd></div>
+        <div><dt>Surface heat</dt><dd><span>{heat(model.baseline_heat_c)}</span><span aria-hidden="true">→</span><span className="metric-screen-reader"> to </span><strong><AnimatedMetric value={result.heat} decimals={2} unit="°C" /></strong></dd></div>
+      </dl>
       <p className="planting-reference">Surface heat above the non-urban baseline</p>
-      <div className="planting-cooling" aria-live="polite" aria-atomic="true"><span>Modelled cooling</span><strong>{result.cooling.toFixed(2)}°C</strong></div>
       <div className="planting-range">
         <span>Approx. 95% model range</span>
         <MetricHelp label="About the model range">This range shows uncertainty in the estimated surface heat after adding trees. The 95% figure comes from the model and has not been checked against real planting results. Weather, tree growth and local conditions can put actual temperatures outside this range.</MetricHelp>

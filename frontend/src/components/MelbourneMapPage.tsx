@@ -3,8 +3,10 @@ import mapboxgl, { type GeoJSONSource, type MapMouseEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { resolveMapStyle } from "../utils/mapStyle";
 import { BlockPlanting } from "./BlockPlanting";
-import { MetricHelp } from "./MetricHelp";
+import { SelectedBlockPanel, type BlockTab } from "./SelectedBlockPanel";
 import { useTheme } from "../hooks/useTheme";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import { animateHeatStates, type HeatState } from "../utils/plantingMotion";
 import { applyMapTheme } from "../utils/mapTheme";
 import { ProjectionHelp } from "./ProjectionHelp";
 import { ProjectionControls, ProjectionLegend } from "./ProjectionControls";
@@ -42,8 +44,8 @@ type SearchResult = {
 };
 
 type SuburbSummary = SearchResult & {
-  uhi_mean?: number;
-  canopy_mean?: number;
+  uhi_mean?: number | null;
+  canopy_mean?: number | null;
 };
 
 type MeshblockProperties = {
@@ -67,7 +69,7 @@ type CoolestBlock = {
   canopy_pct: number | null;
 };
 
-type MeshblockDetail = {
+export type MeshblockDetail = {
   simulator?: { release_id: string; interactive?: PlantingModel } | null;
   block: MeshblockProperties & {
     sa2_name: string;
@@ -147,9 +149,11 @@ function propertyNumber(properties: MapProperties | undefined, key: string) {
 // Render the suburb and mesh block explorer.
 export function MelbourneMapPage() {
   const { theme } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const heatStates = useRef(new Map<string, HeatState>());
+  const heatSuburb = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const meshDataRef = useRef<MapFeatureCollection>(EMPTY_COLLECTION);
   const suburbDataRef = useRef<MapFeatureCollection>(EMPTY_COLLECTION);
@@ -168,6 +172,7 @@ export function MelbourneMapPage() {
   const [searchResetToken, setSearchResetToken] = useState(0);
   const [hoveredSuburb, setHoveredSuburb] = useState<SuburbSummary | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<MeshblockDetail | null>(null);
+  const [blockTab, setBlockTab] = useState<BlockTab>("Overview");
   const [blockLoading, setBlockLoading] = useState(false);
   const blockRequest = useRef<AbortController | null>(null);
   const suburbRequest = useRef<AbortController | null>(null);
@@ -232,25 +237,33 @@ export function MelbourneMapPage() {
   }, [scenarios]);
 
   useEffect(() => {
-    if (detailRef.current && panelRef.current) {
-      // Bring the selected metrics and slider into view without moving the map.
-      panelRef.current.scrollTo({ top: detailRef.current.offsetTop - 24 });
-    }
+    panelRef.current?.scrollTo({ top: 0 });
   }, [selectedBlock?.block.mb_code16]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map?.getSource(MESH_SOURCE)) return;
-    // Clearing feature state restores individually reset blocks and Reset all.
-    map.removeFeatureState({ source: MESH_SOURCE });
+    if (heatSuburb.current !== suburb?.sa2_code16) {
+      map.removeFeatureState({ source: MESH_SOURCE });
+      heatStates.current.clear();
+      heatSuburb.current = suburb?.sa2_code16 ?? null;
+    }
+    const targets = new Map<string, HeatState>();
     if (comparison === "after") {
       for (const scenario of scenarios) {
-        map.setFeatureState({ source: MESH_SOURCE, id: scenario.code }, {
-          simulatedHeat: calculatePlanting(scenario.model, scenario.trees).heat,
+        if (scenario.suburb_code !== suburb?.sa2_code16) continue;
+        targets.set(scenario.code, {
+          heat: calculatePlanting(scenario.model, scenario.trees).heat,
+          baseline: scenario.model.baseline_heat_c,
         });
       }
     }
-  }, [scenarios, comparison, mapReady, suburb]);
+    map.setPaintProperty(MESH_FILL, "fill-color-transition", { duration: reducedMotion ? 0 : 400, delay: 0 });
+    return animateHeatStates(heatStates.current, targets, reducedMotion ? 0 : 400,
+      (code, heat) => map.setFeatureState({ source: MESH_SOURCE, id: code }, { simulatedHeat: heat }),
+      code => map.removeFeatureState({ source: MESH_SOURCE, id: code }, "simulatedHeat"),
+    );
+  }, [scenarios, comparison, mapReady, suburb, reducedMotion]);
 
   function changeTrees(trees: number) {
     if (!model || !selectedBlock?.simulator || !suburb) return;
@@ -308,7 +321,9 @@ export function MelbourneMapPage() {
       setScenarios(current => keepSuburbPlanting(current, selection.sa2_code16));
       setPlantingNotice("");
       setComparison("after");
-      setSuburb({ ...selection, ...data.suburb });
+      // Search results omit averages; retain the same suburb benchmarks as map selection.
+      const summary = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === selection.sa2_code16)?.properties;
+      setSuburb({ ...selection, ...summary, ...data.suburb } as SuburbSummary);
       // Clear highlighting from the previous street search.
       map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
       if (map.getLayer(MESH_FILL)) map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
@@ -371,6 +386,7 @@ export function MelbourneMapPage() {
       const detail = (await response.json()) as MeshblockDetail;
       if (controller.signal.aborted) return;
       setSelectedBlock(detail);
+      setBlockTab("Overview");
       // Reconcile saved scenarios with the active release and freshly read model.
       setScenarios(current => {
         if (!detail.simulator) return [];
@@ -653,6 +669,7 @@ export function MelbourneMapPage() {
       </button>
 
       <section ref={panelRef} className={`map-explorer-panel${selectedBlock && !future ? " has-selected-block" : ""}${future && suburb ? " has-projection-suburb" : ""}`} aria-label="Map explorer">
+        {(!selectedBlock || future) && <>
         <p className="map-page-eyebrow">{future ? "2050 vision · Melbourne suburbs" : "Melbourne · 2018 mesh blocks"}</p>
         {future && projectionStatus === "error" && <p className="projection-failure" role="alert">2050 projection failed to load</p>}
         <h1>{suburb ? suburb.sa2_name : future ? "A hotter future. A reason to plant." : "See the heat beneath your suburb."}</h1>
@@ -662,13 +679,24 @@ export function MelbourneMapPage() {
             ? `${suburb.n_blocks.toLocaleString()} mesh blocks in ${suburb.lga_name}. Select a block to inspect its heat and canopy.`
             : "Explore all 54,239 mapped neighbourhood blocks. Choose a suburb on the map or search by name to reveal its local pattern."}
         </p>
+        </>}
+        {selectedBlock && !future ? <details className="selected-block-search" key={selectedBlock.block.mb_code16}>
+          <summary>Search another location</summary>
         <UnifiedSearch
           key={`${searchResetToken}-${future}`}
           suburbsOnly={future}
           onSelectSuburb={(result) => void openSuburb(result)}
           onStreetMatch={(sa2Code16, mbCodes) => void openStreetMatch(sa2Code16, mbCodes)}
         />
-        {suburb && <button className="map-back-button" type="button" onClick={showAllSuburbs}>← Back to all suburbs</button>}
+        </details> : <>
+        <UnifiedSearch
+          key={`${searchResetToken}-${future}`}
+          suburbsOnly={future}
+          onSelectSuburb={(result) => void openSuburb(result)}
+          onStreetMatch={(sa2Code16, mbCodes) => void openStreetMatch(sa2Code16, mbCodes)}
+        />
+        </>}
+        {suburb && (!selectedBlock || future) && <button className="map-back-button" type="button" onClick={showAllSuburbs}>← Back to all suburbs</button>}
 
         {future && <div className="projection-detail" aria-live="polite">
           <span>{warmingLabel(warmingLevel)} global warming</span>
@@ -681,6 +709,7 @@ export function MelbourneMapPage() {
           <p className="projection-context">Climate projections by warming level, not an exact forecast for 2050. Added trees provide shade; this dataset does not measure their effect on hot-day counts.</p>
           {savedTrees > 0 && <p className="projection-saved">Your {savedTrees.toLocaleString()} added {savedTrees === 1 ? "tree is" : "trees are"} saved. Switch to 🌳 to explore canopy and cooling.</p>}
           {suburb && <button className="projection-planting-link" type="button" onClick={async () => {
+            setBlockTab("Plant");
             await toggleFuture();
             if (!futureRef.current && loadedSuburbRef.current === suburb.sa2_code16) {
               setPlantingNotice(selectedBlock ? "" : `Pick a block in ${suburb.sa2_name} to add trees and explore its mature canopy and cooling.`);
@@ -699,55 +728,22 @@ export function MelbourneMapPage() {
           </div>
         )}
 
-        {!future && (blockLoading || selectedBlock) && (
-          <div ref={detailRef} className="mesh-detail-card">
-            {blockLoading && !selectedBlock ? <p>Reading this mesh block…</p> : selectedBlock && (
-              <>
-                <div className="mesh-detail-heading">
-                  <span>Selected mesh block details</span>
-                  <strong className="mesh-detail-streets">{selectedBlock.streets.length ? selectedBlock.streets.join(", ") : `Block ${selectedBlock.block.mb_code16}`}</strong>
-                  <small className="mesh-detail-suburb">{selectedBlock.block.sa2_name}, {selectedBlock.block.lga_name}</small>
-                </div>
-                <dl>
-                  <div className="metric-item">
-                    <dt>{comparison === "after" && addedTrees ? "Modelled heat" : "Surface heat"}</dt>
-                    <MetricHelp label="About surface heat">{addedTrees && comparison === "after" ? "Modelled surface heat after mature tree planting, relative to non-urban land, using the 2018 baseline climate conditions." : "2018 satellite surface heat above non-urban land."}</MetricHelp>
-                    <dd>{displayed ? `${displayed.heat.toFixed(1)}°C` : selectedBlock.block.uhi_mean == null ? "Not available" : `${selectedBlock.block.uhi_mean.toFixed(1)}°C`}</dd>
-                  </div>
-                  <div className="metric-item">
-                    <dt>Tree canopy</dt>
-                    <MetricHelp label="About tree canopy">{addedTrees && comparison === "after" ? "Baseline tree canopy plus the mature canopy of your added trees." : "Tree canopy cover in this block, measured in 2018."}</MetricHelp>
-                    <dd>{displayed ? `${displayed.canopy.toFixed(1)}%` : selectedBlock.block.canopy_pct == null ? "Not available" : `${selectedBlock.block.canopy_pct.toFixed(1)}%`}</dd>
-                  </div>
-                  <div className="metric-item"><dt>Category</dt><dd>{selectedBlock.block.mb_category || "Not classified"}</dd></div>
-                  <div className="metric-item"><dt>Population</dt><dd>{selectedBlock.block.persons?.toLocaleString() ?? "Not published"}</dd></div>
-                </dl>
-                <section className="block-comparisons" aria-labelledby="block-comparisons-heading">
-                  <div className="block-comparisons-heading">
-                    <span id="block-comparisons-heading">Compare this block</span>
-                    <small>Residential blocks</small>
-                  </div>
-                  <div className="comparison-grid">
-                    {selectedBlock.comparisons.map((comparison) => (
-                      <ComparisonCard
-                        key={comparison.area_type}
-                        label={comparison.area_type === "METRO" ? "Metro average" : `${comparison.area_name} average`}
-                        uhiMean={comparison.uhi_mean}
-                        canopyMean={comparison.canopy_mean}
-                      />
-                    ))}
-                    <ComparisonCard
-                      label="Coolest block in council"
-                      uhiMean={selectedBlock.coolest_in_lga?.uhi_mean ?? null}
-                      canopyMean={selectedBlock.coolest_in_lga?.canopy_pct ?? null}
-                    />
-                  </div>
-                </section>
-                <BlockPlanting model={model} trees={addedTrees} onChange={changeTrees} />
-              </>
-            )}
-          </div>
-        )}
+        {!future && blockLoading && <p role="status">Reading this mesh block…</p>}
+        {!future && selectedBlock && <SelectedBlockPanel key={`block-panel-${selectedBlock.block.mb_code16}`}
+          detail={selectedBlock} suburb={suburb}
+          heat={displayed?.heat ?? selectedBlock.block.uhi_mean}
+          canopy={displayed?.canopy ?? selectedBlock.block.canopy_pct}
+          modelled={comparison === "after" && addedTrees > 0 && !!displayed}
+          tab={blockTab} onTab={setBlockTab}
+          onBack={() => {
+            setSelectedBlock(null);
+            setBlockTab("Overview");
+            panelRef.current?.scrollTo({ top: 0 });
+            mapRef.current?.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
+          }}>
+          <BlockPlanting model={model} trees={addedTrees} onChange={changeTrees} />
+        </SelectedBlockPanel>}
+        <div hidden={!!selectedBlock && blockTab !== "Plant"}>
         {!future && suburb && (selectedBlock || scenarios.length > 0) && <div className="planting-controls">
           <div className="planting-map-toggle" role="group" aria-label="Compare map before and after planting">
             <button type="button" aria-pressed={comparison === "before"} onClick={() => setComparison("before")}>Before</button>
@@ -767,6 +763,7 @@ export function MelbourneMapPage() {
             </li>)}
           </ul> : <p className="planted-blocks-empty">Blocks appear here when you add trees.</p>}
         </details>}
+        </div>
         {!future && plantingNotice && <p className="planting-notice" role="status">{plantingNotice}</p>}
       </section>
 
@@ -781,24 +778,6 @@ export function MelbourneMapPage() {
       {mapError && <div className="map-page-error" role="alert">{mapError}</div>}
       {basemapUnavailable && !mapError && <div className="map-basemap-notice" role="status">Background map unavailable. Suburb and block data remain available.</div>}
     </main>
-  );
-}
-
-function ComparisonCard({
-  label,
-  uhiMean,
-  canopyMean,
-}: {
-  label: string;
-  uhiMean: number | null;
-  canopyMean: number | null;
-}) {
-  return (
-    <div className="comparison-card">
-      <span>{label}</span>
-      <strong>{uhiMean == null ? "—" : `${uhiMean.toFixed(1)}°C`}</strong>
-      <small>{canopyMean == null ? "Canopy unavailable" : `${canopyMean.toFixed(1)}% canopy`}</small>
-    </div>
   );
 }
 
