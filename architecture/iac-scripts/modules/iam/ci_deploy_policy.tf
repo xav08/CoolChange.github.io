@@ -48,8 +48,8 @@ data "aws_iam_policy_document" "ci_deploy" {
       "s3:ListBucket",
     ]
     resources = [
-      "arn:aws:s3:::${var.name_prefix}-frontend",
-      "arn:aws:s3:::${var.name_prefix}-frontend/*",
+      "arn:aws:s3:::${var.name_prefix}-frontend-${data.aws_caller_identity.current.account_id}",
+      "arn:aws:s3:::${var.name_prefix}-frontend-${data.aws_caller_identity.current.account_id}/*", 
     ]
   }
 

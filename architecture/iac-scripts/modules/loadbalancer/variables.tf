@@ -70,3 +70,9 @@ variable "health_check_path" {
   # causing every request through the ALB to 504, even once the backend
   # itself was fully working.
 }
+
+variable "extra_domain_names" {
+  description = "Additional hostnames on the ALB certificate, e.g. api1.coolchange.me"
+  type        = list(string)
+  default     = []
+}

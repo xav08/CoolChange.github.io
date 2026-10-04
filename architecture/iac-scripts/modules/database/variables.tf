@@ -30,7 +30,7 @@ variable "engine_version" {
   description = "PostgreSQL engine version"
   type        = string
   default     = "16.15" # 16.4 isn't offered in ap-southeast-4 — confirmed
-                        # available versions via `aws rds describe-db-engine-versions`
+  # available versions via `aws rds describe-db-engine-versions`
 }
 
 variable "instance_class" {

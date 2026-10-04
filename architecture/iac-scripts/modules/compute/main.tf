@@ -4,8 +4,8 @@
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical's official AWS publishing account —
-                                  # restricting to this prevents accidentally
-                                  # picking a similarly-named lookalike AMI
+  # restricting to this prevents accidentally
+  # picking a similarly-named lookalike AMI
 
   filter {
     name   = "name"
@@ -33,11 +33,11 @@ resource "aws_instance" "backend" {
   # Renders templates/user_data.sh.tpl with these values substituted in,
   # then runs the result once on first boot.
   user_data = templatefile("${path.module}/templates/user_data.sh.tpl", {
-    aws_region             = var.aws_region
-    repo_ssh_url            = var.github_repo_ssh_url
-    deploy_key_secret_arn  = var.deploy_key_secret_arn
-    db_secret_arn          = var.db_secret_arn
-    app_port                = var.app_port
+    aws_region            = var.aws_region
+    repo_ssh_url          = var.github_repo_ssh_url
+    deploy_key_secret_arn = var.deploy_key_secret_arn
+    db_secret_arn         = var.db_secret_arn
+    app_port              = var.app_port
   })
 
   # Without this, the AWS provider's default behavior is to update

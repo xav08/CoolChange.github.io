@@ -19,7 +19,7 @@ data "aws_cloudfront_cache_policy" "caching_optimized" {
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
-  aliases             = [var.domain_name]
+  aliases             = var.attach_primary_alias ? concat([var.domain_name], var.extra_domain_names) : var.extra_domain_names
 
   # PriceClass_100 = cheapest tier, uses edge locations in North America
   # and Europe only. Visitors elsewhere (including Melbourne) still get

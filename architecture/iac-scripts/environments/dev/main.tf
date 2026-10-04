@@ -56,7 +56,7 @@ module "compute" {
   github_repo_ssh_url   = local.github_repo_ssh_url
   deploy_key_secret_arn = module.secrets.secret_arns["github-deploy-key"]
   db_secret_arn         = module.database.db_secret_arn
-  aws_region             = var.region
+  aws_region            = var.region
 }
 
 module "loadbalancer" {
@@ -65,14 +65,15 @@ module "loadbalancer" {
   name_prefix = local.name_prefix
   common_tags = local.common_tags
 
-  vpc_id                     = module.networking.vpc_id
-  public_subnet_ids          = module.networking.public_subnet_ids
-  alb_security_group_id      = module.networking.alb_security_group_id
-  backend_security_group_id  = module.networking.backend_security_group_id
+  vpc_id                    = module.networking.vpc_id
+  public_subnet_ids         = module.networking.public_subnet_ids
+  alb_security_group_id     = module.networking.alb_security_group_id
+  backend_security_group_id = module.networking.backend_security_group_id
 
   backend_instance_id = module.compute.instance_id
 
-  domain_name = local.backend_domain_name
+  domain_name        = local.backend_domain_name
+  extra_domain_names = [local.backend_test_domain_name]
 
   # app_port passed explicitly from the same shared local as the compute
   # module above, so the two can no longer drift out of sync the way
@@ -91,14 +92,16 @@ module "frontend" {
   # configuration_aliases declaration in acm.tf is what makes it able to
   # accept this second one at all.
   providers = {
-    aws            = aws
-    aws.us_east_1  = aws.us_east_1
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
   }
 
   name_prefix = local.name_prefix
   common_tags = local.common_tags
 
-  domain_name = "www.${local.domain_name}"
+  domain_name          = "www.${local.domain_name}"
+  extra_domain_names   = [local.frontend_test_domain_name]
+  attach_primary_alias = local.frontend_attach_primary_alias
 }
 
 module "secrets" {
