@@ -1,9 +1,11 @@
+data "aws_caller_identity" "current" {}
+
 # Private bucket holding the built frontend (HTML/JS/CSS). Nothing here
 # is ever reached directly — only CloudFront is allowed to read from it
 # (see cloudfront.tf), matching the security plan's requirement that the
 # frontend bucket stays private and is served only through CloudFront.
 resource "aws_s3_bucket" "frontend" {
-  bucket = "${var.name_prefix}-frontend"
+  bucket = "${var.name_prefix}-frontend-${data.aws_caller_identity.current.account_id}"
 
   tags = merge(var.common_tags, {
     Name = "${var.name_prefix}-frontend"

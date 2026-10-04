@@ -1,10 +1,10 @@
 # Internet -> ALB: anyone can reach the load balancer on plain HTTP...
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   security_group_id = var.alb_security_group_id
-  cidr_ipv4          = "0.0.0.0/0"
-  from_port          = 80
-  to_port            = 80
-  ip_protocol        = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
 
   description = "Allow inbound HTTP from anywhere (redirected to HTTPS)"
 }
@@ -12,10 +12,10 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http" {
 # ...and on HTTPS, which is the one that actually serves traffic.
 resource "aws_vpc_security_group_ingress_rule" "alb_https" {
   security_group_id = var.alb_security_group_id
-  cidr_ipv4          = "0.0.0.0/0"
-  from_port          = 443
-  to_port            = 443
-  ip_protocol        = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
 
   description = "Allow inbound HTTPS from anywhere"
 }

@@ -16,10 +16,10 @@ resource "aws_vpc_security_group_ingress_rule" "backend_from_alb" {
 # added in Phase 3.
 resource "aws_vpc_security_group_egress_rule" "backend_to_internet_https" {
   security_group_id = var.backend_security_group_id
-  cidr_ipv4          = "0.0.0.0/0"
-  from_port          = 443
-  to_port            = 443
-  ip_protocol        = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
 
   description = "Allow outbound HTTPS to anywhere"
 }
@@ -33,10 +33,10 @@ resource "aws_vpc_security_group_egress_rule" "backend_to_internet_https" {
 # specific case.
 resource "aws_vpc_security_group_egress_rule" "backend_to_internet_http" {
   security_group_id = var.backend_security_group_id
-  cidr_ipv4          = "0.0.0.0/0"
-  from_port          = 80
-  to_port            = 80
-  ip_protocol        = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
 
   description = "Allow outbound HTTP to anywhere (needed for apt package mirrors)"
 }
@@ -58,10 +58,10 @@ resource "aws_vpc_security_group_ingress_rule" "ssh" {
   for_each = toset(var.admin_cidr_blocks)
 
   security_group_id = var.backend_security_group_id
-  cidr_ipv4          = each.value
-  from_port          = 22
-  to_port            = 22
-  ip_protocol        = "tcp"
+  cidr_ipv4         = each.value
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
 
   description = "Direct SSH access (admin_cidr_blocks override)"
 }

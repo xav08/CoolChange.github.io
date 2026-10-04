@@ -37,6 +37,12 @@ locals {
   # app's port ever changes, instead of hunting through multiple files.
   backend_app_port = 3000
 
-  # trigger CI test
-  # debug run 2
+  # Test hostnames for the account migration — the new stack serves these
+  # before cutover. The real www/api names move across in Step 15.
+  frontend_test_domain_name = "www1.${local.domain_name}"
+  backend_test_domain_name  = "api1.${local.domain_name}"
+
+  # False until cutover: the old AWS account's CloudFront distribution still
+  # owns www.coolchange.me, and CloudFront aliases are exclusive across accounts.
+  frontend_attach_primary_alias = false
 }

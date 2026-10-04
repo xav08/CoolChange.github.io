@@ -11,7 +11,7 @@
 # After the first apply, this config is essentially never touched again.
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "coolchange-terraform-state"
+  bucket = "coolchange-terraform-state-177835492852"
 
   # Guards against `terraform destroy` accidentally wiping out state
   # for every other environment.

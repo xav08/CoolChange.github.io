@@ -60,7 +60,7 @@ resource "aws_lb_target_group" "backend" {
 resource "aws_lb_target_group_attachment" "backend" {
   target_group_arn = aws_lb_target_group.backend.arn
   target_id        = var.backend_instance_id
-  port              = var.app_port
+  port             = var.app_port
 }
 
 # Port 80: no plaintext traffic served, just an immediate redirect to

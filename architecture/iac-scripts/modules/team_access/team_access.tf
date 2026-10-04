@@ -10,7 +10,7 @@ variable "team_members" {
   description = "IAM usernames to create, one per team member (e.g. first names or GitHub handles)"
   type        = list(string)
   # Replace with your actual team roster before applying.
-  default     = ["savio", "priyanshu", "yu", "yipu", "sheng", "linda"]
+  default = ["savio", "priyanshu", "yu", "yipu", "sheng", "linda"]
 }
 
 variable "secret_prefix" {
