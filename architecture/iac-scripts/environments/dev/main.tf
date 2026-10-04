@@ -117,7 +117,10 @@ module "secrets" {
   # 2's IAM policy, and referenced by the compute module above via
   # module.secrets.secret_arns["github-deploy-key"].
   app_secrets = {
-    "github-deploy-key" = var.backend_deploy_key
+    # Normalised so the local tfvars value and CI's BACKEND_DEPLOY_KEY secret
+    # always produce identical bytes (strip CRs and surrounding whitespace,
+    # end with exactly one newline) — otherwise CI sees a spurious change.
+    "github-deploy-key" = "${replace(trimspace(var.backend_deploy_key), "\r", "")}\n"
   }
 }
 
