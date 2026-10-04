@@ -15,5 +15,5 @@ output "db_port" {
 
 output "db_secret_arn" {
   description = "ARN of the Secrets Manager secret holding DB connection info"
-  value       = aws_secretsmanager_secret.db.arn
+  value       = aws_secretsmanager_secret_version.db.arn
 }

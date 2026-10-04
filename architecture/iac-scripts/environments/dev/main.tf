@@ -36,11 +36,6 @@ module "database" {
 }
 
 module "compute" {
-  # The boot script reads the DB secret's value (written only after RDS is up)
-  # and the deploy-key secret at first boot — wait for both, or a fresh
-  # single-apply build races them and user_data fails.
-  depends_on = [module.database, module.secrets]
-  
   source = "../../modules/compute"
 
   name_prefix = local.name_prefix
