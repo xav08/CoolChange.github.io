@@ -48,6 +48,10 @@ FILES = {                          # plain HTTP downloads
         "https://www.abs.gov.au/ausstats/subscriber.nsf/log?openagent"
         "&2033055001 - sa1 indexes.xls&2033.0.55.001&Data Cubes"
         "&40A0EFDE970A1511CA25825D000F8E8D&0&2016&27.03.2018&Latest",
+    "seifa_2016_sa2_indexes.xls":          # Epic 7 equity analysis
+        "https://www.abs.gov.au/ausstats/subscriber.nsf/log?openagent"
+        "&2033055001 - sa2 indexes.xls&2033.0.55.001&Data Cubes"
+        "&C9F7AD36397CB43DCA25825D000F917C&0&2016&27.03.2018&Latest",
     "UHI-and-HVI2018_Report_v1.pdf":
         "https://www.planning.vic.gov.au/__data/assets/pdf_file/0032/"
         "655826/UHI-and-HVI2018_Report_v1.pdf",

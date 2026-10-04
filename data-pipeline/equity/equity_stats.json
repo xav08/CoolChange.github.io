@@ -1,0 +1,419 @@
+{
+  "generated": "2026-10-03",
+  "script": "data-pipeline/08_build_equity_sa2.py",
+  "stories": [
+    "7.1.1",
+    "7.1.2"
+  ],
+  "unit_of_analysis": "SA2 (ASGS 2016)",
+  "n_sa2_total": 303,
+  "n_sa2_analysed": 295,
+  "persons_analysed": 4344664,
+  "min_persons_per_sa2": 500,
+  "seifa_index": "IRSD (Index of Relative Socio-economic Disadvantage), ABS 2033.0.55.001, 2016, SA2 Table 1",
+  "decile_definition": "ABS national ranking of SA2s (1 = most disadvantaged 10% of SA2s in Australia)",
+  "aggregation": "population-weighted mean of mesh-block values (weights = 2016 Census usual residents)",
+  "heat_measure": "uhi_mean: summer surface heat, degrees C above non-urban baseline (DTP 2018)",
+  "canopy_measure": "canopy_pct: % of area under tree canopy (DTP 2018)",
+  "x_variable": "irsd_score (higher = less disadvantaged)",
+  "bootstrap": {
+    "resamples": 10000,
+    "seed": 20261004,
+    "caveat": "SA2s are spatially autocorrelated, so these intervals are likely somewhat too narrow."
+  },
+  "primary": {
+    "heat": {
+      "pearson_r": -0.3628,
+      "pearson_r_ci95": [
+        -0.4394,
+        -0.2856
+      ],
+      "r_squared": 0.1316,
+      "spearman_rho": -0.4604,
+      "spearman_rho_ci95": [
+        -0.5441,
+        -0.3666
+      ],
+      "ols_slope_per_100_irsd": -0.938,
+      "ols_slope_per_100_irsd_ci95": [
+        -1.18,
+        -0.72
+      ]
+    },
+    "canopy": {
+      "pearson_r": 0.4576,
+      "pearson_r_ci95": [
+        0.3988,
+        0.52
+      ],
+      "r_squared": 0.2094,
+      "spearman_rho": 0.5848,
+      "spearman_rho_ci95": [
+        0.4996,
+        0.6589
+      ],
+      "ols_slope_per_100_irsd": 5.3341,
+      "ols_slope_per_100_irsd_ci95": [
+        4.38,
+        6.43
+      ]
+    }
+  },
+  "decile_gap": {
+    "uhi_decile1": 9.75,
+    "uhi_decile10": 7.33,
+    "uhi_gap_c": 2.42,
+    "canopy_decile1": 6.61,
+    "canopy_decile10": 20.32,
+    "canopy_ratio_10_to_1": 3.07,
+    "sa2_uhi_sd": 1.71,
+    "sa2_canopy_sd": 7.69
+  },
+  "by_decile": [
+    {
+      "irsd_decile": 1,
+      "n_sa2": 17,
+      "persons": 289607,
+      "irsd_score_mean": 852.5,
+      "uhi_mean": 9.75,
+      "canopy_pct": 6.61
+    },
+    {
+      "irsd_decile": 2,
+      "n_sa2": 17,
+      "persons": 260888,
+      "irsd_score_mean": 921.9,
+      "uhi_mean": 9.11,
+      "canopy_pct": 9.33
+    },
+    {
+      "irsd_decile": 3,
+      "n_sa2": 19,
+      "persons": 304239,
+      "irsd_score_mean": 955.3,
+      "uhi_mean": 9.4,
+      "canopy_pct": 8.73
+    },
+    {
+      "irsd_decile": 4,
+      "n_sa2": 15,
+      "persons": 242344,
+      "irsd_score_mean": 978.1,
+      "uhi_mean": 9.03,
+      "canopy_pct": 8.3
+    },
+    {
+      "irsd_decile": 5,
+      "n_sa2": 26,
+      "persons": 383280,
+      "irsd_score_mean": 996.0,
+      "uhi_mean": 9.65,
+      "canopy_pct": 9.62
+    },
+    {
+      "irsd_decile": 6,
+      "n_sa2": 28,
+      "persons": 423069,
+      "irsd_score_mean": 1019.6,
+      "uhi_mean": 8.53,
+      "canopy_pct": 11.4
+    },
+    {
+      "irsd_decile": 7,
+      "n_sa2": 38,
+      "persons": 563876,
+      "irsd_score_mean": 1037.2,
+      "uhi_mean": 8.75,
+      "canopy_pct": 11.99
+    },
+    {
+      "irsd_decile": 8,
+      "n_sa2": 47,
+      "persons": 662897,
+      "irsd_score_mean": 1057.8,
+      "uhi_mean": 8.93,
+      "canopy_pct": 13.11
+    },
+    {
+      "irsd_decile": 9,
+      "n_sa2": 53,
+      "persons": 756576,
+      "irsd_score_mean": 1075.2,
+      "uhi_mean": 8.18,
+      "canopy_pct": 14.88
+    },
+    {
+      "irsd_decile": 10,
+      "n_sa2": 35,
+      "persons": 457888,
+      "irsd_score_mean": 1102.6,
+      "uhi_mean": 7.33,
+      "canopy_pct": 20.32
+    }
+  ],
+  "sensitivity": {
+    "unweighted_block_mean": {
+      "heat": {
+        "pearson_r": -0.3762,
+        "pearson_r_ci95": [
+          -0.454,
+          -0.2976
+        ],
+        "r_squared": 0.1415,
+        "spearman_rho": -0.4808,
+        "spearman_rho_ci95": [
+          -0.5622,
+          -0.3882
+        ],
+        "ols_slope_per_100_irsd": -0.9703,
+        "ols_slope_per_100_irsd_ci95": [
+          -1.21,
+          -0.76
+        ]
+      },
+      "canopy": {
+        "pearson_r": 0.4616,
+        "pearson_r_ci95": [
+          0.3998,
+          0.5255
+        ],
+        "r_squared": 0.2131,
+        "spearman_rho": 0.5818,
+        "spearman_rho_ci95": [
+          0.4972,
+          0.6554
+        ],
+        "ols_slope_per_100_irsd": 5.2245,
+        "ols_slope_per_100_irsd_ci95": [
+          4.3,
+          6.28
+        ]
+      }
+    },
+    "residential_blocks_only": {
+      "n_sa2": 293,
+      "heat": {
+        "pearson_r": -0.3592,
+        "pearson_r_ci95": [
+          -0.4367,
+          -0.282
+        ],
+        "r_squared": 0.129,
+        "spearman_rho": -0.4555,
+        "spearman_rho_ci95": [
+          -0.5402,
+          -0.363
+        ],
+        "ols_slope_per_100_irsd": -0.9183,
+        "ols_slope_per_100_irsd_ci95": [
+          -1.15,
+          -0.71
+        ]
+      },
+      "canopy": {
+        "pearson_r": 0.4586,
+        "pearson_r_ci95": [
+          0.3989,
+          0.5205
+        ],
+        "r_squared": 0.2103,
+        "spearman_rho": 0.5806,
+        "spearman_rho_ci95": [
+          0.493,
+          0.6539
+        ],
+        "ols_slope_per_100_irsd": 5.2863,
+        "ols_slope_per_100_irsd_ci95": [
+          4.37,
+          6.37
+        ]
+      }
+    },
+    "within_sa4_region": {
+      "what": "Each SA2 compared only with others in its own SA4 region (values demeaned by SA4). Asks: is the gradient still there once broad geography (west vs east, inner vs outer) is held constant?",
+      "n_sa4": 9,
+      "heat_pearson_r": -0.1731,
+      "canopy_pearson_r": 0.3209
+    },
+    "metro_quintiles": [
+      {
+        "metro_quintile": 1,
+        "n_sa2": 62,
+        "persons": 1001643,
+        "irsd_score_mean": 919.8,
+        "uhi_mean": 9.39,
+        "canopy_pct": 8.0
+      },
+      {
+        "metro_quintile": 2,
+        "n_sa2": 59,
+        "persons": 891148,
+        "irsd_score_mean": 1005.4,
+        "uhi_mean": 9.05,
+        "canopy_pct": 10.48
+      },
+      {
+        "metro_quintile": 3,
+        "n_sa2": 56,
+        "persons": 797159,
+        "irsd_score_mean": 1041.2,
+        "uhi_mean": 8.75,
+        "canopy_pct": 12.4
+      },
+      {
+        "metro_quintile": 4,
+        "n_sa2": 59,
+        "persons": 853331,
+        "irsd_score_mean": 1065.1,
+        "uhi_mean": 8.58,
+        "canopy_pct": 13.84
+      },
+      {
+        "metro_quintile": 5,
+        "n_sa2": 59,
+        "persons": 801383,
+        "irsd_score_mean": 1093.8,
+        "uhi_mean": 7.72,
+        "canopy_pct": 18.08
+      }
+    ],
+    "well_covered_sa2s_only": {
+      "what": "Only SA2s where our blocks hold >= 80% of the ABS usual resident population.",
+      "n_sa2": 279,
+      "heat_pearson_r": -0.3499,
+      "canopy_pearson_r": 0.4801
+    },
+    "including_small_sa2s": {
+      "n_sa2": 299,
+      "heat_pearson_r": -0.3607,
+      "canopy_pearson_r": 0.4372
+    },
+    "block_level_reference": {
+      "what": "Same correlation computed on individual mesh blocks with SA1 SEIFA. Reported only to show how much aggregation strengthens r (ecological correlation). Not part of the product output.",
+      "n_blocks": 52762,
+      "heat_pearson_r": -0.2534,
+      "canopy_pearson_r": 0.2773
+    }
+  },
+  "sanity_check": {
+    "most_disadvantaged_5": [
+      {
+        "sa2_name": "Broadmeadows",
+        "irsd_score": 782.0,
+        "irsd_decile": 1,
+        "uhi_mean": 9.26,
+        "canopy_pct": 8.56
+      },
+      {
+        "sa2_name": "Campbellfield - Coolaroo",
+        "irsd_score": 798.0,
+        "irsd_decile": 1,
+        "uhi_mean": 9.37,
+        "canopy_pct": 6.2
+      },
+      {
+        "sa2_name": "Meadow Heights",
+        "irsd_score": 821.0,
+        "irsd_decile": 1,
+        "uhi_mean": 9.57,
+        "canopy_pct": 6.28
+      },
+      {
+        "sa2_name": "Doveton",
+        "irsd_score": 826.0,
+        "irsd_decile": 1,
+        "uhi_mean": 8.34,
+        "canopy_pct": 8.52
+      },
+      {
+        "sa2_name": "St Albans - South",
+        "irsd_score": 832.0,
+        "irsd_decile": 1,
+        "uhi_mean": 10.85,
+        "canopy_pct": 5.17
+      }
+    ],
+    "least_disadvantaged_5": [
+      {
+        "sa2_name": "Glen Iris - East",
+        "irsd_score": 1125.0,
+        "irsd_decile": 10,
+        "uhi_mean": 7.48,
+        "canopy_pct": 18.98
+      },
+      {
+        "sa2_name": "Ivanhoe East - Eaglemont",
+        "irsd_score": 1121.0,
+        "irsd_decile": 10,
+        "uhi_mean": 7.21,
+        "canopy_pct": 24.59
+      },
+      {
+        "sa2_name": "East Melbourne",
+        "irsd_score": 1120.0,
+        "irsd_decile": 10,
+        "uhi_mean": 7.78,
+        "canopy_pct": 16.82
+      },
+      {
+        "sa2_name": "Beaumaris",
+        "irsd_score": 1117.0,
+        "irsd_decile": 10,
+        "uhi_mean": 6.93,
+        "canopy_pct": 19.76
+      },
+      {
+        "sa2_name": "Research - North Warrandyte",
+        "irsd_score": 1117.0,
+        "irsd_decile": 10,
+        "uhi_mean": 4.97,
+        "canopy_pct": 38.53
+      }
+    ],
+    "exceptions_hot_and_advantaged": [
+      {
+        "sa2_name": "Beaconsfield - Officer",
+        "irsd_score": 1071.0,
+        "irsd_decile": 9,
+        "uhi_mean": 11.77,
+        "canopy_pct": 7.43
+      },
+      {
+        "sa2_name": "Point Cook - South",
+        "irsd_score": 1082.0,
+        "irsd_decile": 9,
+        "uhi_mean": 11.22,
+        "canopy_pct": 2.95
+      },
+      {
+        "sa2_name": "Gowanbrae",
+        "irsd_score": 1074.0,
+        "irsd_decile": 9,
+        "uhi_mean": 10.93,
+        "canopy_pct": 5.64
+      },
+      {
+        "sa2_name": "Strathmore",
+        "irsd_score": 1097.0,
+        "irsd_decile": 10,
+        "uhi_mean": 9.88,
+        "canopy_pct": 11.42
+      },
+      {
+        "sa2_name": "Dingley Village",
+        "irsd_score": 1070.0,
+        "irsd_decile": 9,
+        "uhi_mean": 9.88,
+        "canopy_pct": 12.39
+      },
+      {
+        "sa2_name": "Aspendale Gardens - Waterways",
+        "irsd_score": 1088.0,
+        "irsd_decile": 9,
+        "uhi_mean": 9.86,
+        "canopy_pct": 8.9
+      }
+    ],
+    "exceptions_cool_and_disadvantaged": []
+  }
+}

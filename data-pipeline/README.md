@@ -31,6 +31,7 @@ python3 data-pipeline/download_data.py --geometry
 | D2 | ACS Temperature extremes, days per year ≥ 35 °C, by global warming level | CC BY 4.0 |
 | D3 | ABS 2016 Census Mesh Block Counts (cat. 2074.0) | CC BY 4.0 |
 | D4 | ABS SEIFA 2016, SA1 indexes (cat. 2033.0.55.001) | CC BY 4.0 |
+| D4b | ABS SEIFA 2016, SA2 indexes (cat. 2033.0.55.001, Table 1) — Epic 7 equity analysis only | CC BY 4.0 |
 | D5 | VicMap Address (DataVic) — statewide address points, used for street-level search | CC BY 4.0 |
 
 D5 is the slow one: ~4.2M rows statewide, no server-side filter to our study
@@ -50,6 +51,7 @@ python3 data-pipeline/02_build_mesh_block.py          # D1 + D3 + D4  -> 3 CSVs
 python3 data-pipeline/03_build_projections.py         # D2 spatial join -> 1 CSV
 python3 data-pipeline/07_reconcile_mesh_block.py      # D5 -> corrected 2016 mesh_block
 python3 data-pipeline/05_build_street_mesh_block.py   # reconciled D5, collapsed -> 2 CSVs
+python3 data-pipeline/08_build_equity_sa2.py          # Epic 7: SA2 heat/canopy vs SEIFA -> data-pipeline/equity/
 ```
 
 `07_` needs `DATABASE_URL` set (same variable used below) and a GIST index on
@@ -74,6 +76,18 @@ cd src/db/seeds && psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f load_seeds.sql
 | `model_coefficient.csv` | 1 | the fitted canopy/heat relationship |
 | `street.csv` | 65,015 | distinct streets, restricted to our study area |
 | `street_mesh_block.csv` | 178,762 | which block(s) each street touches, with an address count per block |
+
+`08_build_equity_sa2.py` writes outside the seeds folder, because nothing it
+produces goes into the database — the About-page chart reads a static file:
+
+| File | Rows | What |
+|---|---|---|
+| `equity/equity_sa2.csv` | 303 | heat, canopy and SEIFA IRSD per SA2; 295 flagged `included_in_analysis` |
+| `equity/equity_by_decile.csv` | 10 | population-weighted heat and canopy per SEIFA decile |
+| `equity/equity_stats.json` | — | every statistic, sensitivity run and sanity check |
+| `frontend/src/data/equitySeifa.json` | — | chart-ready bundle for the About page (28 KB, committed) |
+
+Method, results and the honest reading of them: [`equity/EQUITY_ANALYSIS.md`](equity/EQUITY_ANALYSIS.md).
 
 ## Validation
 

@@ -17,6 +17,8 @@ D1 = "meshblocks_attributes.csv"
 D2 = "acs_days_over_35.geojson"
 D3 = "2016_census_mesh_block_counts.csv"
 D4 = "seifa_2016_sa1_indexes.xls"
+D4_SA2 = "seifa_2016_sa2_indexes.xls"          # Epic 7 equity analysis (08_)
+D4_SA2_ABS_NAME = "2033055001 - sa2 indexes.xls"  # same file, as the ABS names it
 D5 = "vicmap_address.csv"
 GEOM = "meshblocks.geojson"
 
@@ -84,6 +86,29 @@ def load_d4():
     s.to_csv(cached, index=False)
     return s
 
+
+def load_d4_sa2():
+    """SEIFA 2016 SA2 indexes (ABS 2033.0.55.001, Table 1) -- Epic 7.
+
+    One row per SA2, Australia-wide. Deciles are the ABS's own NATIONAL
+    ranking of SA2s, not a Melbourne-only ranking. Accepts the file under
+    either our name or the name the ABS download gives it.
+
+    Same '-' suppression trap as load_d4(): coerce to numeric so a
+    suppressed score becomes a real NaN, not the string "-".
+    """
+    name = D4_SA2
+    if not os.path.exists(os.path.join(RAW, name)) and \
+            os.path.exists(os.path.join(RAW, D4_SA2_ABS_NAME)):
+        name = D4_SA2_ABS_NAME
+    cols = ["SA2_9", "SA2_NAME", "IRSD", "IRSD_dec", "IRSAD", "IRSAD_dec",
+            "IER", "IER_dec", "IEO", "IEO_dec", "URP"]
+    s = pd.read_excel(raw(name), sheet_name="Table 1", header=None, skiprows=6, names=cols)
+    s = s[pd.to_numeric(s.SA2_9, errors="coerce").notna()].copy()
+    s["SA2_9"] = s.SA2_9.astype("int64").astype(str)
+    for c in ["IRSD", "IRSD_dec", "URP"]:
+        s[c] = pd.to_numeric(s[c], errors="coerce")
+    return s[["SA2_9", "SA2_NAME", "IRSD", "IRSD_dec", "URP"]]
 
 def load_d5():
     """VicMap Address, one row per street address point (statewide, unfiltered).
