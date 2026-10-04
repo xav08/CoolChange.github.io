@@ -168,7 +168,7 @@ footer p { max-width: 350px; margin: 9px 0 0; color: #91aa98; font-size: 12px; l
 .metric-help > button { display: grid; width: 20px; height: 20px; padding: 0; place-items: center; border: 1px solid #799083; border-radius: 50%; background: transparent; color: #416153; font: inherit; cursor: help; }
 .metric-help > button:focus-visible { outline: 2px solid #237966; outline-offset: 3px; }
 .metric-help:focus-within .metric-help-tooltip, .metric-help.is-open .metric-help-tooltip { visibility: visible; opacity: 1; }
-.block-planting { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 22px; }
+.block-planting { margin-top: 20px; border-top: 1px solid var(--line); padding: 22px; border-radius:20px; }
 .planting-heading { position: relative; display: flex; align-items: center; justify-content: space-between; }
 .planting-heading h2 { margin: 5px 0 0; color: var(--deep-green); font-family: Georgia, serif; font-size: 29px; font-weight: 500; letter-spacing: -0.03em; }
 .planting-eyebrow { color: #61796c; font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
