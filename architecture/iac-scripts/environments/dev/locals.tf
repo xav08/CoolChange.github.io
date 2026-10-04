@@ -44,5 +44,5 @@ locals {
 
   # False until cutover: the old AWS account's CloudFront distribution still
   # owns www.coolchange.me, and CloudFront aliases are exclusive across accounts.
-  frontend_attach_primary_alias = false
+  frontend_attach_primary_alias = true
 }
