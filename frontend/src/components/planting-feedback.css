@@ -13,6 +13,18 @@
 .planting-result-rows > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 12px; }
 .planting-result-rows dd { display: flex; align-items: baseline; gap: 8px; margin: 0; font-variant-numeric: tabular-nums; }
 .planting-result-rows strong { color: var(--deep-green); }
+.planting-slider-scale { position: relative; display: flex; justify-content: space-between; margin: 3px 48px 12px; color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; }
+.planting-slider-scale i { position: absolute; top: -6px; height: 5px; width: 1px; background: var(--deep-green); }
+.planting-slider-scale .is-limit { text-decoration: underline; text-underline-offset: 3px; }
+.planting-milestones button { display: flex; justify-content: space-between; align-items: baseline; width: 100%; gap: 12px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); padding: 9px 0; font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+.planting-milestones strong { white-space: nowrap; color: var(--deep-green); }
+.planting-milestones p { color: var(--ink); font-size: 11px; line-height: 1.5; }
+.planting-milestones p.is-limit { font-weight: 650; }
+.hold-before button { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--deep-green); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; touch-action: none; user-select: none; -webkit-touch-callout: none; }
+.hold-before button[aria-pressed="true"] { background: var(--deep-green); color: var(--paper); }
+.hold-before button:disabled { opacity: 0.5; cursor: default; }
+.hold-before p { color: var(--ink); font-size: 11px; line-height: 1.5; }
+.hold-before button:focus-visible, .planting-milestones button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .block-planting *, .selected-block-metrics * { animation: none !important; transition: none !important; }
 }
