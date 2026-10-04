@@ -6,10 +6,10 @@ export function Header({ page }: { page: "story" | "map" | "about" }) {
   return (
     <header className="site-header">
       <div className="nav-shell">
-        <a className="wordmark" href="#top" aria-label="Cool Change home">
-          <span className="wordmark-mark" aria-hidden="true">C</span>
-          <span>
-            <strong>Cool Change</strong>
+        <a className="wordmark" href="#top" aria-labelledby="coolchange-symbol coolchange-wordmark">
+          <span id="coolchange-symbol" className="wordmark-mark" aria-hidden="true">C</span>{" "}
+          <span id="coolchange-wordmark">
+            <strong>Cool Change</strong>{" "}
             <small>See your street differently</small>
           </span>
         </a>

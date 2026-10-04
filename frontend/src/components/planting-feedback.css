@@ -1,0 +1,30 @@
+.animated-metric { display: inline-block; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.metric-screen-reader { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.block-planting .planting-heading h2 { margin: 0; font-family: inherit; font-size: 24px; font-weight: 650; }
+.block-planting .planting-heading .metric-help { top: 4px; }
+.planting-intro { color: var(--ink); font-size: 12px; line-height: 1.6; margin: 8px 24px 20px 0; }
+.block-planting .planting-slider-label output { font-size: 38px; line-height: 1.1; letter-spacing: -0.04em; }
+.block-planting .planting-tree-unit { font-size: 16px; letter-spacing: 0; }
+.planting-impact { margin: 20px 0; color: var(--ink); font-size: 13px; line-height: 1.65; }
+.block-planting .planting-cooling { display: grid; gap: 7px; margin: 20px 0; color: var(--deep-green); }
+.block-planting .planting-cooling > span { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.block-planting .planting-cooling strong { font-size: 36px; font-weight: 700; line-height: 1.1; }
+.planting-result-rows { margin: 0; border-top: 1px solid var(--line); }
+.planting-result-rows > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 12px; }
+.planting-result-rows dd { display: flex; align-items: baseline; gap: 8px; margin: 0; font-variant-numeric: tabular-nums; }
+.planting-result-rows strong { color: var(--deep-green); }
+.planting-slider-scale { position: relative; display: flex; justify-content: space-between; margin: 3px 48px 12px; color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; }
+.planting-slider-scale i { position: absolute; top: -6px; height: 5px; width: 1px; background: var(--deep-green); }
+.planting-slider-scale .is-limit { text-decoration: underline; text-underline-offset: 3px; }
+.planting-milestones button { display: flex; justify-content: space-between; align-items: baseline; width: 100%; gap: 12px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); padding: 9px 0; font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+.planting-milestones strong { white-space: nowrap; color: var(--deep-green); }
+.planting-milestones p { color: var(--ink); font-size: 11px; line-height: 1.5; }
+.planting-milestones p.is-limit { font-weight: 650; }
+.hold-before button { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--deep-green); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; touch-action: none; user-select: none; -webkit-touch-callout: none; }
+.hold-before button[aria-pressed="true"] { background: var(--deep-green); color: var(--paper); }
+.hold-before button:disabled { opacity: 0.5; cursor: default; }
+.hold-before p { color: var(--ink); font-size: 11px; line-height: 1.5; }
+.hold-before button:focus-visible, .planting-milestones button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .block-planting *, .selected-block-metrics * { animation: none !important; transition: none !important; }
+}
