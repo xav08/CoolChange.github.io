@@ -36,6 +36,13 @@ data "aws_iam_policy_document" "ci_terraform" {
   }
 
   statement {
+    sid       = "ManageWaf"
+    effect    = "Allow"
+    actions   = ["wafv2:*"]
+    resources = ["*"]
+  }
+
+  statement {
     sid       = "ManageDatabase"
     effect    = "Allow"
     actions   = ["rds:*"]

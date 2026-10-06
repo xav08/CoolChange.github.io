@@ -76,3 +76,15 @@ variable "extra_domain_names" {
   type        = list(string)
   default     = []
 }
+
+variable "rate_limit" {
+  description = "Max requests per IP per 5-minute window before WAF blocks with a 429. WAF's minimum is 10."
+  type        = number
+  default     = 200
+}
+
+variable "cors_allowed_origin" {
+  description = "Origin returned in Access-Control-Allow-Origin on WAF 429 responses, so browsers show 'too many requests' instead of a CORS error"
+  type        = string
+  default     = "https://www.coolchange.me"
+}

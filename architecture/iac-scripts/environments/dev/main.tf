@@ -81,6 +81,8 @@ module "loadbalancer" {
   # default, now corrected to the confirmed real value ("/health") — see
   # modules/loadbalancer/variables.tf.
   app_port = local.backend_app_port
+
+  rate_limit = 200
 }
 
 module "frontend" {
