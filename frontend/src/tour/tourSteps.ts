@@ -81,6 +81,59 @@ export const tourSteps: TourStep[] = [
     action: { label: "Take me there", done: state => !state.future },
   },
 
+  // Chapter 2 · Where the heat is today
+  {
+    id: "heat-map",
+    chapter: 2,
+    title: "Heat you can see from space.",
+    body: "This is today's map, across all of Melbourne. The colours show surface heat from 2018 satellite images: how much hotter the ground was than nearby non-urban land, at about 9:50 in the morning. Teal is cooler, red is hotter. It isn't air temperature.",
+    target: { kind: "element", selectors: [".map-heat-legend"] },
+    scene: { future: false, suburb: "none", block: "none", sheet: "collapsed" },
+  },
+  {
+    id: "suburb-search",
+    chapter: 2,
+    title: "Search by suburb.",
+    body: demo => `Type a suburb name, or just click one on the map. Either way it opens up into smaller blocks. Try ${demo.suburb.sa2_name}.`,
+    target: { kind: "element", selectors: panel(".suburb-search") },
+    scene: { future: false, suburb: "none", sheet: "half" },
+    action: {
+      label: "Show me",
+      done: (state, demo) => state.suburbCode === demo.suburb.sa2_code16 && state.meshReady,
+      hint: (state, demo) => state.suburbCode && state.suburbCode !== demo.suburb.sa2_code16 ? `That's another suburb. Try ${demo.suburb.sa2_name}, or press Show me.` : null,
+    },
+  },
+  {
+    id: "mesh-blocks",
+    chapter: 2,
+    title: demo => `${demo.suburb.sa2_name}, block by block.`,
+    body: "Each shape is a mesh block, the smallest area the census counts, usually 30 to 60 homes. The colours are the same: teal is cooler, red is hotter. Blocks next door to each other can differ by several degrees.",
+    target: { kind: "suburb" },
+    scene: { future: false, suburb: "demo", highlight: false, block: "none", sheet: "collapsed" },
+  },
+  {
+    id: "street-search",
+    chapter: 2,
+    title: "Search by street.",
+    body: demo => `Add a comma to search for a street: "${demo.streetQuery}". Blocks on that street stay bright and the rest fade.`,
+    target: { kind: "element", selectors: panel(".suburb-search") },
+    scene: { future: false, suburb: "demo", highlight: false, block: "none", sheet: "half" },
+    action: { label: "Show me", done: (state, demo) => state.highlighted > 0 && state.suburbCode === demo.suburb.sa2_code16 },
+  },
+  {
+    id: "open-block",
+    chapter: 2,
+    title: "Open a block.",
+    body: demo => `These are the blocks along ${demo.streetName}. Click the one with the ring to open its details.`,
+    target: { kind: "block", which: "primary" },
+    scene: { future: false, suburb: "demo", highlight: true, block: "none", sheet: "collapsed" },
+    action: {
+      label: "Show me",
+      done: (state, demo) => state.blockCode === demo.primary && !state.blockLoading,
+      hint: (state, demo) => state.blockCode && state.blockCode !== demo.primary ? "That's a different block. Try the one with the ring, or press Show me." : null,
+    },
+  },
+
   {
     id: "finish",
     chapter: 5,
