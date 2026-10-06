@@ -160,6 +160,52 @@ export const tourSteps: TourStep[] = [
     scene: { block: "primary", tab: "Compare", sheet: "half" },
   },
 
+  // Chapter 4 · What trees could change
+  {
+    id: "plant-slider",
+    chapter: 4,
+    title: "Add trees.",
+    body: "Plant lets you test a greener version of this block. Drag the slider or use − and +. Each tree adds about 50 m² of fully grown canopy. The maximum is where the model runs out of data, not how many trees would actually fit.",
+    target: { kind: "element", selectors: [...panel(".planting-slider-label"), ...panel(".planting-slider-row")] },
+    scene: { block: "primary", tab: "Plant", trees: "zero", comparison: "after", sheet: "half" },
+    action: { label: "Show me", done: state => state.trees > 0 },
+  },
+  {
+    id: "plant-milestones",
+    chapter: 4,
+    title: "Two markers to aim for.",
+    body: demo => `The ticks under the slider are shortcuts. One brings this block up to the ${demo.suburb.sa2_name} average canopy, and the other adds 5 percentage points. Tap one to jump straight there.`,
+    target: { kind: "element", selectors: [...panel(".planting-slider-scale"), ...panel(".planting-milestones button")] },
+    scene: { block: "primary", tab: "Plant", trees: "few", comparison: "after", sheet: "half" },
+    action: { label: "Show me", done: state => state.milestones.some(item => item.trees === state.trees) },
+  },
+  {
+    id: "plant-result",
+    chapter: 4,
+    title: "What it could mean.",
+    body: "This shows the modelled cooling, canopy and surface heat before and after, and the model's likely range. It assumes fully grown trees in 2018 conditions, so it's not instant cooling and not a 2050 forecast. On the map, the green dots show how dense the canopy is, not where each tree goes.",
+    target: { kind: "element", selectors: [...panel(".planting-cooling"), ...panel(".planting-result-rows")] },
+    scene: { block: "primary", tab: "Plant", trees: "milestone", comparison: "after", sheet: "half" },
+  },
+  {
+    id: "plant-before-after",
+    chapter: 4,
+    title: "Before and after.",
+    body: "Press and hold \"Hold to see before\" for a quick look without your trees. The Before and After buttons switch every planted block on the map at once, and Reset all clears every tree you've added.",
+    target: { kind: "element", selectors: [...panel(".hold-before button"), ...panel(".planting-controls")] },
+    scene: { block: "primary", tab: "Plant", comparison: "after", sheet: "half" },
+  },
+  {
+    id: "plant-many",
+    chapter: 4,
+    title: "Plant more than one block.",
+    body: (demo, state) => state.plantedBlocks > 1
+      ? `We've added trees to a second block on ${demo.streetName}. Every block you plant is listed here, and you can tap one to go back to it. Keep planting across ${demo.suburb.sa2_name}. Switching to another suburb clears the list.`
+      : `Open another block and keep planting. Every block you plant is listed here, and you can tap one to go back to it. Switching to another suburb clears the list.`,
+    target: { kind: "element", selectors: panel(".planted-blocks") },
+    scene: { block: "secondary", tab: "Plant", trees: "few", comparison: "after", openPlantedList: true, sheet: "half" },
+  },
+
   {
     id: "finish",
     chapter: 5,
