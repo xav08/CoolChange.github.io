@@ -255,6 +255,8 @@ export function MelbourneMapPage() {
   }, [future, mapReady, suburb, projectionRows, projectionData, loadingSuburb]);
 
   useEffect(() => {
+    // The tour plants demo trees; keep the visitor's own saved scenario untouched until it ends.
+    if (tourActiveRef.current) return;
     try { localStorage.setItem(PLANTING_STORAGE_KEY, JSON.stringify(scenarios)); } catch { /* Private browsing may disable storage. */ }
   }, [scenarios]);
 
