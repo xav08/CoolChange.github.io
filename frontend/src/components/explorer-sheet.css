@@ -29,7 +29,8 @@ section.map-explorer-panel { display: flex; flex-direction: column; overflow: cl
   .selected-block-metrics { margin-top: 14px; }
   .block-tabs { margin-top: 12px; }
   .melbourne-map-page .map-heat-legend, .melbourne-map-page .projection-legend { bottom: calc(var(--sheet-height) + 10px); }
-  .melbourne-map-page .map-view-actions, main.melbourne-map-page.is-future-view .map-view-actions { bottom: calc(var(--sheet-height) + 82px); }
+  /* main. prefix outranks the desktop 2050 offset in projections.css, which loads later */
+  main.melbourne-map-page .map-view-actions, main.melbourne-map-page.is-future-view .map-view-actions { bottom: calc(var(--sheet-height) + 82px); }
   .melbourne-map-page .mapboxgl-ctrl-bottom-left { bottom: var(--sheet-height); }
   .melbourne-map-page .mapboxgl-ctrl-bottom-right, .melbourne-map-page.is-future-view .mapboxgl-ctrl-bottom-right { bottom: calc(var(--sheet-height) + 72px); }
   .melbourne-map-page:has([data-sheet="full"]) :is(.map-heat-legend, .projection-legend, .map-view-actions, .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right) { visibility: hidden; }

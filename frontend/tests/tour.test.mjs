@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fewTrees, intersectRect, milestoneTrees, mostCommon, padRect, pickDemoBlocks, placeCard, scoreDemoBlock, unionRects } from '../src/tour/tourLogic.ts';
-import { TOUR_CHAPTERS } from '../src/tour/tourSteps.ts';
+import { tourSteps, TOUR_CHAPTERS } from '../src/tour/tourSteps.ts';
 
 const desktop = { width: 1440, height: 900 };
 const card = { width: 360, height: 280 };
@@ -63,4 +63,13 @@ test('tree targets avoid milestones for the starting value and prefer the suburb
   assert.equal(milestoneTrees(5, []), 5);
   assert.equal(mostCommon(['a', 'b', 'b', 'c']), 'b');
   assert.equal(mostCommon([]), null);
+});
+
+test('the story covers every chapter in order and every action step can finish', () => {
+  const chapters = tourSteps.map(step => step.chapter);
+  assert.deepEqual([...new Set(chapters)], [0, 1, 2, 3, 4, 5]);
+  assert.deepEqual(chapters, [...chapters].sort((a, b) => a - b));
+  assert.equal(TOUR_CHAPTERS.length, 6);
+  assert.equal(new Set(tourSteps.map(step => step.id)).size, tourSteps.length);
+  for (const step of tourSteps.filter(item => item.action)) assert.equal(typeof step.action.done, 'function', step.id);
 });
