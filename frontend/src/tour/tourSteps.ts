@@ -134,6 +134,32 @@ export const tourSteps: TourStep[] = [
     },
   },
 
+  // Chapter 3 · Your block, up close
+  {
+    id: "block-details",
+    chapter: 3,
+    title: "Everything about this block.",
+    body: "At the top are the streets in this block, plus its suburb and council. Below that are its surface heat and tree canopy from 2018. Tap ? to see what each one means. The last line shows what the land is used for and how many people live there.",
+    target: { kind: "element", selectors: [...panel(".selected-block-header"), ...panel(".selected-block-metrics"), ...panel(".selected-block-meta")] },
+    scene: { future: false, suburb: "demo", block: "primary", tab: "Overview", trees: "zero", sheet: "half" },
+  },
+  {
+    id: "tab-overview",
+    chapter: 3,
+    title: "Overview: the short version.",
+    body: "There are three tabs. Overview tells you in plain words whether this block is hotter or cooler than its suburb, and whether it has more or less tree canopy.",
+    target: { kind: "element", selectors: [...panel(".block-tabs"), ...panel('[role="tabpanel"]:not([hidden]) .block-insight')] },
+    scene: { block: "primary", tab: "Overview", sheet: "half" },
+  },
+  {
+    id: "tab-compare",
+    chapter: 3,
+    title: "Compare: side by side.",
+    body: "Compare puts this block next to its suburb, its council, the Melbourne average and the coolest block in the council, for both heat and canopy. \"pp\" means percentage points.",
+    target: { kind: "element", selectors: [...panel(".block-tabs"), ...panel(".block-comparison-section")] },
+    scene: { block: "primary", tab: "Compare", sheet: "half" },
+  },
+
   {
     id: "finish",
     chapter: 5,
