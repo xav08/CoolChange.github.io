@@ -13,6 +13,14 @@ const allowedOrigins = [
   "http://localhost:5173", // Vite dev
 ];
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && !allowedOrigins.includes(origin)) {
+    return res.status(403).json({ error: "Origin not allowed" });
+  }
+  next();
+});
+
 app.use(
   cors({
     origin: allowedOrigins,
