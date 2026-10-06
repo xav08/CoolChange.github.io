@@ -9,9 +9,11 @@ function subscribe(notify: () => void) {
   return () => media.removeEventListener("change", notify);
 }
 
-export function ExplorerPanel({ panelRef, className, selectionKey, title, summary, onCollapse, children }: {
+export function ExplorerPanel({ panelRef, className, selectionKey, title, summary, onCollapse, sizeRequest, children }: {
   panelRef: RefObject<HTMLElement | null>; className: string; selectionKey: string;
   title: string; summary: string; onCollapse: () => void; children: ReactNode;
+  // lets the guided tour open or collapse the mobile sheet
+  sizeRequest?: { size: SheetSize; nonce: number } | null;
 }) {
   const mobile = useSyncExternalStore(subscribe, () => window.matchMedia(query).matches, () => false);
   const [size, setSize] = useState<SheetSize>("half");
@@ -19,6 +21,13 @@ export function ExplorerPanel({ panelRef, className, selectionKey, title, summar
   const dragged = useRef(false);
   const id = useId();
   useEffect(() => { setSize("half"); }, [selectionKey]);
+  useEffect(() => {
+    if (!sizeRequest) return;
+    if (sizeRequest.size === "collapsed") onCollapse();
+    setSize(sizeRequest.size);
+    // Only a new request should resize; onCollapse identity changes every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sizeRequest?.nonce]);
 
   function resize(next: SheetSize) {
     if (next === "collapsed") onCollapse();
