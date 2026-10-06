@@ -806,21 +806,36 @@ export function MelbourneMapPage() {
         cooling={displayed?.cooling ?? 0} revision={plantingRevision} interacting={plantingInteracting}
         after={effectiveComparison === "after"} reducedMotion={reducedMotion} />}
       <ProjectionControls future={future} onToggle={toggleFuture} level={warmingLevel} onLevel={setWarmingLevel} />
-      <button
-        className="map-reset-button"
-        type="button"
-        onClick={showAllSuburbs}
-        disabled={!mapReady}
-        aria-label="Reset map view"
-        title="Reset map view"
-      >
-        <span>Reset view</span>
-      </button>
+      <div className="map-view-actions">
+        <button
+          className="map-tour-button"
+          type="button"
+          onClick={() => setTourActive(true)}
+          disabled={!mapReady || tourActive}
+          aria-haspopup="dialog"
+          title="Take a guided tour of the map"
+        >
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 4.5 7.5 3l5 1.5L17 3v12.5L12.5 17l-5-1.5L3 17Z" /><path d="M7.5 3v12.5M12.5 4.5V17" />
+          </svg>
+          <span>Take the tour</span>
+        </button>
+        <button
+          className="map-reset-button"
+          type="button"
+          onClick={showAllSuburbs}
+          disabled={!mapReady}
+          aria-label="Reset map view"
+          title="Reset map view"
+        >
+          <span>Reset view</span>
+        </button>
+      </div>
 
       <ExplorerPanel panelRef={panelRef} selectionKey={`${future}-${selectedBlock?.block.mb_code16 ?? suburb?.sa2_code16 ?? "all"}`}
         title={selectedBlock && !future ? (selectedBlock.streets.join(" / ") || `Block ${selectedBlock.block.mb_code16}`) : suburb?.sa2_name || "Explore Melbourne"}
         summary={selectedBlock && !future ? `${metricValue(displayed?.heat ?? selectedBlock.block.uhi_mean, "heat")} · ${metricValue(displayed?.canopy ?? selectedBlock.block.canopy_pct, "canopy")} canopy${effectiveComparison === "after" && addedTrees > 0 ? " · Modelled" : " · Baseline"}` : "Search or select a location to explore"}
-        onCollapse={() => setPreviewBefore(false)} className={`map-explorer-panel${selectedBlock && !future ? " has-selected-block" : ""}${future && suburb ? " has-projection-suburb" : ""}`}>
+        onCollapse={() => setPreviewBefore(false)} sizeRequest={sheetRequest} className={`map-explorer-panel${selectedBlock && !future ? " has-selected-block" : ""}${future && suburb ? " has-projection-suburb" : ""}`}>
         {(!selectedBlock || future) && <>
         <p className="map-page-eyebrow">{future ? "2050 vision · Melbourne suburbs" : "Melbourne · 2018 mesh blocks"}</p>
         {future && projectionStatus === "error" && <p className="projection-failure" role="alert">2050 projection failed to load</p>}
