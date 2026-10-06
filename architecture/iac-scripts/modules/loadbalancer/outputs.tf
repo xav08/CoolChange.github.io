@@ -21,3 +21,8 @@ output "certificate_arn" {
   description = "ARN of the backend's ACM certificate, for reference"
   value       = aws_acm_certificate.backend.arn
 }
+
+output "web_acl_arn" {
+  description = "ARN of the WAF web ACL attached to the ALB"
+  value       = aws_wafv2_web_acl.backend.arn
+}

@@ -8,7 +8,27 @@ const { errorHandler } = require("./http/errors");
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  "https://www.coolchange.me",
+  "http://localhost:5173", // Vite dev
+];
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && !allowedOrigins.includes(origin)) {
+    return res.status(403).json({ error: "Origin not allowed" });
+  }
+  next();
+});
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "OPTIONS"],
+    maxAge: 86400,
+  })
+);
+
 app.use(express.json());
 app.use("/health", healthRouter);
 app.use("/api/v1", v1Router);
