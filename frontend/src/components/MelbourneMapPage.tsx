@@ -16,6 +16,12 @@ import { ProjectionHelp } from "./ProjectionHelp";
 import { ProjectionControls, ProjectionLegend } from "./ProjectionControls";
 import { daysBand, isProjectionData, projectionColor, warmingLabel, UNAVAILABLE_COLOR, type ProjectionData, type WarmingLevel } from "../utils/projections";
 import { calculatePlanting, keepSuburbPlanting, restorePlanting, updatePlanting, PLANTING_STORAGE_KEY, type PlantingModel, type PlantingScenario } from "../utils/planting";
+import { plantingMilestones } from "../utils/plantingMilestones";
+import { polygonBounds, polygonsFor } from "../utils/canopyGeometry";
+import type { SheetSize } from "../utils/explorerSheet";
+import { MapTour } from "../tour/MapTour";
+import type { TourController, TourState } from "../tour/tourTypes";
+import type { Rect } from "../tour/tourLogic";
 
 // resolve the backend endpoint for map data
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
@@ -190,6 +196,13 @@ export function MelbourneMapPage() {
   const [previewBefore, setPreviewBefore] = useState(false);
   const effectiveComparison = previewBefore ? "before" : comparison;
   const [plantingNotice, setPlantingNotice] = useState("");
+  // guided tour: highlighted street blocks, search prefill and mobile sheet size requests
+  const [highlighted, setHighlighted] = useState<string[]>([]);
+  const [tourActive, setTourActive] = useState(false);
+  const [searchPrefill, setSearchPrefill] = useState<{ text: string; token: number } | null>(null);
+  const [sheetRequest, setSheetRequest] = useState<{ size: SheetSize; nonce: number } | null>(null);
+  const tourActiveRef = useRef(false);
+  const tourSnapshot = useRef<PlantingScenario[]>([]);
   const model = selectedBlock?.simulator?.interactive ?? null;
   const activeScenario = scenarios.find(s => s.code === selectedBlock?.block.mb_code16);
   const addedTrees = activeScenario?.trees ?? 0;
@@ -242,6 +255,8 @@ export function MelbourneMapPage() {
   }, [future, mapReady, suburb, projectionRows, projectionData, loadingSuburb]);
 
   useEffect(() => {
+    // The tour plants demo trees; keep the visitor's own saved scenario untouched until it ends.
+    if (tourActiveRef.current) return;
     try { localStorage.setItem(PLANTING_STORAGE_KEY, JSON.stringify(scenarios)); } catch { /* Private browsing may disable storage. */ }
   }, [scenarios]);
 
@@ -301,6 +316,7 @@ export function MelbourneMapPage() {
     const controller = new AbortController();
     suburbRequest.current = controller;
     setBlockLoading(false);
+    setHighlighted([]);
     if (futureRef.current) {
       // The future view never requests or drills into mesh-block geometry.
       const feature = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === selection.sa2_code16);
@@ -388,6 +404,7 @@ export function MelbourneMapPage() {
     setPlantingNotice("");
     setMapError("");
     map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], mbCode16]);
+    setHighlighted([]);
     // clicking any block -- highlighted or not -- resolves the street search's
     // job; drop the dim so the view returns to normal, leaving just this one
     // block outlined
@@ -422,6 +439,7 @@ export function MelbourneMapPage() {
   const highlightBlocks = useCallback((mbCodes: string[]) => {
     const map = mapRef.current;
     if (!map || futureRef.current || !mbCodes.length) return;
+    setHighlighted(mbCodes);
     map.setFilter(MESH_SELECTED, ["in", ["get", "mb_code16"], ["literal", mbCodes]]);
     map.setLayoutProperty(MESH_SELECTED, "visibility", "visible");
     map.setPaintProperty(MESH_FILL, "fill-opacity", [
@@ -644,6 +662,7 @@ export function MelbourneMapPage() {
     loadedSuburbRef.current = null;
     setHoveredSuburb(null);
     setSelectedBlock(null);
+    setHighlighted([]);
     setSearchResetToken((token) => token + 1);
     // Clear detailed geometry before restoring the overview.
     (map.getSource(MESH_SOURCE) as GeoJSONSource)?.setData(EMPTY_COLLECTION as SourceData);
@@ -659,6 +678,126 @@ export function MelbourneMapPage() {
     map.flyTo({ center: MELBOURNE_CENTER, zoom: 8.55, duration: 900 });
   }
 
+  // --- Guided tour -------------------------------------------------------
+  const milestones = model ? plantingMilestones(model, suburb?.canopy_mean ?? null) : [];
+  const tourState: TourState = {
+    mapReady, future, warming: warmingLevel, projectionStatus,
+    projectionDays: future && suburb ? daysBand(selectedProjection) : null,
+    suburbCode: suburb?.sa2_code16 ?? null,
+    meshReady: !!suburb && !loadingSuburb && loadedSuburbRef.current === suburb.sa2_code16,
+    highlighted: highlighted.length,
+    blockCode: selectedBlock?.block.mb_code16 ?? null,
+    blockLoading, tab: blockTab, trees: addedTrees, maxTrees: model?.max_trees ?? 0,
+    milestones, comparison, plantedBlocks: scenarios.length,
+  };
+
+  function screenRect(bounds: [[number, number], [number, number]] | null): Rect | null {
+    const map = mapRef.current;
+    if (!map || !bounds) return null;
+    const box = map.getContainer().getBoundingClientRect();
+    const a = map.project(bounds[0]);
+    const b = map.project(bounds[1]);
+    return { left: box.left + Math.min(a.x, b.x), top: box.top + Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) };
+  }
+
+  function closeBlock() {
+    setSelectedBlock(null);
+    setBlockTab("Overview");
+    panelRef.current?.querySelector(".map-explorer-content")?.scrollTo({ top: 0 });
+    mapRef.current?.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
+  }
+
+  function prefillSearch(text: string) {
+    const token = searchResetToken + 1;
+    setSearchPrefill({ text, token });
+    setSearchResetToken(token);
+  }
+
+  // Latest-render actions; the tour calls them through a stable object below.
+  const tourActions = useRef<Omit<TourController, "apiBase">>(null!);
+  tourActions.current = {
+    begin() {
+      tourSnapshot.current = scenarios;
+      tourActiveRef.current = true;
+      setScenarios([]);
+      setPlantingNotice("");
+    },
+    end() {
+      tourActiveRef.current = false;
+      setScenarios(tourSnapshot.current);
+      setComparison("after");
+      setPreviewBefore(false);
+      setPlantingNotice("");
+      setBlockTab("Overview");
+      futureRef.current = false;
+      setFuture(false);
+      setSearchPrefill(null);
+      showAllSuburbs();
+      setTourActive(false);
+    },
+    setFuture(on) { if (futureRef.current !== on) void toggleFuture(); },
+    setWarming: setWarmingLevel,
+    showAll: showAllSuburbs,
+    openSuburb(target, text) { prefillSearch(text); void openSuburb(target); },
+    streetSearch(text) { prefillSearch(text); },
+    clearHighlight() {
+      const map = mapRef.current;
+      if (map?.getLayer(MESH_FILL)) {
+        map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
+        map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
+      }
+      setHighlighted([]);
+      setSearchPrefill(null);
+      setSearchResetToken(token => token + 1);
+    },
+    openBlock(code) { void openBlock(code); },
+    closeBlock,
+    setTab: setBlockTab,
+    setTrees: changeTrees,
+    setComparison,
+    setSheet(size) { setSheetRequest(current => ({ size, nonce: (current?.nonce ?? 0) + 1 })); },
+    openPlantedList() { panelRef.current?.querySelector<HTMLDetailsElement>(".planted-blocks")?.setAttribute("open", ""); },
+    suburbSummary(code) {
+      const properties = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === code)?.properties;
+      return properties ? {
+        sa2_code16: propertyText(properties, "sa2_code16"), sa2_name: propertyText(properties, "sa2_name"),
+        lga_name: propertyText(properties, "lga_name"), n_blocks: propertyNumber(properties, "n_blocks"),
+        uhi_mean: properties.uhi_mean == null ? null : propertyNumber(properties, "uhi_mean"),
+        canopy_mean: properties.canopy_mean == null ? null : propertyNumber(properties, "canopy_mean"),
+      } : null;
+    },
+    suburbRect() {
+      if (!suburb) return null;
+      const meshReady = loadedSuburbRef.current === suburb.sa2_code16;
+      const feature = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === suburb.sa2_code16);
+      return screenRect(meshReady ? boundsFor(meshDataRef.current) : feature ? boundsFor({ type: "FeatureCollection", features: [feature] }) : null);
+    },
+    blockRect(code) {
+      const feature = meshDataRef.current.features.find(item => String(item.properties?.mb_code16) === code);
+      const bounds = polygonBounds(polygonsFor(feature?.geometry ?? null));
+      return screenRect(bounds as [[number, number], [number, number]] | null);
+    },
+  };
+  const tourController = useMemo<TourController>(() => {
+    const call = <K extends keyof Omit<TourController, "apiBase">>(key: K) =>
+      ((...args: unknown[]) => (tourActions.current[key] as (...a: unknown[]) => unknown)(...args)) as TourController[K];
+    return {
+      apiBase: API_BASE,
+      begin: call("begin"), end: call("end"), setFuture: call("setFuture"), setWarming: call("setWarming"),
+      showAll: call("showAll"), openSuburb: call("openSuburb"), streetSearch: call("streetSearch"),
+      clearHighlight: call("clearHighlight"), openBlock: call("openBlock"), closeBlock: call("closeBlock"),
+      setTab: call("setTab"), setTrees: call("setTrees"), setComparison: call("setComparison"),
+      setSheet: call("setSheet"), openPlantedList: call("openPlantedList"), suburbSummary: call("suburbSummary"),
+      suburbRect: call("suburbRect"), blockRect: call("blockRect"),
+    };
+  }, []);
+  const searchInitial = searchPrefill?.token === searchResetToken ? searchPrefill.text : undefined;
+  // The prefill is one-shot: the search box remounts when a block opens, and must
+  // not replay the tour's street search (which would reopen the suburb).
+  useEffect(() => {
+    if (searchPrefill) setSearchPrefill(null);
+  }, [searchPrefill]);
+
   return (
     <main className={`melbourne-map-page${future ? " is-future-view" : ""}`}>
       <div ref={containerRef} className="melbourne-map-canvas" aria-label="Interactive urban heat map of metropolitan Melbourne" />
@@ -667,21 +806,36 @@ export function MelbourneMapPage() {
         cooling={displayed?.cooling ?? 0} revision={plantingRevision} interacting={plantingInteracting}
         after={effectiveComparison === "after"} reducedMotion={reducedMotion} />}
       <ProjectionControls future={future} onToggle={toggleFuture} level={warmingLevel} onLevel={setWarmingLevel} />
-      <button
-        className="map-reset-button"
-        type="button"
-        onClick={showAllSuburbs}
-        disabled={!mapReady}
-        aria-label="Reset map view"
-        title="Reset map view"
-      >
-        <span>Reset view</span>
-      </button>
+      <div className="map-view-actions">
+        <button
+          className="map-tour-button"
+          type="button"
+          onClick={() => setTourActive(true)}
+          disabled={!mapReady || tourActive}
+          aria-haspopup="dialog"
+          title="Take a guided tour of the map"
+        >
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 4.5 7.5 3l5 1.5L17 3v12.5L12.5 17l-5-1.5L3 17Z" /><path d="M7.5 3v12.5M12.5 4.5V17" />
+          </svg>
+          <span>Take the tour</span>
+        </button>
+        <button
+          className="map-reset-button"
+          type="button"
+          onClick={showAllSuburbs}
+          disabled={!mapReady}
+          aria-label="Reset map view"
+          title="Reset map view"
+        >
+          <span>Reset view</span>
+        </button>
+      </div>
 
       <ExplorerPanel panelRef={panelRef} selectionKey={`${future}-${selectedBlock?.block.mb_code16 ?? suburb?.sa2_code16 ?? "all"}`}
         title={selectedBlock && !future ? (selectedBlock.streets.join(" / ") || `Block ${selectedBlock.block.mb_code16}`) : suburb?.sa2_name || "Explore Melbourne"}
         summary={selectedBlock && !future ? `${metricValue(displayed?.heat ?? selectedBlock.block.uhi_mean, "heat")} · ${metricValue(displayed?.canopy ?? selectedBlock.block.canopy_pct, "canopy")} canopy${effectiveComparison === "after" && addedTrees > 0 ? " · Modelled" : " · Baseline"}` : "Search or select a location to explore"}
-        onCollapse={() => setPreviewBefore(false)} className={`map-explorer-panel${selectedBlock && !future ? " has-selected-block" : ""}${future && suburb ? " has-projection-suburb" : ""}`}>
+        onCollapse={() => setPreviewBefore(false)} sizeRequest={sheetRequest} className={`map-explorer-panel${selectedBlock && !future ? " has-selected-block" : ""}${future && suburb ? " has-projection-suburb" : ""}`}>
         {(!selectedBlock || future) && <>
         <p className="map-page-eyebrow">{future ? "2050 vision · Melbourne suburbs" : "Melbourne · 2018 mesh blocks"}</p>
         {future && projectionStatus === "error" && <p className="projection-failure" role="alert">2050 projection failed to load</p>}
@@ -697,6 +851,7 @@ export function MelbourneMapPage() {
           <summary>Search another location</summary>
         <UnifiedSearch
           key={`${searchResetToken}-${future}`}
+          initialQuery={searchInitial}
           suburbsOnly={future}
           onSelectSuburb={(result) => void openSuburb(result)}
           onStreetMatch={(sa2Code16, mbCodes) => void openStreetMatch(sa2Code16, mbCodes)}
@@ -704,6 +859,7 @@ export function MelbourneMapPage() {
         </details> : <>
         <UnifiedSearch
           key={`${searchResetToken}-${future}`}
+          initialQuery={searchInitial}
           suburbsOnly={future}
           onSelectSuburb={(result) => void openSuburb(result)}
           onStreetMatch={(sa2Code16, mbCodes) => void openStreetMatch(sa2Code16, mbCodes)}
@@ -792,6 +948,7 @@ export function MelbourneMapPage() {
       {!resolveMapStyle(accessToken).accessToken && <div className="map-page-error">Add a public Mapbox token (pk.*) to frontend/.env.local.</div>}
       {mapError && <div className="map-page-error" role="alert">{mapError}</div>}
       {basemapUnavailable && !mapError && <div className="map-basemap-notice" role="status">Background map unavailable. Suburb and block data remain available.</div>}
+      {tourActive && <MapTour state={tourState} controller={tourController} />}
     </main>
   );
 }
@@ -807,12 +964,15 @@ function UnifiedSearch({
   onSelectSuburb,
   onStreetMatch,
   suburbsOnly = false,
+  initialQuery,
 }: {
   onSelectSuburb: (result: SearchResult) => void;
   onStreetMatch: (sa2Code16: string, mbCodes: string[]) => void;
   suburbsOnly?: boolean;
+  initialQuery?: string;
 }) {
   const [query, setQuery] = useState(() => {
+    if (initialQuery !== undefined) return initialQuery;
     const saved = sessionStorage.getItem("coolchange-suburb-query") || "";
     sessionStorage.removeItem("coolchange-suburb-query");
     return saved.replace(/\s+VIC(?:\s+\d{4})?$/i, "");
