@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canopyFootprint, plantedTreeScale, clampTreeCount, sampleStreetView, plantingLocations, streetChapters } from '../src/data/streetStory.ts';
+import { canopyFootprint, melbourneSunDirection, plantedTreeScale, clampTreeCount, sampleStreetView, plantingLocations, streetChapters } from '../src/data/streetStory.ts';
 
 test('planting counts handle slider boundaries and invalid input', () => {
   assert.deepEqual([-5, 0, 12, 36, 50, NaN].map(clampTreeCount), [0, 0, 12, 36, 36, 0]);
@@ -43,13 +43,36 @@ test('heat remains conspicuous through the exposed, shade and shared-street beat
   assert.equal(sampleStreetView(4).heat, 0);
 });
 
-test('simulator keeps exposed heat and prioritises shade beside the bus stop', () => {
+test('simulator keeps exposed heat and grows the canopy footprint with the tree', () => {
   assert.equal(sampleStreetView(5).heat, 0.85);
-  assert.deepEqual(plantingLocations[0], [0, 0.05, 5.3]);
-  const [x, z, width, depth] = canopyFootprint(0, 5.3, 0.9);
-  assert.ok(Math.hypot((1 - x) / width, (3.65 - z) / depth) < 1);
+  assert.deepEqual(plantingLocations[0], [0, 0.05, 6.1]);
+  const [, , width] = canopyFootprint(0, 5.3, 0.9);
   assert.equal(canopyFootprint(0, 5.3, 0)[2], 0);
   assert.ok(canopyFootprint(0, 5.3, 0.45)[2] < width);
+});
+
+test('Melbourne sun follows the northern sky from east to west', () => {
+  const morning = melbourneSunDirection(0);
+  const noon = melbourneSunDirection(0.5);
+  const afternoon = melbourneSunDirection(1);
+  assert.ok(morning[0] > 0 && afternoon[0] < 0);
+  assert.ok(noon[1] > morning[1]);
+  for (const direction of [morning, noon, afternoon]) {
+    assert.ok(direction[1] > 0 && direction[2] < 0);
+    assert.ok(Math.abs(Math.hypot(...direction) - 1) < 1e-10);
+  }
+});
+
+test('shade is opposite the sun on both verges, with no side-dependent flip', () => {
+  for (const z of [-5.3, 5.3]) {
+    for (const time of [0, 0.5, 1]) {
+      const [sunX, sunY, sunZ] = melbourneSunDirection(time);
+      const [x, shadowZ] = canopyFootprint(0, z, 1, time);
+      assert.ok(Math.abs(x + 3.1 * sunX / sunY) < 1e-10);
+      assert.ok(Math.abs(shadowZ - z + 3.1 * sunZ / sunY) < 1e-10);
+      assert.ok(shadowZ > z, 'shade falls south on both sides of this east-west street');
+    }
+  }
 });
 
 test('before/after changes visible planting without consuming the saved selection', () => {
@@ -60,4 +83,18 @@ test('before/after changes visible planting without consuming the saved selectio
     assert.equal(scales(false).filter(Boolean).length, count);
     assert.equal(plantedTreeScale(0, count, 0, false), 0);
   }
+});
+
+test('five-tree challenge supports individual locations, removal and replacement', async () => {
+  const { togglePlantingSite } = await import('../src/data/streetStory.ts');
+  let selected = [];
+  for (const site of [7, 0, 4, 2, 6]) selected = togglePlantingSite(selected, site);
+  assert.deepEqual(selected, [7, 0, 4, 2, 6]);
+  assert.deepEqual(togglePlantingSite(selected, 1), selected);
+  selected = togglePlantingSite(selected, 4);
+  assert.deepEqual(selected, [7, 0, 2, 6]);
+  selected = togglePlantingSite(selected, 1);
+  assert.deepEqual(selected, [7, 0, 2, 6, 1]);
+  for (const invalid of [-1, 3, 8, NaN, 1.5]) assert.deepEqual(togglePlantingSite(selected, invalid), selected);
+  assert.deepEqual(togglePlantingSite([], 3), [], 'East homes is no longer a planting option');
 });
