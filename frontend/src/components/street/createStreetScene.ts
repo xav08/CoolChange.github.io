@@ -1,22 +1,22 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { canopyFootprint, clampTreeCount, plantedTreeScale, plantingLocations, sampleStreetView } from "../../data/streetStory";
+import { plantedCanopyFootprint, melbourneSunDirection, plantingLocations, plantingSites, sampleStreetView } from "../../data/streetStory";
 import type { Theme } from "../../hooks/useTheme";
 
 export type StreetSceneController = {
   setProgress: (progress: number) => void;
-  setTrees: (trees: number, immediate?: boolean) => void;
+  setPlanting: (selected: number[], growth: number, afternoon: boolean) => void;
   setBefore: (before: boolean) => void;
   setTheme: (theme: Theme) => void;
   getStillViews: () => string[];
   dispose: () => void;
 };
 
-type Tree = { group: THREE.Group; shade: THREE.Mesh; scale: number };
+type Tree = { group: THREE.Group; crown: THREE.Group; scale: number };
 
 export function createStreetScene(
   canvas: HTMLCanvasElement,
-  options: { theme: Theme; trees: number; before?: boolean; reduced: boolean; onFailure: () => void },
+  options: { theme: Theme; selected: number[]; growth: number; afternoon: boolean; before?: boolean; reduced: boolean; onFailure: () => void; onProject: (index: number, x: number, y: number, visible: boolean) => void },
 ): StreetSceneController {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
   renderer.setClearColor(0x000000, 0);
@@ -152,29 +152,25 @@ export function createStreetScene(
   car(-11, 1.55, palette.orange);
   car(9, -1.55, palette.trim);
 
-  const shadeMaterial = new THREE.MeshBasicMaterial({ color: "#385237", transparent: true, opacity: 0.12, depthWrite: false });
-  materials.add(shadeMaterial);
-  function makeTree(x: number, z: number, variant: number): Tree {
+  function makeTree(x: number, z: number, variant: number, castsCanopyShade = false): Tree {
     const group = new THREE.Group(); group.position.set(x, 0.1, z); neighbourhood.add(group);
     const trunk = new THREE.Mesh(cylinderGeometry, palette.trunk);
     trunk.position.y = 1.1; trunk.scale.y = 2.2; trunk.castShadow = true; group.add(trunk);
+    const crown = new THREE.Group();
+    group.add(crown);
     const leaves = [palette.leaf, palette.leafLight, palette.leafDark];
     [[0, 3.45, 0, 1.4], [-0.58, 2.7, 0.15, 1.02], [0.65, 2.95, 0.12, 1.08]].forEach(([lx, ly, lz, s], index) => {
       const leaf = new THREE.Mesh(sphereGeometry, leaves[(variant + index) % leaves.length]);
       leaf.position.set(lx, ly, lz); leaf.scale.set(s, s * 1.08, s * 0.92);
-      leaf.rotation.set(0.2 * variant, variant * 0.7, 0.2); leaf.castShadow = true; leaf.receiveShadow = true;
-      group.add(leaf);
+      leaf.rotation.set(0.2 * variant, variant * 0.7, 0.2); leaf.castShadow = castsCanopyShade; leaf.receiveShadow = true;
+      crown.add(leaf);
     });
-    const shade = new THREE.Mesh(diskGeometry, shadeMaterial);
-    shade.rotation.x = -Math.PI / 2; shade.position.set(x - 1.4, 0.335, z - 1.3);
-    shade.scale.set(2.1, 1.45, 1); neighbourhood.add(shade);
-    return { group, shade, scale: 1 };
+    return { group, crown, scale: 1 };
   }
   const existingTrees = [[-10, -5.1], [10, -5.1], [-10, 5.1]].map(([x, z], index) => makeTree(x, z, index));
   const heroTree = makeTree(3.6, 5.2, 0);
-  const plantedTrees = plantingLocations.map(([x, , z], index) => makeTree(x, z, index));
-  const allTrees = [...existingTrees, heroTree, ...plantedTrees];
-  const footprints = allTrees.map(() => new THREE.Vector4());
+  const plantedTrees = plantingLocations.map(([x, , z], index) => makeTree(x, z, index, true));
+  const footprints = plantedTrees.map(() => new THREE.Vector4());
   // Saturated thermal contours belong to the surfaces, not a full-screen tint.
   // These are illustrative marks, not sampled temperature measurements.
   const heatMaterial = new THREE.ShaderMaterial({
@@ -185,6 +181,7 @@ export function createStreetScene(
       hot: { value: new THREE.Color("#df4825") },
       cool: { value: new THREE.Color("#729874") },
       footprints: { value: footprints },
+      shelterFootprint: { value: new THREE.Vector4() },
     },
     vertexShader: `varying vec2 vUv; varying vec2 streetPosition;
       void main() {
@@ -194,7 +191,7 @@ export function createStreetScene(
         gl_Position = projectionMatrix * viewMatrix * world;
       }`,
     fragmentShader: `uniform float strength; uniform vec3 warm; uniform vec3 hot; uniform vec3 cool;
-      uniform vec4 footprints[40];
+      uniform vec4 footprints[36]; uniform vec4 shelterFootprint;
       varying vec2 vUv; varying vec2 streetPosition;
       void main() {
         float radius = length(vUv * 2.0 - 1.0);
@@ -203,9 +200,9 @@ export function createStreetScene(
         float contour = (1.0 - smoothstep(0.009, 0.022, abs(radius - 0.54))) * 0.23;
         vec3 color = mix(warm, hot, core);
         color = mix(color, warm, contour);
-        // Existing canopy and the shelter interrupt the exposed-surface wash.
+        // Only trees added by the visitor paint a canopy cooling area.
         float shade = 0.0;
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < 36; i++) {
           vec4 footprint = footprints[i];
           if (footprint.z > 0.01) {
             float distanceToCanopy = length((streetPosition - footprint.xy) / footprint.zw);
@@ -215,7 +212,7 @@ export function createStreetScene(
         // Amber at the expanding edge, muted green within the canopy.
         color = mix(color, warm, smoothstep(0.0, 0.45, shade));
         color = mix(color, cool, smoothstep(0.3, 0.85, shade));
-        vec2 shelter = abs(streetPosition - vec2(-0.6, 3.8)) / vec2(1.8, 0.8);
+        vec2 shelter = abs(streetPosition - shelterFootprint.xy) / shelterFootprint.zw;
         float shelterShade = 1.0 - smoothstep(0.85, 1.05, max(shelter.x, shelter.y));
         gl_FragColor = vec4(color, alpha * (1.0 - shelterShade * 0.95));
         #include <colorspace_fragment>
@@ -232,7 +229,10 @@ export function createStreetScene(
   }
 
   let progress = 0;
-  let treeCount = clampTreeCount(options.trees);
+  let selected = options.selected;
+  let growth = options.growth;
+  let afternoon = options.afternoon;
+  let daylight = afternoon ? 1 : 0;
   let before = options.before ?? false;
   const reduced = options.reduced;
   let mobile = false;
@@ -243,14 +243,12 @@ export function createStreetScene(
   const lookAt = new THREE.Vector3();
   const cameraOffset = new THREE.Vector3();
 
-  function applyTree(tree: Tree, scale: number) {
+  function applyTree(tree: Tree, scale: number, maturity = 0) {
     tree.scale = scale;
     tree.group.visible = scale > 0.01;
     tree.group.scale.setScalar(Math.max(0.001, scale));
-    tree.shade.visible = scale > 0.01;
-    const [x, z, width, depth] = canopyFootprint(tree.group.position.x, tree.group.position.z, scale);
-    tree.shade.position.set(x, 0.335, z);
-    tree.shade.scale.set(width, depth, 1);
+    const crownSpread = 1 + maturity * 0.7;
+    tree.crown.scale.set(crownSpread, 1, crownSpread);
   }
 
   function draw(time: number) {
@@ -261,28 +259,36 @@ export function createStreetScene(
     lookAt.set(...view.target);
     cameraOffset.set(...view.camera).sub(lookAt);
     // Preserve the composition in tall tablet canvases instead of cropping it.
-    camera.position.copy(lookAt).addScaledVector(cameraOffset, Math.max(1, 1.05 / camera.aspect));
+    camera.position.copy(lookAt).addScaledVector(cameraOffset, Math.max(1, 1.05 / camera.aspect) * (1 + (mobile ? 0 : 0.16) * view.planting));
     camera.lookAt(lookAt);
     heatMaterial.uniforms.strength.value = view.heat;
-    shadeMaterial.opacity = 0.12 + view.heat * 0.2;
+    const sunTarget = view.planting > 0 ? (afternoon ? 1 : 0) : 0;
+    daylight = reduced ? sunTarget : daylight + (sunTarget - daylight) * (1 - Math.exp(-delta / 220));
+    let settling = Math.abs(daylight - sunTarget) > 0.001;
+    const [east, up, south] = melbourneSunDirection(daylight);
+    sun.position.set(east * 40, up * 40, south * 40);
+    heatMaterial.uniforms.shelterFootprint.value.set(-east / up * 2.615, 4 - south / up * 2.615, 1.85, 0.9);
     applyTree(heroTree, view.growth);
-    let settling = false;
     plantedTrees.forEach((tree, index) => {
-      const target = plantedTreeScale(index, treeCount, view.planting, before);
+      const target = !before && selected.includes(index) ? view.planting * (0.25 + growth * 0.65) : 0;
       if (reduced || immediateTrees) tree.scale = target;
       else {
-        tree.scale += (target - tree.scale) * (1 - Math.exp(-delta / 130));
+        tree.scale += (target - tree.scale) * (1 - Math.exp(-delta / 200));
         if (Math.abs(target - tree.scale) > 0.002) settling = true;
         else tree.scale = target;
       }
-      applyTree(tree, tree.scale);
+      const maturity = Math.max(0, Math.min(1, (tree.scale - 0.25) / 0.65));
+      applyTree(tree, tree.scale, maturity);
+      footprints[index].set(...plantedCanopyFootprint(tree.group.position.x, tree.group.position.z, tree.scale, daylight, maturity));
     });
     existingTrees.forEach(tree => applyTree(tree, 1));
-    allTrees.forEach((tree, index) => {
-      footprints[index].set(...canopyFootprint(tree.group.position.x, tree.group.position.z, tree.scale));
-    });
     immediateTrees = false;
     renderer.render(scene, camera);
+    plantingSites.forEach(({ index }) => {
+      const [x, , z] = plantingLocations[index];
+      const point = new THREE.Vector3(x, selected.includes(index) && !before ? 0.1 + 5.05 * plantedTrees[index].scale : 0.5, z).project(camera);
+      options.onProject(index, (point.x + 1) * 50, (1 - point.y) * 50, view.planting > 0.95 && point.z < 1);
+    });
     if (settling) invalidate();
   }
   function invalidate() {
@@ -319,7 +325,7 @@ export function createStreetScene(
 
   return {
     setProgress(value) { progress = value; invalidate(); },
-    setTrees(value, immediate = false) { treeCount = clampTreeCount(value); immediateTrees = immediate; invalidate(); },
+    setPlanting(value, age, pm) { selected = value; growth = age; afternoon = pm; invalidate(); },
     setBefore(value) { before = value; immediateTrees = true; invalidate(); },
     setTheme,
     getStillViews() {

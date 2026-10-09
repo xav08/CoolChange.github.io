@@ -37,18 +37,18 @@ test('rect helpers union, clip and pad', () => {
   assert.deepEqual(padRect({ left: 50, top: 50, width: 4, height: 4 }, 2, 40), { left: 32, top: 32, width: 40, height: 40 });
 });
 
-test('demo block prefers a local model with both milestones', () => {
-  const base = { hasModel: true, sourceKind: 'local', unavailable: false, maxTrees: 20, milestoneCount: 2, streetCount: 1 };
+test('demo block prefers a local model with a reachable suburb average', () => {
+  const base = { hasModel: true, sourceKind: 'local', unavailable: false, maxTrees: 20, milestoneCount: 1, streetCount: 1 };
   assert.equal(scoreDemoBlock({ ...base, code: 'a', hasModel: false }), null);
   assert.equal(scoreDemoBlock({ ...base, code: 'a', unavailable: true }), null);
   assert.equal(scoreDemoBlock({ ...base, code: 'a', maxTrees: 1 }), null);
   const picked = pickDemoBlocks([
     { ...base, code: 'borrowed', sourceKind: 'adjacent' },
-    { ...base, code: 'one-marker', milestoneCount: 1 },
+    { ...base, code: 'no-marker', milestoneCount: 0 },
     { ...base, code: 'best' },
     { ...base, code: 'none', hasModel: false },
   ]);
-  assert.deepEqual(picked, { primary: 'best', secondary: 'one-marker' });
+  assert.deepEqual(picked, { primary: 'best', secondary: 'no-marker' });
   assert.deepEqual(pickDemoBlocks([]), { primary: null, secondary: null });
 });
 
@@ -57,9 +57,8 @@ test('tree targets avoid milestones for the starting value and prefer the suburb
   assert.equal(fewTrees(20, [3, 9]), 2);
   assert.equal(fewTrees(2, [1, 2]), 2);
   assert.equal(fewTrees(0, []), 0);
-  const marks = [{ trees: 6, labels: ['+5 percentage points canopy'] }, { trees: 11, labels: ['Suburb average canopy'] }];
+  const marks = [{ trees: 11, labels: ['Suburb average'] }];
   assert.equal(milestoneTrees(20, marks), 11);
-  assert.equal(milestoneTrees(20, [marks[0]]), 6);
   assert.equal(milestoneTrees(5, []), 5);
   assert.equal(mostCommon(['a', 'b', 'b', 'c']), 'b');
   assert.equal(mostCommon([]), null);

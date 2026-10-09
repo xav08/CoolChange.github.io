@@ -1,0 +1,6 @@
+.hold-before { flex: 1 1 190px; min-width: 0; }
+.hold-before button { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--hold-line, var(--line)); border-radius: 10px; background: transparent; color: var(--hold-ink, var(--deep-green)); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; touch-action: none; user-select: none; -webkit-touch-callout: none; }
+.hold-before button[aria-pressed="true"] { background: var(--hold-ink, var(--deep-green)); color: var(--hold-surface, var(--paper)); }
+.hold-before button:disabled { opacity: 0.5; cursor: default; }
+.hold-before button:focus-visible { outline: 2px solid var(--hold-ink, var(--deep-green)); outline-offset: 3px; }
+.hold-before p { margin: 6px 0 0; color: var(--hold-muted, var(--ink)); font-size: 11px; line-height: 1.5; }

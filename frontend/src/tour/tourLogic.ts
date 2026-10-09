@@ -73,8 +73,7 @@ export function scoreDemoBlock(candidate: DemoCandidate): number | null {
   if (!candidate.hasModel || candidate.unavailable || candidate.maxTrees < 2) return null;
   let score = 0;
   if (candidate.sourceKind === "local") score += 4;
-  if (candidate.milestoneCount >= 2) score += 3;
-  else if (candidate.milestoneCount === 1) score += 1;
+  if (candidate.milestoneCount > 0) score += 3;
   if (candidate.streetCount > 0) score += 1;
   if (candidate.maxTrees >= 10) score += 1;
   return score;

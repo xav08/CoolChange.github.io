@@ -9,5 +9,22 @@ export function relativeInsight(value: number | null | undefined, reference: num
   if (delta === 0) return kind === "heat" ? "About the same surface heat" : "About the same tree canopy";
   return kind === "heat"
     ? `${Math.abs(delta).toFixed(1)}°C ${delta > 0 ? "hotter" : "cooler"}`
-    : `${Math.abs(delta).toFixed(1)} percentage points ${delta > 0 ? "more" : "less"} tree canopy`;
+    : `${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)}% canopy coverage`;
+}
+
+export type MetricKind = "heat" | "canopy";
+
+export function comparisonScale(values: Array<number | null | undefined>, kind: MetricKind) {
+  const available = values.filter((value): value is number => value != null && Number.isFinite(value));
+  const step = kind === "heat" ? 2 : 10;
+  const min = Math.floor(Math.min(0, ...available) / step) * step;
+  const max = Math.max(min + step, Math.ceil(Math.max(0, ...available) / step) * step);
+  return { min, max, position: (value: number) => Math.max(0, Math.min(100, (value - min) / (max - min) * 100)) };
+}
+
+export function compactInsight(value: number | null | undefined, reference: number | null | undefined, kind: MetricKind) {
+  const insight = relativeInsight(value, reference, kind);
+  if (!insight) return "Comparison unavailable";
+  return insight.replace("About the same surface heat", "Similar heat")
+    .replace("About the same tree canopy", "Similar canopy");
 }

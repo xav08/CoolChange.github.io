@@ -3,6 +3,7 @@ import mapboxgl, { type GeoJSONSource, type MapMouseEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { resolveMapStyle } from "../utils/mapStyle";
 import { BlockPlanting } from "./BlockPlanting";
+import { HoldBefore } from "./HoldBefore";
 import { SelectedBlockPanel, type BlockTab } from "./SelectedBlockPanel";
 import { ExplorerPanel } from "./ExplorerPanel";
 import { metricValue } from "../utils/blockInsights";
@@ -183,8 +184,6 @@ export function MelbourneMapPage() {
   const [hoveredSuburb, setHoveredSuburb] = useState<SuburbSummary | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<MeshblockDetail | null>(null);
   const [selectedGeometry, setSelectedGeometry] = useState<BlockGeometry | null>(null);
-  const [plantingInteracting, setPlantingInteracting] = useState(false);
-  const [plantingRevision, setPlantingRevision] = useState(0);
   const [blockTab, setBlockTab] = useState<BlockTab>("Overview");
   const [blockLoading, setBlockLoading] = useState(false);
   const blockRequest = useRef<AbortController | null>(null);
@@ -292,7 +291,6 @@ export function MelbourneMapPage() {
   function changeTrees(trees: number) {
     if (!model || !selectedBlock?.simulator || !suburb) return;
     if (calculatePlanting(model, trees).trees === addedTrees) return;
-    setPlantingRevision(value => value + 1);
     const code = selectedBlock.block.mb_code16;
     setPlantingNotice("");
     const next = { code, suburb_code: suburb.sa2_code16, release: selectedBlock.simulator.release_id, trees, model };
@@ -375,7 +373,6 @@ export function MelbourneMapPage() {
   }, []);
 
   async function toggleFuture() {
-    setPlantingInteracting(false);
     const next = !futureRef.current;
     panelRef.current?.querySelector(".map-explorer-content")?.scrollTo({ top: 0 });
     futureRef.current = next;
@@ -400,7 +397,6 @@ export function MelbourneMapPage() {
     const controller = new AbortController();
     blockRequest.current = controller;
     setSelectedBlock(null);
-    setPlantingInteracting(false);
     setPlantingNotice("");
     setMapError("");
     map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], mbCode16]);
@@ -803,7 +799,6 @@ export function MelbourneMapPage() {
       <div ref={containerRef} className="melbourne-map-canvas" aria-label="Interactive urban heat map of metropolitan Melbourne" />
       {mapReady && !future && selectedBlock && <MapPlantingFeedback key={`feedback-${selectedBlock.block.mb_code16}`}
         mapRef={mapRef} panelRef={panelRef} geometry={selectedGeometry} trees={addedTrees} maxTrees={model?.max_trees ?? 0}
-        cooling={displayed?.cooling ?? 0} revision={plantingRevision} interacting={plantingInteracting}
         after={effectiveComparison === "after"} reducedMotion={reducedMotion} />}
       <ProjectionControls future={future} onToggle={toggleFuture} level={warmingLevel} onLevel={setWarmingLevel} />
       <div className="map-view-actions">
@@ -910,21 +905,21 @@ export function MelbourneMapPage() {
             panelRef.current?.querySelector(".map-explorer-content")?.scrollTo({ top: 0 });
             mapRef.current?.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
           }}>
-          <BlockPlanting model={model} trees={addedTrees} onChange={changeTrees} onInteractionChange={setPlantingInteracting}
-            suburbCanopy={suburb?.canopy_mean ?? null} previewBefore={previewBefore} onPreview={setPreviewBefore}
-            previewEnabled={!future && blockTab === "Plant" && comparison === "after"} />
+          <BlockPlanting model={model} trees={addedTrees} onChange={changeTrees}
+            suburbCanopy={suburb?.canopy_mean ?? null}
+            mapControls={<div className="planting-controls">
+              <HoldBefore active={previewBefore} enabled={!future && blockTab === "Plant" && scenarios.length > 0} onPreview={setPreviewBefore} />
+              <button className="planting-reset" type="button" disabled={scenarios.length === 0} onClick={resetPlanting}>Reset all</button>
+            </div>} />
         </SelectedBlockPanel>}
         <div hidden={!!selectedBlock && blockTab !== "Plant"}>
-        {!future && suburb && (selectedBlock || scenarios.length > 0) && <div className="planting-controls">
-          <div className="planting-map-toggle" role="group" aria-label="Compare map before and after planting">
-            <button type="button" aria-pressed={comparison === "before"} onClick={() => setComparison("before")}>Before</button>
-            <button type="button" aria-pressed={comparison === "after"} onClick={() => setComparison("after")}>After</button>
-          </div>
+        {!future && suburb && !selectedBlock && scenarios.length > 0 && <div className="planting-controls">
+          <HoldBefore active={previewBefore} enabled={scenarios.length > 0} onPreview={setPreviewBefore} />
           <button className="planting-reset" type="button" disabled={scenarios.length === 0} onClick={resetPlanting}>Reset all</button>
         </div>}
         {!future && suburb && (selectedBlock || scenarios.length > 0) && <details className="planted-blocks" key={suburb.sa2_code16}>
           <summary><span>Added trees in {suburb.sa2_name}</span><span className="planted-blocks-count">{scenarios.length} {scenarios.length === 1 ? "block" : "blocks"}</span></summary>
-          <p className="planted-blocks-hint">Keep adding trees across this suburb. Switching to another suburb clears these additions.</p>
+          <p className="planted-blocks-hint">Try another block in this suburb. Choosing a different suburb clears these additions.</p>
           {scenarios.length ? <ul>
             {scenarios.map(scenario => <li key={scenario.code} className={scenario.code === selectedBlock?.block.mb_code16 ? "is-selected" : ""}>
               <button type="button" className="planted-block-view" onClick={() => viewPlantedBlock(scenario.code)} aria-label={`View block ${scenario.code}, ${scenario.trees} added trees`} aria-current={scenario.code === selectedBlock?.block.mb_code16 ? "true" : undefined}>

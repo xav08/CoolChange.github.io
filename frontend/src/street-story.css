@@ -18,12 +18,9 @@ html[data-theme="dark"] .street-page {
 .street-experience { position: relative; isolation: isolate; }
 .street-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; pointer-events: none; }
 .street-world { position: absolute; inset: 76px -3% 7% 36%; mask-image: linear-gradient(to right, transparent, #000 6%, #000 98%, transparent); }
-.street-canvas, .street-poster { display: block; width: 100%; height: 100%; }
+.street-canvas { display: block; width: 100%; height: 100%; }
 .street-canvas { position: absolute; inset: 0; opacity: 0; transition: opacity 0.5s ease; }
-.street-poster { position: absolute; inset: 0; object-fit: contain; mix-blend-mode: multiply; transition: opacity 0.4s ease; }
 .street-world.is-ready .street-canvas { opacity: 1; }
-.street-world.is-ready .street-poster { opacity: 0; }
-html[data-theme="dark"] .street-poster { mix-blend-mode: normal; border-radius: 24px; }
 .street-loading { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); white-space: nowrap; color: var(--story-muted); font-size: 12px; }
 .street-beats { position: relative; margin-top: -100svh; pointer-events: none; }
 .street-beat { position: relative; display: flex; min-height: 100svh; align-items: center; padding: 135px 0 100px 6vw; scroll-margin-top: 30px; }
@@ -146,3 +143,72 @@ html[data-theme="dark"] .street-copy h1 em { color: #b2c88b; }
 @media (max-width: 360px) {
   body:has(.street-page) .wordmark > span:last-child { display: none; }
 }
+
+/* A five-tree activity: controls stay quiet while the street responds. */
+.street-world.is-planting { left: 38%; right: 2%; mask-image: none; }
+.street-static-world .street-world.is-planting { inset: 0; }
+.street-planting { max-width: 370px; }
+.street-tree-budget { display: flex; align-items: center; gap: 14px; }
+.street-tree-budget > span { font-size: 12px; color: var(--story-muted); }
+.street-tree-budget strong { font-size: 22px; color: var(--story-ink); }
+.street-seeds { display: flex; gap: 7px; }
+.street-seeds i { width: 17px; height: 24px; border: 1.5px solid var(--story-accent); border-radius: 70% 15% 65% 20%; transform: rotate(-15deg); background: var(--story-accent); transition: background .25s, transform .25s; }
+.street-seeds i.is-used { background: transparent; transform: rotate(-15deg) scale(.8); }
+.street-reset { margin-left: auto; padding: 10px 0 10px 12px; min-height: 44px; border: 0; background: none; color: var(--story-ink); text-decoration: underline; font: inherit; font-size: 12px; cursor: pointer; }
+.street-reset:disabled { opacity: .4; cursor: default; }
+.street-plant-hint { min-height: 20px; margin: 10px 0 23px; color: var(--story-muted); font-size: 13px; }
+.street-simulator-controls { border: 0; padding: 0; margin: 0; min-width: 0; }
+.street-simulator-controls output { font: inherit; font-size: 12px; color: var(--story-muted); }
+.street-simulator-controls input[type="range"] { margin-bottom: 0; }
+.street-daylight { display: flex; gap: 8px; margin-top: 22px; }
+.street-daylight button { display: flex; justify-content: center; align-items: center; gap: 10px; flex: 1; min-height: 46px; border: 1px solid var(--story-line); border-radius: 8px; background: transparent; color: var(--story-ink); font: inherit; font-size: 12px; cursor: pointer; }
+.street-daylight button[aria-pressed="true"] { border-color: var(--story-ink); background: color-mix(in srgb, var(--story-accent) 18%, transparent); }
+.street-sun { width: 13px; height: 13px; border: 1.5px solid currentColor; border-radius: 50%; }
+.street-sun.afternoon { background: currentColor; }
+.street-planting .street-comparison { display: block; margin: 22px 0 18px; padding: 0; border: 0; }
+.street-comparison .hold-before { --hold-ink: var(--story-ink); --hold-muted: var(--story-muted); --hold-surface: var(--story-ground); --hold-line: var(--story-line); }
+.street-planting .street-comparison button { min-height: 48px; font-size: 15px; font-weight: 650; border: 2px solid var(--story-ink); border-radius: 12px; }
+.street-comparison button span { margin-left: 8px; }
+.street-simulator-controls:disabled { opacity: .45; }
+.street-thermal-legend small { margin-left: auto; font-size: 10px; align-self: center; }
+.street-planting-spots { position: absolute; inset: 0; pointer-events: none; }
+.street-spot { position: absolute; visibility: hidden; transform: translate(-50%, -50%); width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; color: #17382c; background: #f4f2e9; box-shadow: 0 0 0 5px #f4f2e94d, 0 3px 12px #17382c30; cursor: pointer; pointer-events: auto; touch-action: manipulation; transition: background .2s, box-shadow .2s; }
+.street-spot > span { font-size: 26px; line-height: 1; }
+.street-spot.is-planted { transform: translate(-50%, calc(-100% - 4px)); background: transparent; color: #536858; box-shadow: none; }
+.street-spot.is-planted > span { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #b7c4ab; border-radius: 50%; background: #e1e8d6; font-size: 18px; }
+.street-spot:disabled { opacity: .3; cursor: default; }
+.street-spot small { position: absolute; top: 51px; white-space: nowrap; background: var(--story-ground); color: var(--story-ink); border-radius: 5px; padding: 5px 8px; font-size: 11px; opacity: 0; pointer-events: none; }
+.street-spot:hover small, .street-spot:focus-visible small { opacity: 1; }
+.street-spot:focus-visible, .street-planting button:focus-visible { outline: 3px solid var(--story-accent); outline-offset: 5px; }
+.street-spot:not(:disabled):hover { box-shadow: 0 0 0 7px #a9c18b88, 0 3px 12px #17382c30; }
+.street-spot.is-planted:not(:disabled):hover { box-shadow: none; }
+.street-spot.is-planted:hover > span { background: #d4dfc7; border-color: #839477; }
+@media (max-width: 767px) {
+  .street-beat-5 .street-copy h2 { font-size: 38px; }
+  .street-world.is-planting { left: 0; right: 0; }
+  .street-stage { height: calc(80px + 43svh); }
+  .street-beats { margin-top: calc(-80px - 43svh); }
+  .street-beat-5 { min-height: 130svh; }
+  .street-planting { max-width: none; }
+  .street-plant-hint { margin-bottom: 16px; }
+  .street-daylight { margin-top: 16px; }
+  .street-planting .street-comparison { margin-top: 16px; }
+}
+/* The range is a visible growth tool, with a brief cue after planting. */
+.street-growth-control { padding: 14px 16px 12px; border: 1px solid var(--story-line); border-radius: 12px; background: color-mix(in srgb, var(--story-accent) 8%, var(--story-ground)); transition: border-color .25s, box-shadow .25s; }
+.street-growth-control.needs-growth { border-color: var(--story-accent); animation: street-growth-highlight 1.4s ease-in-out infinite; }
+.street-growth-arrows { display: inline-block; margin-left: 6px; font-size: 20px; line-height: 1; color: var(--story-ink); }
+.needs-growth .street-growth-arrows { animation: street-growth-nudge .85s ease-in-out 4; }
+.street-growth-control input[type="range"] { appearance: none; -webkit-appearance: none; display: block; height: 44px; margin: 5px 0 0; background: transparent; cursor: ew-resize; }
+.street-growth-control input[type="range"]::-webkit-slider-runnable-track { height: 9px; border-radius: 6px; background: linear-gradient(to right, var(--story-ink) var(--growth-fill), color-mix(in srgb, var(--story-accent) 35%, var(--story-ground)) var(--growth-fill)); }
+.street-growth-control input[type="range"]::-moz-range-track { height: 9px; border-radius: 6px; background: linear-gradient(to right, var(--story-ink) var(--growth-fill), color-mix(in srgb, var(--story-accent) 35%, var(--story-ground)) var(--growth-fill)); }
+.street-growth-control input[type="range"]::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 30px; height: 30px; margin-top: -10.5px; border: 3px solid var(--story-ground); border-radius: 50%; background: var(--story-ink); box-shadow: 0 0 0 2px var(--story-ink); }
+.street-growth-control input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 30px; height: 30px; border: 3px solid var(--story-ground); border-radius: 50%; background: var(--story-ink); box-shadow: 0 0 0 2px var(--story-ink); }
+.street-growth-control input:disabled { opacity: .4; cursor: default; }
+.street-growth-control input:focus-visible { outline: 2px solid var(--story-accent); outline-offset: 4px; border-radius: 6px; }
+@keyframes street-growth-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(9px); } }
+@keyframes street-growth-highlight {
+  0%, 100% { border-color: var(--story-accent); background: color-mix(in srgb, var(--story-accent) 8%, var(--story-ground)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--story-accent) 20%, transparent); }
+  50% { border-color: var(--story-ink); background: color-mix(in srgb, var(--story-accent) 20%, var(--story-ground)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--story-accent) 65%, transparent), 0 0 0 9px color-mix(in srgb, var(--story-accent) 24%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .needs-growth .street-growth-arrows, .street-growth-control.needs-growth { animation: none; } }
