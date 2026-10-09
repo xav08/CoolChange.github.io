@@ -165,8 +165,9 @@ html[data-theme="dark"] .street-copy h1 em { color: #b2c88b; }
 .street-daylight button[aria-pressed="true"] { border-color: var(--story-ink); background: color-mix(in srgb, var(--story-accent) 18%, transparent); }
 .street-sun { width: 13px; height: 13px; border: 1.5px solid currentColor; border-radius: 50%; }
 .street-sun.afternoon { background: currentColor; }
-.street-planting .street-comparison { margin: 22px 0 18px; padding: 5px; border: 2px solid var(--story-ink); border-radius: 12px; gap: 5px; }
-.street-planting .street-comparison button { min-height: 56px; font-size: 15px; font-weight: 650; border-radius: 7px; }
+.street-planting .street-comparison { display: block; margin: 22px 0 18px; padding: 0; border: 0; }
+.street-comparison .hold-before { --hold-ink: var(--story-ink); --hold-muted: var(--story-muted); --hold-surface: var(--story-ground); --hold-line: var(--story-line); }
+.street-planting .street-comparison button { min-height: 48px; font-size: 15px; font-weight: 650; border: 2px solid var(--story-ink); border-radius: 12px; }
 .street-comparison button span { margin-left: 8px; }
 .street-simulator-controls:disabled { opacity: .45; }
 .street-thermal-legend small { margin-left: auto; font-size: 10px; align-self: center; }
@@ -195,7 +196,7 @@ html[data-theme="dark"] .street-copy h1 em { color: #b2c88b; }
 }
 /* The range is a visible growth tool, with a brief cue after planting. */
 .street-growth-control { padding: 14px 16px 12px; border: 1px solid var(--story-line); border-radius: 12px; background: color-mix(in srgb, var(--story-accent) 8%, var(--story-ground)); transition: border-color .25s, box-shadow .25s; }
-.street-growth-control.needs-growth { border-color: var(--story-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--story-accent) 20%, transparent); animation: street-growth-highlight 1.8s ease-in-out infinite; }
+.street-growth-control.needs-growth { border-color: var(--story-accent); animation: street-growth-highlight 1.4s ease-in-out infinite; }
 .street-growth-arrows { display: inline-block; margin-left: 6px; font-size: 20px; line-height: 1; color: var(--story-ink); }
 .needs-growth .street-growth-arrows { animation: street-growth-nudge .85s ease-in-out 4; }
 .street-growth-control input[type="range"] { appearance: none; -webkit-appearance: none; display: block; height: 44px; margin: 5px 0 0; background: transparent; cursor: ew-resize; }
@@ -207,7 +208,7 @@ html[data-theme="dark"] .street-copy h1 em { color: #b2c88b; }
 .street-growth-control input:focus-visible { outline: 2px solid var(--story-accent); outline-offset: 4px; border-radius: 6px; }
 @keyframes street-growth-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(9px); } }
 @keyframes street-growth-highlight {
-  0%, 100% { border-color: var(--story-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--story-accent) 12%, transparent); }
-  50% { border-color: var(--story-ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--story-accent) 30%, transparent); }
+  0%, 100% { border-color: var(--story-accent); background: color-mix(in srgb, var(--story-accent) 8%, var(--story-ground)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--story-accent) 20%, transparent); }
+  50% { border-color: var(--story-ink); background: color-mix(in srgb, var(--story-accent) 20%, var(--story-ground)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--story-accent) 65%, transparent), 0 0 0 9px color-mix(in srgb, var(--story-accent) 24%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) { .needs-growth .street-growth-arrows, .street-growth-control.needs-growth { animation: none; } }

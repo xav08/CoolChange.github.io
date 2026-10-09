@@ -8,19 +8,19 @@ const model={baseline_canopy_pct:20,crown_area_m2:50.3,area_m2:10000,max_trees:1
 
 test('milestones round upward to the first whole tree that reaches the real canopy target',()=>{
   const milestones=plantingMilestones(model,22);
-  assert.deepEqual(milestones.map(item=>item.trees),[4,10]);
+  assert.deepEqual(milestones,[{trees:4,labels:['Suburb average']}]);
   assert.ok(20+4*0.503>=22);
   assert.ok(20+3*0.503<22);
 });
 test('unsupported and already-met suburb targets never appear as reachable goals',()=>{
   for(const avg of [null,NaN,10,20,40]) {
-    assert.deepEqual(plantingMilestones(model,avg).map(item=>item.labels),[['+5 percentage points canopy']]);
+    assert.deepEqual(plantingMilestones(model,avg),[]);
   }
   assert.deepEqual(plantingMilestones({...model,max_trees:0},25),[]);
   assert.deepEqual(plantingMilestones({...model,max_trees:5},40),[]);
 });
-test('coincident milestones merge and exact whole-tree thresholds do not round one too high',()=>{
-  assert.deepEqual(plantingMilestones(model,25),[{trees:10,labels:['Suburb average canopy','+5 percentage points canopy']}]);
+test('the suburb average is the only target and exact whole-tree thresholds do not round one too high',()=>{
+  assert.deepEqual(plantingMilestones(model,25),[{trees:10,labels:['Suburb average']}]);
   assert.equal(plantingMilestones({...model,crown_area_m2:50},22)[0].trees,4);
 });
 test('sheet drag ignores taps, follows direction, and clamps both ends',()=>{

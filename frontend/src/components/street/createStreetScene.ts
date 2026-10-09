@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { canopyFootprint, melbourneSunDirection, plantingLocations, plantingSites, sampleStreetView } from "../../data/streetStory";
+import { plantedCanopyFootprint, melbourneSunDirection, plantingLocations, plantingSites, sampleStreetView } from "../../data/streetStory";
 import type { Theme } from "../../hooks/useTheme";
 
 export type StreetSceneController = {
@@ -12,7 +12,7 @@ export type StreetSceneController = {
   dispose: () => void;
 };
 
-type Tree = { group: THREE.Group; shade: THREE.Mesh; scale: number };
+type Tree = { group: THREE.Group; crown: THREE.Group; scale: number };
 
 export function createStreetScene(
   canvas: HTMLCanvasElement,
@@ -152,29 +152,25 @@ export function createStreetScene(
   car(-11, 1.55, palette.orange);
   car(9, -1.55, palette.trim);
 
-  const shadeMaterial = new THREE.MeshBasicMaterial({ color: "#385237", transparent: true, opacity: 0.12, depthWrite: false });
-  materials.add(shadeMaterial);
-  function makeTree(x: number, z: number, variant: number): Tree {
+  function makeTree(x: number, z: number, variant: number, castsCanopyShade = false): Tree {
     const group = new THREE.Group(); group.position.set(x, 0.1, z); neighbourhood.add(group);
     const trunk = new THREE.Mesh(cylinderGeometry, palette.trunk);
     trunk.position.y = 1.1; trunk.scale.y = 2.2; trunk.castShadow = true; group.add(trunk);
+    const crown = new THREE.Group();
+    group.add(crown);
     const leaves = [palette.leaf, palette.leafLight, palette.leafDark];
     [[0, 3.45, 0, 1.4], [-0.58, 2.7, 0.15, 1.02], [0.65, 2.95, 0.12, 1.08]].forEach(([lx, ly, lz, s], index) => {
       const leaf = new THREE.Mesh(sphereGeometry, leaves[(variant + index) % leaves.length]);
       leaf.position.set(lx, ly, lz); leaf.scale.set(s, s * 1.08, s * 0.92);
-      leaf.rotation.set(0.2 * variant, variant * 0.7, 0.2); leaf.castShadow = true; leaf.receiveShadow = true;
-      group.add(leaf);
+      leaf.rotation.set(0.2 * variant, variant * 0.7, 0.2); leaf.castShadow = castsCanopyShade; leaf.receiveShadow = true;
+      crown.add(leaf);
     });
-    const shade = new THREE.Mesh(diskGeometry, shadeMaterial);
-    shade.rotation.x = -Math.PI / 2; shade.position.set(x - 1.4, 0.335, z - 1.3);
-    shade.scale.set(2.1, 1.45, 1); neighbourhood.add(shade);
-    return { group, shade, scale: 1 };
+    return { group, crown, scale: 1 };
   }
   const existingTrees = [[-10, -5.1], [10, -5.1], [-10, 5.1]].map(([x, z], index) => makeTree(x, z, index));
   const heroTree = makeTree(3.6, 5.2, 0);
-  const plantedTrees = plantingLocations.map(([x, , z], index) => makeTree(x, z, index));
-  const allTrees = [...existingTrees, heroTree, ...plantedTrees];
-  const footprints = allTrees.map(() => new THREE.Vector4());
+  const plantedTrees = plantingLocations.map(([x, , z], index) => makeTree(x, z, index, true));
+  const footprints = plantedTrees.map(() => new THREE.Vector4());
   // Saturated thermal contours belong to the surfaces, not a full-screen tint.
   // These are illustrative marks, not sampled temperature measurements.
   const heatMaterial = new THREE.ShaderMaterial({
@@ -195,7 +191,7 @@ export function createStreetScene(
         gl_Position = projectionMatrix * viewMatrix * world;
       }`,
     fragmentShader: `uniform float strength; uniform vec3 warm; uniform vec3 hot; uniform vec3 cool;
-      uniform vec4 footprints[40]; uniform vec4 shelterFootprint;
+      uniform vec4 footprints[36]; uniform vec4 shelterFootprint;
       varying vec2 vUv; varying vec2 streetPosition;
       void main() {
         float radius = length(vUv * 2.0 - 1.0);
@@ -204,9 +200,9 @@ export function createStreetScene(
         float contour = (1.0 - smoothstep(0.009, 0.022, abs(radius - 0.54))) * 0.23;
         vec3 color = mix(warm, hot, core);
         color = mix(color, warm, contour);
-        // Existing canopy and the shelter interrupt the exposed-surface wash.
+        // Only trees added by the visitor paint a canopy cooling area.
         float shade = 0.0;
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < 36; i++) {
           vec4 footprint = footprints[i];
           if (footprint.z > 0.01) {
             float distanceToCanopy = length((streetPosition - footprint.xy) / footprint.zw);
@@ -247,18 +243,12 @@ export function createStreetScene(
   const lookAt = new THREE.Vector3();
   const cameraOffset = new THREE.Vector3();
 
-  function footprint(tree: Tree, scale: number) {
-    return canopyFootprint(tree.group.position.x, tree.group.position.z, scale, daylight);
-  }
-
-  function applyTree(tree: Tree, scale: number) {
+  function applyTree(tree: Tree, scale: number, maturity = 0) {
     tree.scale = scale;
     tree.group.visible = scale > 0.01;
     tree.group.scale.setScalar(Math.max(0.001, scale));
-    tree.shade.visible = scale > 0.01;
-    const [x, z, width, depth] = footprint(tree, scale);
-    tree.shade.position.set(x, 0.335, z);
-    tree.shade.scale.set(width, depth, 1);
+    const crownSpread = 1 + maturity * 0.7;
+    tree.crown.scale.set(crownSpread, 1, crownSpread);
   }
 
   function draw(time: number) {
@@ -272,7 +262,6 @@ export function createStreetScene(
     camera.position.copy(lookAt).addScaledVector(cameraOffset, Math.max(1, 1.05 / camera.aspect) * (1 + (mobile ? 0 : 0.16) * view.planting));
     camera.lookAt(lookAt);
     heatMaterial.uniforms.strength.value = view.heat;
-    shadeMaterial.opacity = 0.12 + view.heat * 0.2;
     const sunTarget = view.planting > 0 ? (afternoon ? 1 : 0) : 0;
     daylight = reduced ? sunTarget : daylight + (sunTarget - daylight) * (1 - Math.exp(-delta / 220));
     let settling = Math.abs(daylight - sunTarget) > 0.001;
@@ -288,12 +277,11 @@ export function createStreetScene(
         if (Math.abs(target - tree.scale) > 0.002) settling = true;
         else tree.scale = target;
       }
-      applyTree(tree, tree.scale);
+      const maturity = Math.max(0, Math.min(1, (tree.scale - 0.25) / 0.65));
+      applyTree(tree, tree.scale, maturity);
+      footprints[index].set(...plantedCanopyFootprint(tree.group.position.x, tree.group.position.z, tree.scale, daylight, maturity));
     });
     existingTrees.forEach(tree => applyTree(tree, 1));
-    allTrees.forEach((tree, index) => {
-      footprints[index].set(...footprint(tree, tree.scale));
-    });
     immediateTrees = false;
     renderer.render(scene, camera);
     plantingSites.forEach(({ index }) => {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canopyDensity, canopyPoints, insidePolygons, polygonsFor, selectedBlockPadding } from '../src/utils/canopyGeometry.ts';
+import { canopyDensity, canopyMarkerSize, canopyPoints, insidePolygons, polygonsFor, selectedBlockPadding } from '../src/utils/canopyGeometry.ts';
 import { queueCoolingPulse } from '../src/utils/coolingFeedback.ts';
 
 test('illustrative canopy stays capped and handles zero, invalid and out-of-range inputs', () => {
@@ -44,6 +44,16 @@ test('camera reserves the actual side panel and enough visible space on mobile',
   const mobile=selectedBlockPadding(390,760,{right:378,bottom:550});
   assert.ok(mobile.top>550);
   assert.ok(760-mobile.top-mobile.bottom>=90);
+});
+
+test('crowns keep separate silhouettes and shrink naturally at low zoom', () => {
+  const points = [{x:0,y:0},{x:10,y:0},{x:100,y:100}];
+  assert.equal(canopyMarkerSize(points, 0, 120), 7.5);
+  assert.equal(canopyMarkerSize(points, 1, 120), 7.5);
+  assert.equal(canopyMarkerSize(points, 2, 120), 24);
+  assert.equal(canopyMarkerSize(points, 0, 3), 1);
+  assert.equal(canopyMarkerSize([{x:0,y:0},{x:0,y:0}], 0, 120), 0);
+  assert.equal(canopyMarkerSize([], 0, 120), 0);
 });
 
 function fakeTimer() {

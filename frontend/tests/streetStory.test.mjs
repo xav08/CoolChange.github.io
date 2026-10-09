@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canopyFootprint, melbourneSunDirection, plantedTreeScale, clampTreeCount, sampleStreetView, plantingLocations, streetChapters } from '../src/data/streetStory.ts';
+import { canopyFootprint, plantedCanopyFootprint, melbourneSunDirection, plantedTreeScale, clampTreeCount, sampleStreetView, plantingLocations, streetChapters } from '../src/data/streetStory.ts';
 
 test('planting counts handle slider boundaries and invalid input', () => {
   assert.deepEqual([-5, 0, 12, 36, 50, NaN].map(clampTreeCount), [0, 0, 12, 36, 36, 0]);
@@ -45,10 +45,26 @@ test('heat remains conspicuous through the exposed, shade and shared-street beat
 
 test('simulator keeps exposed heat and grows the canopy footprint with the tree', () => {
   assert.equal(sampleStreetView(5).heat, 0.85);
-  assert.deepEqual(plantingLocations[0], [0, 0.05, 6.1]);
+  assert.ok(plantingLocations[0][2] >= 8, 'the bus-stop tree sits back beside the houses');
   const [, , width] = canopyFootprint(0, 5.3, 0.9);
   assert.equal(canopyFootprint(0, 5.3, 0)[2], 0);
   assert.ok(canopyFootprint(0, 5.3, 0.45)[2] < width);
+  const standard = canopyFootprint(0, 5.3, 0.9, 0.5);
+  const broader = canopyFootprint(0, 5.3, 0.9, 0.5, 1.14);
+  assert.ok(broader[2] > standard[2] && broader[3] > standard[3]);
+  assert.deepEqual(broader.slice(0, 2), standard.slice(0, 2), 'a wider crown does not move the shade centre');
+});
+
+test('added mature canopy reaches the adjoining road on both verges and clears when removed', () => {
+  for (const z of [-5.3, 5.3]) {
+    for (const time of [0, 1]) {
+      const [, centreZ, width, depth] = plantedCanopyFootprint(0, z, 0.9, time, 1);
+      assert.ok(centreZ - depth < 2.8 && centreZ + depth > -2.8, 'mature coverage must intersect the road');
+      const young = plantedCanopyFootprint(0, z, 0.25, time, 0);
+      assert.ok(width * depth > young[2] * young[3] * 5);
+      assert.deepEqual(plantedCanopyFootprint(0, z, 0, time, 0), [0, z, 0, 0]);
+    }
+  }
 });
 
 test('Melbourne sun follows the northern sky from east to west', () => {

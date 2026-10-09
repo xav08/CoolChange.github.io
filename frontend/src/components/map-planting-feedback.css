@@ -1,11 +1,3 @@
 .map-planting-feedback { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
-.map-canopy-circle { fill: #286d50; stroke: #e5f1ce; stroke-width: 0.65; transition: r 300ms ease-out, opacity 300ms ease-out; }
-.map-cooling-pulse { animation: cooling-pulse 600ms ease-out both; }
-.map-cooling-border { fill: none; stroke: #dbf7cf; stroke-width: 4; }
-.map-cooling-halo { fill: #a7e4bd; fill-opacity: 0.18; stroke: #d0f2d7; stroke-opacity: 0.5; stroke-width: 1; transform-box: fill-box; transform-origin: center; animation: cooling-halo 600ms ease-out both; }
-.map-cooling-label-background { fill: #183d2d; fill-opacity: 0.95; stroke: #d0f2d7; stroke-width: 1; }
-.map-cooling-label { fill: #f0f8e9; font: 11px system-ui, sans-serif; font-variant-numeric: tabular-nums; }
-.planting-illustration-note { color: var(--ink); font-size: 11px; line-height: 1.5; margin: 12px 0; }
-@keyframes cooling-pulse { 0% { opacity: 0; } 15%, 40% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes cooling-halo { from { transform: scale(0.65); } to { transform: scale(1.7); } }
-@media (prefers-reduced-motion: reduce) { .map-canopy-circle { transition: none; } .map-cooling-pulse { display: none; animation: none; } .map-cooling-halo { animation: none; } }
+.map-tree-crown { transition: opacity 200ms ease-out; filter: drop-shadow(0 1px 1px #17382c35); }
+@media (prefers-reduced-motion: reduce) { .map-tree-crown { transition: none; } }

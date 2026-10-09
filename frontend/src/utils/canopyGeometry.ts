@@ -57,6 +57,15 @@ export function canopyDensity(trees: number, maxTrees: number) {
   return { ratio, count: ratio > 0 ? Math.max(1, Math.round(ratio * 10)) : 0 };
 }
 
+// Screen-space crowns stay separate even on narrow blocks or at low zoom.
+export function canopyMarkerSize(points: { x: number; y: number }[], index: number, blockSize: number) {
+  const point = points[index];
+  if (!point || !Number.isFinite(blockSize) || blockSize <= 0) return 0;
+  const nearest = Math.min(...points.filter((_, other) => other !== index)
+    .map(other => Math.hypot(point.x - other.x, point.y - other.y)));
+  return Math.min(24, blockSize / 3, nearest * 0.75);
+}
+
 export function selectedBlockPadding(width: number, height: number, panel: { right: number; bottom: number; top?: number }) {
   if (width <= 760 && panel.top != null) {
     const top = Math.min(184, height * 0.24);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { plantingSites, streetChapters, togglePlantingSite } from "../../data/streetStory";
 import { useTheme } from "../../hooks/useTheme";
 import type { StreetSceneController } from "./createStreetScene";
+import { HoldBefore } from "../HoldBefore";
 
 export function StreetExperience() {
   const root = useRef<HTMLElement>(null);
@@ -182,9 +183,8 @@ export function StreetExperience() {
                     <button type="button" aria-pressed={!afternoon} onClick={() => setAfternoon(false)}><i className="street-sun morning" aria-hidden="true" />Morning</button>
                     <button type="button" aria-pressed={afternoon} onClick={() => setAfternoon(true)}><i className="street-sun afternoon" aria-hidden="true" />Afternoon</button>
                   </div>
-                  <div className="street-comparison" role="group" aria-label="Compare your street before and after planting">
-                    <button type="button" aria-pressed={before} onClick={() => setBefore(true)}>Before</button>
-                    <button type="button" aria-pressed={!before} onClick={() => setBefore(false)}>After</button>
+                  <div className="street-comparison">
+                    <HoldBefore active={before} enabled={status === "ready" && selected.length > 0 && active} onPreview={setBefore} />
                   </div>
                 </fieldset>
                 <div className="street-thermal-legend" aria-label="Heat and shade">

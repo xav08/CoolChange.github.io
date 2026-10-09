@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import "./hold-before.css";
 
 export function HoldBefore({ active, enabled, onPreview }: { active: boolean; enabled: boolean; onPreview: (active: boolean) => void }) {
   useEffect(() => {
@@ -31,6 +32,6 @@ export function HoldBefore({ active, enabled, onPreview }: { active: boolean; en
       }}
       onKeyUp={event => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); onPreview(false); } }}
       onContextMenu={event => event.preventDefault()}>Hold to see before</button>
-    <p role="status">{active ? "Showing the baseline map. Release to return to your scenario." : "Hold with a pointer, Space or Enter to preview the baseline. Before / After below keeps your chosen map view."}</p>
+    <p role="status">{active ? "Showing before. Release to return." : "Release to return to your trees."}</p>
   </div>;
 }

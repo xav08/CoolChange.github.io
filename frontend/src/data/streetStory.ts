@@ -84,8 +84,8 @@ export function togglePlantingSite(selected: readonly number[], index: number): 
 // Fixed positions prevent trees jumping around when the slider is reversed.
 // Three rows of verge/yard planting, clear of the bus stop and front doors.
 export const plantingLocations: readonly Point3[] = Array.from({ length: MAX_STORY_TREES }, (_, index) => {
-  // Set the bus-stop tree farther back from the shelter, within the verge.
-  if (index === 0) return [0, 0.05, 6.1];
+  // Beside the red-roof house, behind the shelter and clear of the building.
+  if (index === 0) return [-0.8, 0.05, 8.8];
   const pair = Math.floor(index / 2);
   const row = Math.floor(pair / 6);
   const column = pair % 6;
@@ -105,16 +105,26 @@ export function melbourneSunDirection(daylight: number): Point3 {
   return [-Math.sin(hourAngle), Math.cos(latitude) * Math.cos(hourAngle), Math.sin(latitude) * Math.cos(hourAngle)];
 }
 
-// Project the canopy centre away from the sun onto the ground. The same
-// footprint drives the shade mesh and thermal mask on BOTH sides of the road.
-export function canopyFootprint(x: number, z: number, scale: number, daylight = 0): readonly [number, number, number, number] {
+// Project the canopy centre away from the sun onto the ground.
+export function canopyFootprint(x: number, z: number, scale: number, daylight = 0, crownSpread = 1): readonly [number, number, number, number] {
   const size = Math.max(0, scale);
   const [east, up, south] = melbourneSunDirection(daylight);
   const dx = east / up;
   const dz = south / up;
   const height = 3.1 * size;
   return [x - dx * height, z - dz * height,
-    size * Math.hypot(1.5, 1.6 * dx), size * Math.hypot(1.5, 1.6 * dz)];
+    size * Math.hypot(1.5 * crownSpread, 1.6 * dx), size * Math.hypot(1.5 * crownSpread, 1.6 * dz)];
+}
+
+// The illustrative cooling area includes both the canopy overhead and its
+// cast shade, so growing a tree can shelter the adjoining footpath and road.
+export function plantedCanopyFootprint(x: number, z: number, scale: number, daylight: number, maturity: number): readonly [number, number, number, number] {
+  const size = Math.max(0, scale);
+  const age = Math.max(0, Math.min(1, maturity));
+  const [shadowX, shadowZ] = canopyFootprint(x, z, size, daylight);
+  const radius = size * 1.5 * (1 + age * 0.7) * (1 + age * 0.5);
+  return [(x + shadowX) / 2, (z + shadowZ) / 2,
+    radius + Math.abs(shadowX - x) / 2, radius + Math.abs(shadowZ - z) / 2];
 }
 
 export function plantedTreeScale(index: number, count: number, planting: number, before: boolean): number {
