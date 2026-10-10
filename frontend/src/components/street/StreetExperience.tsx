@@ -3,8 +3,9 @@ import { plantingSites, streetChapters, togglePlantingSite } from "../../data/st
 import { useTheme } from "../../hooks/useTheme";
 import type { StreetSceneController } from "./createStreetScene";
 import { HoldBefore } from "../HoldBefore";
+import type { WelcomePhase } from "../../data/welcome";
 
-export function StreetExperience() {
+export function StreetExperience({ welcome = "complete" }: { welcome?: WelcomePhase }) {
   const root = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const controller = useRef<StreetSceneController | null>(null);
@@ -20,7 +21,13 @@ export function StreetExperience() {
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [stills, setStills] = useState<string[]>([]);
-  const latest = useRef({ theme, selected, growth, afternoon, before });
+  const staticWelcome = reduced && welcome !== "complete";
+  const latest = useRef({ theme, selected, growth, afternoon, before, welcome: welcome === "welcome" });
+
+  useEffect(() => {
+    latest.current.welcome = welcome === "welcome";
+    controller.current?.setWelcome(welcome === "welcome");
+  }, [welcome]);
 
   useEffect(() => {
     latest.current = { ...latest.current, theme, selected, growth, afternoon };
@@ -110,7 +117,7 @@ export function StreetExperience() {
       localController?.dispose();
       controller.current = null;
     };
-  }, [reduced]);
+  }, [reduced, staticWelcome]);
 
   useEffect(() => {
     const chapter = root.current?.querySelector("#street-plant");
@@ -144,7 +151,7 @@ export function StreetExperience() {
 
   return (
     <section ref={root} className={`street-experience ${isStatic ? "is-static" : ""}`} aria-label="A continuous neighbourhood story">
-      {!isStatic && <div className="street-stage">
+      {(!isStatic || welcome !== "complete") && <div className="street-stage">
         {world}
       </div>}
 
@@ -152,7 +159,7 @@ export function StreetExperience() {
         {streetChapters.map((chapter, index) => (
           <article key={chapter.id} id={chapter.id} className={`street-beat street-beat-${index}`} aria-labelledby={`${chapter.id}-title`}>
             {isStatic && index < 5 && stills[index] && <img className="street-still" src={stills[index]} alt={chapter.object} loading={index === 0 ? "eager" : "lazy"} />}
-            {isStatic && index === 5 && <div className="street-static-world">{world}</div>}
+            {isStatic && index === 5 && welcome === "complete" && <div className="street-static-world">{world}</div>}
             <div className="street-copy">
               {index === 0 && <p className="street-intro-label">Cool Change / The street we share</p>}
               {index === 0

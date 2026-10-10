@@ -68,7 +68,7 @@ export function BlockPlanting({ model, trees, onChange, onInteractionChange, sub
             {addedCanopy > 0 && <circle cx="32" cy="32" r="24" pathLength="100" strokeDasharray={`${addedCanopy} 100`} strokeDashoffset={-model.baseline_canopy_pct} className="planting-ring-added" />}
           </svg>
           <div><span className="planting-canopy-values"><span>{model.baseline_canopy_pct.toFixed(1)}%</span><span aria-hidden="true">→</span><span className="metric-screen-reader"> to </span><strong><AnimatedMetric value={result.canopy} unit="%" /></strong></span>
-            <span className="planting-canopy-change">+{addedCanopy.toFixed(1)}% canopy coverage</span>
+            <span className="planting-canopy-change">+{addedCanopy.toFixed(1)}%</span>
           </div>
         </dd>
       </div>

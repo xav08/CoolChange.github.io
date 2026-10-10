@@ -870,7 +870,6 @@ export function MelbourneMapPage() {
               {!suburb && <h2>{projectionSuburb.sa2_name}</h2>}<p className="projection-days">{daysBand(selectedProjection)}<small>{selectedProjection?.days_lower != null ? "days/year ≥35°C" : ""}</small></p>
               {suburb && <ProjectionHelp band={selectedProjection} level={warmingLevel} suburbName={suburb.sa2_name} />}
             </> : <p>Choose a suburb to see its projected hot-day band.</p>}
-          <p className="projection-context">Climate projections by warming level, not an exact forecast for 2050. Added trees provide shade; this dataset does not measure their effect on hot-day counts.</p>
           {savedTrees > 0 && <p className="projection-saved">Your {savedTrees.toLocaleString()} added {savedTrees === 1 ? "tree is" : "trees are"} saved. Switch to 🌳 to explore canopy and cooling.</p>}
           {suburb && <button className="projection-planting-link" type="button" onClick={async () => {
             setBlockTab("Plant");

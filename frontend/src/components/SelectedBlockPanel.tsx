@@ -2,7 +2,7 @@ import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "rea
 import type { MeshblockDetail } from "./MelbourneMapPage";
 import { MetricHelp } from "./MetricHelp";
 import { AnimatedMetric } from "./AnimatedMetric";
-import { compactInsight, comparisonScale, metricValue, relativeInsight, type MetricKind } from "../utils/blockInsights";
+import { compactInsight, comparisonScale, heatTone, metricValue, relativeInsight, type MetricKind } from "../utils/blockInsights";
 import "./selected-block.css";
 
 const tabs = ["Overview", "Compare", "Plant"] as const;
@@ -14,7 +14,7 @@ const isAvailable = (value: number | null | undefined): value is number => value
 function LocalComparison({ kind, value, reference, label }: { kind: MetricKind; value: number | null; reference: number | null | undefined; label: string }) {
   return <div className="block-insight">
     <span className="block-insight-label">{kind === "heat" ? "Surface heat" : "Tree canopy"}</span>
-    <strong>{compactInsight(value, reference, kind)}</strong>
+    <strong className={kind === "heat" ? "heat-value" : undefined} data-tone={kind === "heat" ? heatTone(value, reference) : undefined}>{compactInsight(value, reference, kind)}</strong>
     <span className="metric-screen-reader">{relativeInsight(value, reference, kind) ?? "Comparison unavailable"} compared with the {label.toLowerCase()}.</span>
   </div>;
 }
@@ -71,7 +71,6 @@ export function SelectedBlockPanel({ detail, suburb, heat, canopy, modelled, tab
         <dd>{!isAvailable(canopy) ? "Not available" : <AnimatedMetric value={canopy} unit="%" />}</dd>
       </div>
     </dl>}
-    {tab !== "Plant" && !modelled && <p className="selected-block-context">2018 baseline · surface heat above non-urban land</p>}
     <div className="block-tabs" role="tablist" aria-label="Selected block information">
       {tabs.map((name, index) => <button key={name} ref={node => { tabRefs.current[index] = node; }}
         type="button" role="tab" id={`${id}-${name}`} aria-controls={`${id}-${name}-panel`}
@@ -101,7 +100,7 @@ export function SelectedBlockPanel({ detail, suburb, heat, canopy, modelled, tab
         <button type="button" aria-pressed={comparisonKind === "canopy"} onClick={() => setComparisonKind("canopy")}>Tree canopy</button>
       </div>
       <section className="block-comparison-section" aria-label={comparisonKind === "heat" ? "Surface heat comparisons" : "Tree canopy comparisons"}>
-        <p className="block-comparison-caption"><strong>{compactInsight(selected, local[comparisonKind], comparisonKind)}</strong> vs the {local.label.toLowerCase()}</p>
+        <p className="block-comparison-caption"><strong className={comparisonKind === "heat" ? "heat-value" : undefined} data-tone={comparisonKind === "heat" ? heatTone(selected, local.heat) : undefined}>{compactInsight(selected, local[comparisonKind], comparisonKind)}</strong> vs the {local.label.toLowerCase()}</p>
         <dl>{rows.map((row, index) => <div className={`block-comparison-row${index === 0 ? " is-selected" : ""}`} key={row.label}>
           <dt>{row.label}</dt><dd>{metricValue(row[comparisonKind], comparisonKind)}
             {index > 0 && <span className="metric-screen-reader">{relativeInsight(selected, row[comparisonKind], comparisonKind) ?? "Difference unavailable"}</span>}

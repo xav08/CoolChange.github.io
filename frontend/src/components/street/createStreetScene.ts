@@ -2,11 +2,14 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { plantedCanopyFootprint, melbourneSunDirection, plantingLocations, plantingSites, sampleStreetView } from "../../data/streetStory";
 import type { Theme } from "../../hooks/useTheme";
+import { WELCOME_TRANSITION_MS } from "../../data/welcome";
+import { createCanopyTree } from "./createCanopyTree";
 
 export type StreetSceneController = {
   setProgress: (progress: number) => void;
   setPlanting: (selected: number[], growth: number, afternoon: boolean) => void;
   setBefore: (before: boolean) => void;
+  setWelcome: (active: boolean) => void;
   setTheme: (theme: Theme) => void;
   getStillViews: () => string[];
   dispose: () => void;
@@ -16,7 +19,7 @@ type Tree = { group: THREE.Group; crown: THREE.Group; scale: number };
 
 export function createStreetScene(
   canvas: HTMLCanvasElement,
-  options: { theme: Theme; selected: number[]; growth: number; afternoon: boolean; before?: boolean; reduced: boolean; onFailure: () => void; onProject: (index: number, x: number, y: number, visible: boolean) => void },
+  options: { theme: Theme; selected: number[]; growth: number; afternoon: boolean; before?: boolean; welcome?: boolean; reduced: boolean; onFailure: () => void; onProject: (index: number, x: number, y: number, visible: boolean) => void },
 ): StreetSceneController {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
   renderer.setClearColor(0x000000, 0);
@@ -62,7 +65,7 @@ export function createStreetScene(
   const sun = new THREE.DirectionalLight(0xfff0d5, 2.6);
   sun.position.set(12, 24, 14);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -27, right: 27, top: 27, bottom: -27, near: 1, far: 80 });
   sun.shadow.normalBias = 0.08;
   sun.shadow.bias = -0.0004;
@@ -167,7 +170,10 @@ export function createStreetScene(
     });
     return { group, crown, scale: 1 };
   }
-  const existingTrees = [[-10, -5.1], [10, -5.1], [-10, 5.1]].map(([x, z], index) => makeTree(x, z, index));
+  const detailedTree = createCanopyTree(geometries, materials);
+  detailedTree.group.position.set(-10, 0.1, 5.1);
+  scene.add(detailedTree.group);
+  const existingTrees = [makeTree(-10, -5.1, 0), makeTree(10, -5.1, 1), makeTree(-10, 5.1, 2)];
   const heroTree = makeTree(3.6, 5.2, 0);
   const plantedTrees = plantingLocations.map(([x, , z], index) => makeTree(x, z, index, true));
   const footprints = plantedTrees.map(() => new THREE.Vector4());
@@ -228,6 +234,25 @@ export function createStreetScene(
     patch.rotation.x = -Math.PI / 2; patch.position.set(x, y, z); patch.scale.set(sx, sz, 1); neighbourhood.add(patch);
   }
 
+  // The welcome model fades into the ordinary street tree at the same location.
+  const welcomeTree = detailedTree;
+  const streetShadowCasters: THREE.Object3D[] = [];
+  neighbourhood.traverse(object => {
+    if (object.castShadow) streetShadowCasters.push(object);
+  });
+  const welcomeGroundMaterial = new THREE.MeshBasicMaterial({ color: "#f4f2e9", transparent: true, depthWrite: false, toneMapped: false });
+  const welcomeShadowMaterial = new THREE.ShadowMaterial({ color: "#3c523b", transparent: true, opacity: 0.22, depthWrite: false });
+  materials.add(welcomeGroundMaterial); materials.add(welcomeShadowMaterial);
+  const welcomeGroundGeometry = geometry(new THREE.PlaneGeometry(240, 240));
+  const welcomeGround = new THREE.Mesh(welcomeGroundGeometry, welcomeGroundMaterial);
+  welcomeGround.rotation.x = -Math.PI / 2; welcomeGround.position.y = 0.065; scene.add(welcomeGround);
+  const welcomeShadow = new THREE.Mesh(welcomeGroundGeometry, welcomeShadowMaterial);
+  welcomeShadow.rotation.x = -Math.PI / 2; welcomeShadow.position.y = 0.07;
+  welcomeShadow.receiveShadow = true; scene.add(welcomeShadow);
+  const welcomeTarget = new THREE.Vector3(-10.8, 1.55, 5.1);
+  const welcomeCamera = new THREE.Vector3(-2.8, 7.55, 17.1);
+  let welcomeAmount = options.welcome ? 1 : 0;
+  let welcomeExitStart: number | null = null;
   let progress = 0;
   let selected = options.selected;
   let growth = options.growth;
@@ -255,13 +280,20 @@ export function createStreetScene(
     frame = 0;
     if (disposed) return;
     const delta = Math.min(64, time - (lastTime || time)); lastTime = time;
+    if (welcomeExitStart !== null) {
+      const elapsed = Math.min(1, (time - welcomeExitStart) / WELCOME_TRANSITION_MS);
+      welcomeAmount = reduced ? 0 : 1 - elapsed * elapsed * (3 - 2 * elapsed);
+      if (welcomeAmount === 0) welcomeExitStart = null;
+    }
     const view = sampleStreetView(progress, mobile, reduced);
     lookAt.set(...view.target);
     cameraOffset.set(...view.camera).sub(lookAt);
     // Preserve the composition in tall tablet canvases instead of cropping it.
     camera.position.copy(lookAt).addScaledVector(cameraOffset, Math.max(1, 1.05 / camera.aspect) * (1 + (mobile ? 0 : 0.16) * view.planting));
+    camera.position.lerp(welcomeCamera, welcomeAmount);
+    lookAt.lerp(welcomeTarget, welcomeAmount);
     camera.lookAt(lookAt);
-    heatMaterial.uniforms.strength.value = view.heat;
+    heatMaterial.uniforms.strength.value = view.heat * (1 - welcomeAmount);
     const sunTarget = view.planting > 0 ? (afternoon ? 1 : 0) : 0;
     daylight = reduced ? sunTarget : daylight + (sunTarget - daylight) * (1 - Math.exp(-delta / 220));
     let settling = Math.abs(daylight - sunTarget) > 0.001;
@@ -282,6 +314,20 @@ export function createStreetScene(
       footprints[index].set(...plantedCanopyFootprint(tree.group.position.x, tree.group.position.z, tree.scale, daylight, maturity));
     });
     existingTrees.forEach(tree => applyTree(tree, 1));
+    welcomeTree.crown.scale.set(1 + welcomeAmount * 0.85, 1, 1 + welcomeAmount * 0.55);
+    detailedTree.animate(time, reduced ? 0 : welcomeAmount);
+    detailedTree.setOpacity(welcomeAmount);
+    detailedTree.setCanopyShade(welcomeAmount > 0.01);
+    welcomeGround.visible = welcomeShadow.visible = welcomeAmount > 0;
+    welcomeGroundMaterial.opacity = welcomeAmount;
+    welcomeShadowMaterial.opacity = welcomeAmount * 0.22;
+    // Hide the surrounding street until the visitor chooses to enter it.
+    Object.values(palette).forEach(mat => {
+      mat.transparent = welcomeAmount > 0;
+      mat.opacity = 1 - welcomeAmount;
+      mat.depthWrite = welcomeAmount < 0.5;
+    });
+    streetShadowCasters.forEach(object => { object.castShadow = welcomeAmount === 0; });
     immediateTrees = false;
     renderer.render(scene, camera);
     plantingSites.forEach(({ index }) => {
@@ -289,7 +335,7 @@ export function createStreetScene(
       const point = new THREE.Vector3(x, selected.includes(index) && !before ? 0.1 + 5.05 * plantedTrees[index].scale : 0.5, z).project(camera);
       options.onProject(index, (point.x + 1) * 50, (1 - point.y) * 50, view.planting > 0.95 && point.z < 1);
     });
-    if (settling) invalidate();
+    if (settling || (welcomeAmount > 0 && !reduced && !document.hidden)) invalidate();
   }
   function invalidate() {
     if (!frame && !disposed) frame = requestAnimationFrame(draw);
@@ -309,6 +355,8 @@ export function createStreetScene(
     palette.ground.color.set(dark ? "#617762" : "#c3cfa9");
     palette.edge.color.set(dark ? "#435d4b" : "#a9b691");
     palette.road.color.set(dark ? "#536c62" : "#77877e");
+    welcomeGroundMaterial.color.set(dark ? "#14271f" : "#f4f2e9");
+    welcomeShadowMaterial.color.set(dark ? "#07130c" : "#3c523b");
     // Keep daylight on the model in either interface theme.
     renderer.toneMappingExposure = dark ? 1 : 1.05;
     invalidate();
@@ -318,6 +366,8 @@ export function createStreetScene(
     options.onFailure();
   }
   canvas.addEventListener("webglcontextlost", contextLost);
+  function visibilityChanged() { if (!document.hidden) invalidate(); }
+  document.addEventListener("visibilitychange", visibilityChanged);
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
   setTheme(options.theme);
@@ -327,9 +377,17 @@ export function createStreetScene(
     setProgress(value) { progress = value; invalidate(); },
     setPlanting(value, age, pm) { selected = value; growth = age; afternoon = pm; invalidate(); },
     setBefore(value) { before = value; immediateTrees = true; invalidate(); },
+    setWelcome(active) {
+      if (active) { welcomeAmount = 1; welcomeExitStart = null; }
+      else if (welcomeAmount > 0 && welcomeExitStart === null) welcomeExitStart = performance.now();
+      invalidate();
+    },
     setTheme,
     getStillViews() {
       const savedProgress = progress;
+      const savedWelcome = welcomeAmount;
+      const savedExit = welcomeExitStart;
+      welcomeAmount = 0; welcomeExitStart = null;
       const views: string[] = [];
       for (let index = 0; index < 6; index++) {
         cancelAnimationFrame(frame); frame = 0;
@@ -338,6 +396,7 @@ export function createStreetScene(
         views.push(canvas.toDataURL("image/webp", 0.8));
       }
       progress = savedProgress;
+      welcomeAmount = savedWelcome; welcomeExitStart = savedExit;
       invalidate();
       return views;
     },
@@ -347,6 +406,8 @@ export function createStreetScene(
       cancelAnimationFrame(frame);
       observer.disconnect();
       canvas.removeEventListener("webglcontextlost", contextLost);
+      document.removeEventListener("visibilitychange", visibilityChanged);
+      detailedTree.dispose();
       geometries.forEach(value => value.dispose());
       materials.forEach(value => value.dispose());
       renderer.dispose();

@@ -9,10 +9,16 @@ export function relativeInsight(value: number | null | undefined, reference: num
   if (delta === 0) return kind === "heat" ? "About the same surface heat" : "About the same tree canopy";
   return kind === "heat"
     ? `${Math.abs(delta).toFixed(1)}°C ${delta > 0 ? "hotter" : "cooler"}`
-    : `${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)}% canopy coverage`;
+    : `${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)}%`;
 }
 
 export type MetricKind = "heat" | "canopy";
+
+export function heatTone(value: number | null | undefined, reference: number | null | undefined) {
+  if (value == null || reference == null || !Number.isFinite(value) || !Number.isFinite(reference)) return "neutral";
+  const delta = Math.round((value - reference) * 10) / 10;
+  return delta > 0 ? "hotter" : delta < 0 ? "cooler" : "neutral";
+}
 
 export function comparisonScale(values: Array<number | null | undefined>, kind: MetricKind) {
   const available = values.filter((value): value is number => value != null && Number.isFinite(value));

@@ -1,0 +1,39 @@
+/* Layers: street scene (0), welcome text (40), password gate (9999). */
+.welcome-screen { position: fixed; inset: 0; z-index: 40; min-height: 100dvh; color: var(--ink); pointer-events: none; }
+.welcome-brand { position: absolute; top: 32px; left: 5.5vw; padding: 0; }
+.welcome-copy { position: absolute; top: 42%; left: 8vw; transform: translateY(-12%); }
+.welcome-copy h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(52px, 5.5vw, 88px); font-weight: 400; line-height: 1.08; letter-spacing: -0.055em; }
+.welcome-copy h1 em { display: inline-block; padding-bottom: 0.08em; color: #6f8453; font-weight: 400; }
+.welcome-entry { display: grid; justify-items: start; gap: 15px; margin-top: 38px; pointer-events: auto; }
+.welcome-entry button { display: inline-flex; align-items: center; gap: 30px; min-height: 52px; padding: 13px 23px; border: 1px solid var(--deep-green); border-radius: 999px; background: var(--deep-green); color: var(--paper); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: transform 180ms ease, box-shadow 180ms ease; }
+.welcome-entry button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px #17382c18; }
+.welcome-entry button:disabled { cursor: default; }
+.welcome-entry button > span { font-size: 20px; }
+.welcome-key-hint { margin-left: 23px; font-size: 11px; color: #526858; }
+.welcome-key-hint kbd { font: inherit; }
+.welcome-screen.is-entering .welcome-copy, .welcome-screen.is-entering .welcome-brand { opacity: 0; transition: opacity 350ms ease; }
+.site-content > .site-header { transition: opacity 450ms ease; }
+.site-content .street-beats { transition: opacity 500ms ease; }
+.welcome-content > .site-header { opacity: 0; pointer-events: none; }
+.welcome-content .street-beats { opacity: 0; }
+.welcome-content .street-beats, .welcome-content .explore-section, .welcome-content .trust-section, .welcome-content footer, .welcome-content .street-closing-image { visibility: hidden; }
+.welcome-content .street-planting-spots { visibility: hidden; }
+.welcome-content .street-world { transform: translateX(2%) scale(1.45); transform-origin: 70% 45%; mask-image: none; }
+.welcome-content.is-entering .street-world { transform: none; transition: transform 1400ms cubic-bezier(.4, 0, .2, 1); }
+.welcome-content .street-stage { position: fixed; inset: 0; height: 100dvh; }
+.welcome-content .street-loading { display: none; }
+.welcome-content .street-experience.is-static .street-stage { display: block; }
+.welcome-content .street-experience.is-static .street-beats { margin-top: -100svh; }
+.welcome-content .street-canvas { transition: opacity 500ms ease; }
+html[data-theme="dark"] .welcome-copy h1 em { color: #b2c88b; }
+html[data-theme="dark"] .welcome-key-hint { color: #b0bfae; }
+@media (max-width: 767px) {
+  .welcome-brand { top: 24px; left: 6vw; }
+  .welcome-copy { top: auto; bottom: 18%; left: 7vw; transform: none; }
+  .welcome-copy h1 { font-size: clamp(42px, 9vw, 64px); }
+  .welcome-entry { margin-top: 22px; gap: 10px; }
+  .welcome-content .street-world { inset: 5% -22% 38% 0; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-content > .site-header, .site-content .street-beats, .welcome-content .street-world, .welcome-screen * { animation: none !important; transition: none !important; }
+}
