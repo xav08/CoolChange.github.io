@@ -17,9 +17,10 @@
 .planting-milestones button:disabled { opacity: 0.65; cursor: default; }
 .planting-target-note { flex-basis: 100%; margin: 2px 0 0; color: var(--ink); font-size: 11px; line-height: 1.5; }
 .block-planting .planting-cooling { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 16px; justify-content: space-between; margin: 20px 0 14px; color: var(--deep-green); }
+html[data-theme] .block-planting .planting-cooling { color: var(--deep-green); }
 .planting-cooling > div { display: grid; gap: 5px; }
 .planting-cooling > div > span { font-size: 12px; }
-.block-planting .planting-cooling strong { font-size: 36px; font-weight: 700; line-height: 1.1; letter-spacing: -0.035em; }
+.block-planting .planting-cooling strong { color: var(--cooling-green); font-size: 36px; font-weight: 700; line-height: 1.1; letter-spacing: -0.035em; }
 .planting-result-rows { margin: 0; }
 .planting-canopy-result { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; color: var(--ink); font-size: 12px; }
 .planting-canopy-result dd { display: flex; align-items: center; gap: 10px; margin: 0; }

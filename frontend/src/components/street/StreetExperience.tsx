@@ -3,8 +3,9 @@ import { plantingSites, streetChapters, togglePlantingSite } from "../../data/st
 import { useTheme } from "../../hooks/useTheme";
 import type { StreetSceneController } from "./createStreetScene";
 import { HoldBefore } from "../HoldBefore";
+import type { WelcomePhase, WelcomeEntryCallbacks } from "../../data/welcome";
 
-export function StreetExperience() {
+export function StreetExperience({ welcome = "complete", onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable }: { welcome?: WelcomePhase } & WelcomeEntryCallbacks) {
   const root = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const controller = useRef<StreetSceneController | null>(null);
@@ -20,7 +21,11 @@ export function StreetExperience() {
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [stills, setStills] = useState<string[]>([]);
+  const staticWelcome = reduced && welcome !== "complete";
+  const sceneEnabled = welcome !== "welcome";
   const latest = useRef({ theme, selected, growth, afternoon, before });
+  const entry = useRef({ welcome, onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable });
+  useEffect(() => { entry.current = { welcome, onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable }; }, [welcome, onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable]);
 
   useEffect(() => {
     latest.current = { ...latest.current, theme, selected, growth, afternoon };
@@ -41,6 +46,7 @@ export function StreetExperience() {
   }, []);
 
   useEffect(() => {
+    if (!sceneEnabled) return;
     let cancelled = false;
     let disposeTimeline = () => {};
     let localController: StreetSceneController | null = null;
@@ -61,8 +67,13 @@ export function StreetExperience() {
           localController?.dispose();
           controller.current = null;
           setStatus("fallback");
+          entry.current.onEntryUnavailable?.();
         };
         localController = createStreetScene(surface!, { ...latest.current, reduced, onFailure: fail,
+          entry: entry.current.welcome === "entering",
+          onEntryReady: () => entry.current.onEntryReady?.(),
+          onEntryFrame: frame => entry.current.onEntryFrame?.(frame),
+          onEntryComplete: () => entry.current.onEntryComplete?.(),
           onProject(index, x, y, visible) {
             const marker = markers.current[index];
             if (!marker) return;
@@ -100,6 +111,7 @@ export function StreetExperience() {
           localController?.dispose();
           controller.current = null;
           setStatus("fallback");
+          entry.current.onEntryUnavailable?.();
         }
       }
     }
@@ -110,7 +122,7 @@ export function StreetExperience() {
       localController?.dispose();
       controller.current = null;
     };
-  }, [reduced]);
+  }, [reduced, staticWelcome, sceneEnabled]);
 
   useEffect(() => {
     const chapter = root.current?.querySelector("#street-plant");
@@ -144,7 +156,7 @@ export function StreetExperience() {
 
   return (
     <section ref={root} className={`street-experience ${isStatic ? "is-static" : ""}`} aria-label="A continuous neighbourhood story">
-      {!isStatic && <div className="street-stage">
+      {(!isStatic || welcome !== "complete") && <div className="street-stage">
         {world}
       </div>}
 
@@ -152,7 +164,7 @@ export function StreetExperience() {
         {streetChapters.map((chapter, index) => (
           <article key={chapter.id} id={chapter.id} className={`street-beat street-beat-${index}`} aria-labelledby={`${chapter.id}-title`}>
             {isStatic && index < 5 && stills[index] && <img className="street-still" src={stills[index]} alt={chapter.object} loading={index === 0 ? "eager" : "lazy"} />}
-            {isStatic && index === 5 && <div className="street-static-world">{world}</div>}
+            {isStatic && index === 5 && welcome === "complete" && <div className="street-static-world">{world}</div>}
             <div className="street-copy">
               {index === 0 && <p className="street-intro-label">Cool Change / The street we share</p>}
               {index === 0

@@ -10,7 +10,7 @@
 .projection-planting-link strong { font-size: 12px; }
 .projection-planting-link:hover { background: #d5e4c9; }
 .about-section h3 { margin: 28px 0 0; font-size: 18px; }
-html[data-theme="dark"] { color-scheme: dark; --ink: #e4eee5; --paper: #101d19; --green: #a8d5af; --deep-green: #b9dfbd; --line: #a7c5b52e; --surface: #20322a; }
+html[data-theme="dark"] { color-scheme: dark; --ink: #e4eee5; --paper: #101d19; --green: #a8d5af; --deep-green: #b9dfbd; --cooling-green: #9acb8d; --line: #a7c5b52e; --surface: #20322a; }
 html[data-theme="dark"] :is(.nav-shell, .map-explorer-panel, .projection-controls, .projection-legend, .map-heat-legend, .map-reset-button) { background: #17291ff2; border-color: var(--line); color: var(--ink); box-shadow: 0 12px 32px #0004; }
 html[data-theme="dark"] :is(.site-header nav a, .wordmark small, .about-hero > p:last-child, .about-section div > p, .about-notes li, .about-sources small, .about-section-label, .about-sources li > span, .eyebrow, .map-page-intro, .map-page-eyebrow, .projection-kicker, .projection-controls > p, .projection-detail .projection-context, .projection-legend > span, .projection-legend small) { color: #b0c6b7; }
 html[data-theme="dark"] .site-header nav a:hover { background: #314a39; color: #e4eee5; }

@@ -1,16 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { comparisonScale, metricValue, relativeInsight } from '../src/utils/blockInsights.ts';
+import { comparisonScale, heatTone, metricValue, relativeInsight } from '../src/utils/blockInsights.ts';
 
 test('heat differences describe the selected block, including cooler blocks', () => {
   assert.equal(relativeInsight(6.2, 4.8, 'heat'), '1.4°C hotter');
   assert.equal(relativeInsight(2.9, 6.2, 'heat'), '3.3°C cooler');
   assert.equal(relativeInsight(-1, -2, 'heat'), '1.0°C hotter');
+  assert.equal(heatTone(6.2, 4.8), 'hotter');
+  assert.equal(heatTone(2.9, 6.2), 'cooler');
+  assert.equal(heatTone(-1, -2), 'hotter');
+  assert.equal(heatTone(-1, 0), 'cooler');
 });
 
 test('canopy coverage gaps subtract coverage values and show their direction', () => {
-  assert.equal(relativeInsight(12.4, 21.7, 'canopy'), '−9.3% canopy coverage');
-  assert.equal(relativeInsight(30, 20, 'canopy'), '+10.0% canopy coverage');
+  assert.equal(relativeInsight(12.4, 21.7, 'canopy'), '−9.3%');
+  assert.equal(relativeInsight(30, 20, 'canopy'), '+10.0%');
 });
 
 test('missing data is distinct from zero, and rounded equality has neutral wording', () => {
@@ -21,6 +25,10 @@ test('missing data is distinct from zero, and rounded equality has neutral wordi
   assert.equal(relativeInsight(5, NaN, 'heat'), null);
   assert.equal(relativeInsight(5, 5.01, 'heat'), 'About the same surface heat');
   assert.equal(relativeInsight(20.01, 20, 'canopy'), 'About the same tree canopy');
+  assert.equal(heatTone(5, 5.01), 'neutral');
+  assert.equal(heatTone(null, 5), 'neutral');
+  assert.equal(heatTone(5, NaN), 'neutral');
+  assert.equal(heatTone(5, undefined), 'neutral');
 });
 
 test('comparison axes include negative surface heat and preserve equal spacing', () => {

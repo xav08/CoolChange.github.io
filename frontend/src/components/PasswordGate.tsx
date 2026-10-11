@@ -26,7 +26,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
     <>
       {/* Rendered underneath so the real app is present (for layout/perf)
           but visually dimmed and non-interactive until unlocked. */}
-      <div style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none" }}>
+      <div inert style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none" }}>
         {children}
       </div>
 

@@ -139,6 +139,7 @@ SELECT RTRIM(m.sa2_code16) AS sa2_code16,
        m.sa2_name,
        MIN(m.lga_name) AS lga_name,
        COUNT(*)::integer AS n_blocks,
+       SUM(m.persons) AS persons,
        ROUND(AVG(m.uhi_mean)::numeric, 2) AS uhi_mean,
        ROUND(AVG(m.canopy_pct)::numeric, 2) AS canopy_mean,
        ST_AsGeoJSON(s.geom, 6) AS geometry

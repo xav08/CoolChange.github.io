@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { plantedCanopyFootprint, melbourneSunDirection, plantingLocations, plantingSites, sampleStreetView } from "../../data/streetStory";
 import type { Theme } from "../../hooks/useTheme";
+import { WELCOME_TRANSITION_MS, welcomeEntryMotion, type WelcomeEntryCallbacks } from "../../data/welcome";
 
 export type StreetSceneController = {
   setProgress: (progress: number) => void;
@@ -16,7 +17,7 @@ type Tree = { group: THREE.Group; crown: THREE.Group; scale: number };
 
 export function createStreetScene(
   canvas: HTMLCanvasElement,
-  options: { theme: Theme; selected: number[]; growth: number; afternoon: boolean; before?: boolean; reduced: boolean; onFailure: () => void; onProject: (index: number, x: number, y: number, visible: boolean) => void },
+  options: { theme: Theme; selected: number[]; growth: number; afternoon: boolean; before?: boolean; reduced: boolean; entry?: boolean; onFailure: () => void; onProject: (index: number, x: number, y: number, visible: boolean) => void } & WelcomeEntryCallbacks,
 ): StreetSceneController {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
   renderer.setClearColor(0x000000, 0);
@@ -58,16 +59,17 @@ export function createStreetScene(
     return mesh;
   }
 
-  scene.add(new THREE.HemisphereLight(0xfff7e7, 0x81987d, 1.9));
+  const skyLight = new THREE.HemisphereLight(0xfff7e7, 0x81987d, 1.9);
+  scene.add(skyLight);
   const sun = new THREE.DirectionalLight(0xfff0d5, 2.6);
   sun.position.set(12, 24, 14);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -27, right: 27, top: 27, bottom: -27, near: 1, far: 80 });
   sun.shadow.normalBias = 0.08;
   sun.shadow.bias = -0.0004;
   sun.shadow.radius = 3;
-  scene.add(sun);
+  scene.add(sun, sun.target);
 
   const neighbourhood = new THREE.Group();
   scene.add(neighbourhood);
@@ -167,7 +169,7 @@ export function createStreetScene(
     });
     return { group, crown, scale: 1 };
   }
-  const existingTrees = [[-10, -5.1], [10, -5.1], [-10, 5.1]].map(([x, z], index) => makeTree(x, z, index));
+  const existingTrees = [makeTree(-10, -5.1, 0), makeTree(10, -5.1, 1), makeTree(-10, 5.1, 2)];
   const heroTree = makeTree(3.6, 5.2, 0);
   const plantedTrees = plantingLocations.map(([x, , z], index) => makeTree(x, z, index, true));
   const footprints = plantedTrees.map(() => new THREE.Vector4());
@@ -236,12 +238,47 @@ export function createStreetScene(
   let before = options.before ?? false;
   const reduced = options.reduced;
   let mobile = false;
+  let surfaceWidth = 0, surfaceHeight = 0;
   let disposed = false;
   let frame = 0;
   let lastTime = 0;
   let immediateTrees = true;
   const lookAt = new THREE.Vector3();
   const cameraOffset = new THREE.Vector3();
+  let entryElapsed = 0;
+  let entryAnnounced = false;
+  let entryActive = options.entry ?? false;
+  let capturingStills = false;
+  const entryTarget = new THREE.Vector3();
+  // The existing tree behind the terracotta roof, beside the yellow car.
+  existingTrees[2].crown.children[0].getWorldPosition(entryTarget);
+  const world = canvas.parentElement!;
+  const stage = world.parentElement!;
+  let entryLayout: { stageWidth: number; stageHeight: number; left: number; top: number; width: number; height: number } | null = null;
+
+  function clearEntryLayout() {
+    for (const property of ["left", "right", "top", "bottom", "width", "height", "mask-image"]) world.style.removeProperty(property);
+  }
+
+  function frameEntryScene(blend: number) {
+    const stageRect = stage.getBoundingClientRect();
+    if (!entryLayout || entryLayout.stageWidth !== stageRect.width || entryLayout.stageHeight !== stageRect.height) {
+      clearEntryLayout();
+      const target = world.getBoundingClientRect();
+      entryLayout = { stageWidth: stageRect.width, stageHeight: stageRect.height,
+        left: target.left - stageRect.left, top: target.top - stageRect.top,
+        width: target.width, height: target.height };
+    }
+    const target = entryLayout;
+    world.style.left = `${target.left * blend}px`;
+    world.style.top = `${target.top * blend}px`;
+    world.style.right = "auto";
+    world.style.bottom = "auto";
+    world.style.width = `${target.stageWidth + (target.width - target.stageWidth) * blend}px`;
+    world.style.height = `${target.stageHeight + (target.height - target.stageHeight) * blend}px`;
+    world.style.maskImage = `linear-gradient(to right, transparent, #000 ${6 * blend}%, #000 ${100 - 2 * blend}%, transparent)`;
+    resize();
+  }
 
   function applyTree(tree: Tree, scale: number, maturity = 0) {
     tree.scale = scale;
@@ -254,12 +291,32 @@ export function createStreetScene(
   function draw(time: number) {
     frame = 0;
     if (disposed) return;
-    const delta = Math.min(64, time - (lastTime || time)); lastTime = time;
-    const view = sampleStreetView(progress, mobile, reduced);
+    const elapsed = time - (lastTime || time);
+    const delta = Math.min(64, elapsed); lastTime = time;
+    let entryProgress = 1;
+    if (entryActive && !capturingStills) {
+      entryElapsed += Math.min(100, elapsed);
+      entryProgress = Math.min(1, entryElapsed / WELCOME_TRANSITION_MS);
+      frameEntryScene(welcomeEntryMotion(entryProgress).layout);
+    }
+    const view = sampleStreetView(entryActive && !capturingStills ? 0 : progress, mobile, reduced);
     lookAt.set(...view.target);
     cameraOffset.set(...view.camera).sub(lookAt);
     // Preserve the composition in tall tablet canvases instead of cropping it.
     camera.position.copy(lookAt).addScaledVector(cameraOffset, Math.max(1, 1.05 / camera.aspect) * (1 + (mobile ? 0 : 0.16) * view.planting));
+    if (entryActive && !capturingStills) {
+      const motion = welcomeEntryMotion(entryProgress);
+      const endDistance = camera.position.distanceTo(lookAt);
+      const distance = Math.exp(Math.log(1.65) + Math.log(endDistance / 1.65) * motion.pullback);
+      cameraOffset.copy(camera.position).sub(lookAt).normalize();
+      // Keep the tree centred as the street appears. Pan towards the whole
+      // neighbourhood only as the canvas settles into the homepage layout.
+      const pan = motion.layout * distance / endDistance * (entryLayout?.width ?? canvas.clientWidth) / canvas.clientWidth;
+      lookAt.lerpVectors(entryTarget, lookAt, Math.min(1, pan));
+      // Dolly out along the same viewing direction. A logarithmic distance
+      // keeps the close-up gentle instead of shrinking the tree in one jump.
+      camera.position.copy(lookAt).addScaledVector(cameraOffset, distance);
+    }
     camera.lookAt(lookAt);
     heatMaterial.uniforms.strength.value = view.heat;
     const sunTarget = view.planting > 0 ? (afternoon ? 1 : 0) : 0;
@@ -283,20 +340,35 @@ export function createStreetScene(
     });
     existingTrees.forEach(tree => applyTree(tree, 1));
     immediateTrees = false;
+    // Only the camera moves during entry; reuse the street's static shadows.
+    renderer.shadowMap.autoUpdate = !entryActive || capturingStills;
+    if (entryActive && !entryAnnounced) renderer.shadowMap.needsUpdate = true;
     renderer.render(scene, camera);
+    if (entryActive && !capturingStills) {
+      options.onEntryFrame?.({ progress: entryProgress });
+      if (!entryAnnounced) { entryAnnounced = true; options.onEntryReady?.(); }
+      if (entryProgress >= 1) {
+        entryActive = false;
+        renderer.shadowMap.autoUpdate = true;
+        clearEntryLayout();
+        options.onEntryComplete?.();
+      }
+    }
     plantingSites.forEach(({ index }) => {
       const [x, , z] = plantingLocations[index];
       const point = new THREE.Vector3(x, selected.includes(index) && !before ? 0.1 + 5.05 * plantedTrees[index].scale : 0.5, z).project(camera);
       options.onProject(index, (point.x + 1) * 50, (1 - point.y) * 50, view.planting > 0.95 && point.z < 1);
     });
-    if (settling) invalidate();
+    if (settling || (entryActive && !capturingStills)) invalidate();
   }
   function invalidate() {
     if (!frame && !disposed) frame = requestAnimationFrame(draw);
   }
   function resize() {
-    const { width, height } = canvas.getBoundingClientRect();
+    const width = canvas.clientWidth, height = canvas.clientHeight;
     if (!width || !height) return;
+    if (width === surfaceWidth && height === surfaceHeight) return;
+    surfaceWidth = width; surfaceHeight = height;
     mobile = window.matchMedia("(max-width: 767px)").matches;
     camera.aspect = width / height;
     camera.fov = mobile ? 42 : 36;
@@ -318,6 +390,8 @@ export function createStreetScene(
     options.onFailure();
   }
   canvas.addEventListener("webglcontextlost", contextLost);
+  function visibilityChanged() { lastTime = 0; if (!document.hidden) invalidate(); }
+  document.addEventListener("visibilitychange", visibilityChanged);
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
   setTheme(options.theme);
@@ -330,6 +404,7 @@ export function createStreetScene(
     setTheme,
     getStillViews() {
       const savedProgress = progress;
+      capturingStills = true;
       const views: string[] = [];
       for (let index = 0; index < 6; index++) {
         cancelAnimationFrame(frame); frame = 0;
@@ -338,6 +413,7 @@ export function createStreetScene(
         views.push(canvas.toDataURL("image/webp", 0.8));
       }
       progress = savedProgress;
+      capturingStills = false;
       invalidate();
       return views;
     },
@@ -346,7 +422,9 @@ export function createStreetScene(
       disposed = true;
       cancelAnimationFrame(frame);
       observer.disconnect();
+      if (entryActive) clearEntryLayout();
       canvas.removeEventListener("webglcontextlost", contextLost);
+      document.removeEventListener("visibilitychange", visibilityChanged);
       geometries.forEach(value => value.dispose());
       materials.forEach(value => value.dispose());
       renderer.dispose();
