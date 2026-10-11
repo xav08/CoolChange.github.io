@@ -2,6 +2,7 @@ import { useState, type ReactNode, type FormEvent } from "react";
 
 const SESSION_KEY = "coolchange_unlocked";
 const SITE_PASSWORD = import.meta.env.VITE_SITE_PASSWORD;
+const gateEnabled = Boolean(import.meta.env.VITE_SITE_PASSWORD);
 
 export function PasswordGate({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(
@@ -18,10 +19,11 @@ export function PasswordGate({ children }: { children: ReactNode }) {
     } else {
       setError(true);
     }
-  };
+  };  
 
   if (unlocked) return <>{children}</>;
-
+  if (!gateEnabled) return <>{children}</>;
+  
   return (
     <>
       {/* Rendered underneath so the real app is present (for layout/perf)
