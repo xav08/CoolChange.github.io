@@ -236,6 +236,7 @@ async function getMapSuburbs() {
         sa2_name: row.sa2_name,
         lga_name: row.lga_name,
         n_blocks: Number(row.n_blocks),
+        persons: row.persons == null ? null : Number(row.persons),
         uhi_mean: round2(row.uhi_mean),
         canopy_mean: round2(row.canopy_mean),
       })

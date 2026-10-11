@@ -19,11 +19,12 @@ function LocalComparison({ kind, value, reference, label }: { kind: MetricKind; 
   </div>;
 }
 
-export function SelectedBlockPanel({ detail, suburb, heat, canopy, modelled, tab, onTab, onBack, children }: {
+export function SelectedBlockPanel({ detail, suburb, heat, canopy, modelled, tab, onTab, onBack, children, reportAction }: {
   detail: MeshblockDetail;
   suburb: { uhi_mean?: number | null; canopy_mean?: number | null } | null;
   heat: number | null; canopy: number | null; modelled: boolean; tab: BlockTab;
   onTab: (tab: BlockTab) => void; onBack: () => void; children: ReactNode;
+  reportAction?: ReactNode;
 }) {
   const id = useId();
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -60,6 +61,7 @@ export function SelectedBlockPanel({ detail, suburb, heat, canopy, modelled, tab
       <button className="map-back-button" type="button" onClick={onBack}>← {detail.block.sa2_name || "All suburbs"}</button>
       <h1>{title}</h1>
       <p>{detail.block.lga_name}{detail.streets.length > 1 ? ` · +${detail.streets.length - 1} ${detail.streets.length === 2 ? "street" : "streets"}` : ""}</p>
+      {reportAction}
     </header>
     {tab === "Overview" && <dl className="selected-block-metrics">
       <div><dt>Surface heat</dt>

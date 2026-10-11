@@ -21,6 +21,8 @@ import { plantingMilestones } from "../utils/plantingMilestones";
 import { polygonBounds, polygonsFor } from "../utils/canopyGeometry";
 import type { SheetSize } from "../utils/explorerSheet";
 import { MapTour } from "../tour/MapTour";
+import { ReportPanel } from "./ReportPanel";
+import { firstStreet, reportForSuburb, toggleReportBlock, type ReportSelection } from "../utils/report";
 import type { TourController, TourState } from "../tour/tourTypes";
 import type { Rect } from "../tour/tourLogic";
 
@@ -55,6 +57,7 @@ type SearchResult = {
 };
 
 type SuburbSummary = SearchResult & {
+  persons?: number | null;
   uhi_mean?: number | null;
   canopy_mean?: number | null;
 };
@@ -183,6 +186,7 @@ export function MelbourneMapPage() {
   const [searchResetToken, setSearchResetToken] = useState(0);
   const [hoveredSuburb, setHoveredSuburb] = useState<SuburbSummary | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<MeshblockDetail | null>(null);
+  const [reportSelection, setReportSelection] = useState<ReportSelection>({ suburbCode: "", items: [] });
   const [selectedGeometry, setSelectedGeometry] = useState<BlockGeometry | null>(null);
   const [blockTab, setBlockTab] = useState<BlockTab>("Overview");
   const [blockLoading, setBlockLoading] = useState(false);
@@ -319,6 +323,7 @@ export function MelbourneMapPage() {
       // The future view never requests or drills into mesh-block geometry.
       const feature = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === selection.sa2_code16);
       setSuburb({ ...selection, ...(feature?.properties ?? {}) } as SuburbSummary);
+      setReportSelection(current => reportForSuburb(current, selection.sa2_code16));
       setHoveredSuburb(null);
       setLoadingSuburb(false);
       setMapError("");
@@ -349,6 +354,7 @@ export function MelbourneMapPage() {
       // Search results omit averages; retain the same suburb benchmarks as map selection.
       const summary = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === selection.sa2_code16)?.properties;
       setSuburb({ ...selection, ...summary, ...data.suburb } as SuburbSummary);
+      setReportSelection(current => reportForSuburb(current, selection.sa2_code16));
       // Clear highlighting from the previous street search.
       map.setFilter(MESH_SELECTED, ["==", ["get", "mb_code16"], ""]);
       if (map.getLayer(MESH_FILL)) map.setPaintProperty(MESH_FILL, "fill-opacity", 0.8);
@@ -898,6 +904,12 @@ export function MelbourneMapPage() {
           canopy={displayed?.canopy ?? selectedBlock.block.canopy_pct}
           modelled={effectiveComparison === "after" && addedTrees > 0 && !!displayed}
           tab={blockTab} onTab={setBlockTab}
+          reportAction={<button type="button" className="report-add" disabled={blockLoading || loadingSuburb || tourActive || !suburb}
+            aria-pressed={reportSelection.items.some(item => item.code === selectedBlock.block.mb_code16)}
+            onClick={() => { if (suburb) setReportSelection(current => toggleReportBlock(current, suburb.sa2_code16,
+              { code: selectedBlock.block.mb_code16, street: firstStreet(selectedBlock.streets) })); }}>
+            {reportSelection.items.some(item => item.code === selectedBlock.block.mb_code16) ? "Remove from report" : "Add to report"}
+          </button>}
           onBack={() => {
             setSelectedBlock(null);
             setBlockTab("Overview");
@@ -930,6 +942,10 @@ export function MelbourneMapPage() {
         </details>}
         </div>
         {!future && plantingNotice && <p className="planting-notice" role="status">{plantingNotice}</p>}
+        <ReportPanel suburb={suburb} items={suburb?.sa2_code16 === reportSelection.suburbCode ? reportSelection.items : []}
+          scenarios={scenarios} warming={warmingLevel} apiBase={API_BASE}
+          disabled={!mapReady || blockLoading || loadingSuburb || tourActive}
+          onRemove={code => setReportSelection(current => ({ ...current, items: current.items.filter(item => item.code !== code) }))} />
       </ExplorerPanel>
 
       {future && projectionData && <ProjectionLegend data={projectionData} />}

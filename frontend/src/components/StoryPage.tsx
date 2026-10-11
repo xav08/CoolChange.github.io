@@ -3,14 +3,14 @@ import { Footer } from "./Footer";
 import { StreetExperience } from "./street/StreetExperience";
 import { TrustSection } from "./TrustSection";
 import "../street-story.css";
-import type { WelcomePhase } from "../data/welcome";
+import type { WelcomePhase, WelcomeEntryCallbacks } from "../data/welcome";
 
 // compose the full scroll-led home page
-export function StoryPage({ welcome = "complete" }: { welcome?: WelcomePhase }) {
+export function StoryPage({ welcome = "complete", ...entry }: { welcome?: WelcomePhase } & WelcomeEntryCallbacks) {
   return (
     <div className="street-page">
       <main id="story">
-        <StreetExperience welcome={welcome} />
+        <StreetExperience welcome={welcome} {...entry} />
         <AddressExplorer />
         <TrustSection />
       </main>

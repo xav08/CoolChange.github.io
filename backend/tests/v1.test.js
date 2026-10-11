@@ -113,9 +113,10 @@ describe("GET /api/v1/meshblocks/:mb_code16", () => {
     expect(response.body.error.code).toBe("BAD_REQUEST");
   });
 
-  it("sets fallback and population flags from the four queries", async () => {
+  it("sets fallback and population flags with associated streets", async () => {
     pool.query.mockImplementation(async (text) => {
       if (text.includes("simulatorBlock")) return rows([]);
+      if (text.includes("blockStreets")) return rows([{ road_name: "High", road_type: "Street" }]);
       if (text.includes("blockByCode")) {
         return rows([
           {
@@ -182,6 +183,7 @@ describe("GET /api/v1/meshblocks/:mb_code16", () => {
     expect(response.body.flags.no_published_population).toBe(true);
     expect(response.body.flags.already_coolest_in_lga).toBe(false);
     expect(response.body.block.irsd_score).toBeNull();
+    expect(response.body.streets).toEqual(["High Street"]);
     expect(response.body.simulator).toBeNull();
     expect(response.body.projections[0].is_fallback).toBe(true);
     expect(response.body.comparisons[0].uhi_delta).toBe(-0.68);
@@ -210,6 +212,7 @@ describe("map geometry endpoints", () => {
       sa2_name: "Brunswick",
       lga_name: "Moreland (C)",
       n_blocks: 363,
+      persons: '24000',
       uhi_mean: 4.28,
       canopy_mean: 17.32,
       geometry: JSON.stringify({
@@ -224,6 +227,7 @@ describe("map geometry endpoints", () => {
     expect(response.body.features[0].properties).toEqual(expect.objectContaining({
       sa2_name: "Brunswick",
       n_blocks: 363,
+      persons: 24000,
       uhi_mean: 4.28,
     }));
   });

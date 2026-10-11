@@ -3,9 +3,9 @@ import { plantingSites, streetChapters, togglePlantingSite } from "../../data/st
 import { useTheme } from "../../hooks/useTheme";
 import type { StreetSceneController } from "./createStreetScene";
 import { HoldBefore } from "../HoldBefore";
-import type { WelcomePhase } from "../../data/welcome";
+import type { WelcomePhase, WelcomeEntryCallbacks } from "../../data/welcome";
 
-export function StreetExperience({ welcome = "complete" }: { welcome?: WelcomePhase }) {
+export function StreetExperience({ welcome = "complete", onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable }: { welcome?: WelcomePhase } & WelcomeEntryCallbacks) {
   const root = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const controller = useRef<StreetSceneController | null>(null);
@@ -22,12 +22,10 @@ export function StreetExperience({ welcome = "complete" }: { welcome?: WelcomePh
   const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [stills, setStills] = useState<string[]>([]);
   const staticWelcome = reduced && welcome !== "complete";
-  const latest = useRef({ theme, selected, growth, afternoon, before, welcome: welcome === "welcome" });
-
-  useEffect(() => {
-    latest.current.welcome = welcome === "welcome";
-    controller.current?.setWelcome(welcome === "welcome");
-  }, [welcome]);
+  const sceneEnabled = welcome !== "welcome";
+  const latest = useRef({ theme, selected, growth, afternoon, before });
+  const entry = useRef({ welcome, onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable });
+  useEffect(() => { entry.current = { welcome, onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable }; }, [welcome, onEntryReady, onEntryFrame, onEntryComplete, onEntryUnavailable]);
 
   useEffect(() => {
     latest.current = { ...latest.current, theme, selected, growth, afternoon };
@@ -48,6 +46,7 @@ export function StreetExperience({ welcome = "complete" }: { welcome?: WelcomePh
   }, []);
 
   useEffect(() => {
+    if (!sceneEnabled) return;
     let cancelled = false;
     let disposeTimeline = () => {};
     let localController: StreetSceneController | null = null;
@@ -68,8 +67,13 @@ export function StreetExperience({ welcome = "complete" }: { welcome?: WelcomePh
           localController?.dispose();
           controller.current = null;
           setStatus("fallback");
+          entry.current.onEntryUnavailable?.();
         };
         localController = createStreetScene(surface!, { ...latest.current, reduced, onFailure: fail,
+          entry: entry.current.welcome === "entering",
+          onEntryReady: () => entry.current.onEntryReady?.(),
+          onEntryFrame: frame => entry.current.onEntryFrame?.(frame),
+          onEntryComplete: () => entry.current.onEntryComplete?.(),
           onProject(index, x, y, visible) {
             const marker = markers.current[index];
             if (!marker) return;
@@ -107,6 +111,7 @@ export function StreetExperience({ welcome = "complete" }: { welcome?: WelcomePh
           localController?.dispose();
           controller.current = null;
           setStatus("fallback");
+          entry.current.onEntryUnavailable?.();
         }
       }
     }
@@ -117,7 +122,7 @@ export function StreetExperience({ welcome = "complete" }: { welcome?: WelcomePh
       localController?.dispose();
       controller.current = null;
     };
-  }, [reduced, staticWelcome]);
+  }, [reduced, staticWelcome, sceneEnabled]);
 
   useEffect(() => {
     const chapter = root.current?.querySelector("#street-plant");

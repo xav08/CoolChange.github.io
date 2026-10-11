@@ -1,0 +1,17 @@
+.report-panel { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink); }
+.report-panel summary { cursor: pointer; font-size: 14px; font-weight: 700; padding: 8px 0; }
+.report-panel p { font-size: 12px; line-height: 1.55; }
+.report-panel ul { list-style: none; margin: 12px 0; padding: 0; max-height: 260px; overflow-y: auto; }
+.report-panel li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.report-panel li > span { min-width: 0; overflow-wrap: anywhere; }
+.report-panel strong, .report-panel small { display: block; font-size: 12px; line-height: 1.5; }
+.report-panel small { font-size: 11px; }
+.report-panel button, .report-add { font: inherit; font-size: 12px; min-height: 44px; cursor: pointer; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: transparent; color: var(--deep-green); }
+.report-panel button:focus-visible, .report-add:focus-visible { outline: 2px solid var(--deep-green); outline-offset: 3px; }
+.report-panel button:disabled, .report-add:disabled { opacity: 0.5; cursor: default; }
+.report-add { margin: 12px 0 0; width: 100%; }
+.report-add[aria-pressed="true"] { border-color: var(--deep-green); }
+.report-panel .report-export { background: var(--deep-green); color: var(--paper); font-weight: 700; border-color: var(--deep-green); white-space: nowrap; }
+.report-panel .report-cancel { margin-left: 8px; }
+.report-panel .report-status:empty { margin: 0; }
+.report-panel .report-error { color: var(--ink); border-left: 3px solid #b85c3a; padding-left: 10px; }
