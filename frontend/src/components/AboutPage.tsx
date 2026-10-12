@@ -1,3 +1,5 @@
+import { AboutEquity } from "./AboutEquity";
+
 // list the external datasets used by the project
 const sources = [
   {
@@ -20,7 +22,7 @@ const sources = [
   },
   {
     code: "D4",
-    title: "SEIFA 2016, SA1 indexes",
+    title: "SEIFA 2016, SA1 and SA2 indexes",
     organisation: "Australian Bureau of Statistics · cat. 2033.0.55.001",
     href: "https://www.abs.gov.au/",
   },
@@ -44,6 +46,8 @@ export function AboutPage() {
             <p>Melbourne is warming, but heat is not felt equally across the city. Shade, trees, streets and land cover all shape the conditions of a neighbourhood. Cool Change makes those patterns easier to explore at suburb and mesh-block scale.</p>
           </div>
         </section>
+
+        <AboutEquity />
 
         <section className="about-section">
           <p className="about-section-label">Our data</p>
