@@ -206,6 +206,7 @@ export function MelbourneMapPage() {
   const [sheetRequest, setSheetRequest] = useState<{ size: SheetSize; nonce: number } | null>(null);
   const tourActiveRef = useRef(false);
   const tourSnapshot = useRef<PlantingScenario[]>([]);
+  const tourReportSnapshot = useRef<ReportSelection>({ suburbCode: "", items: [] });
   const model = selectedBlock?.simulator?.interactive ?? null;
   const activeScenario = scenarios.find(s => s.code === selectedBlock?.block.mb_code16);
   const addedTrees = activeScenario?.trees ?? 0;
@@ -691,6 +692,7 @@ export function MelbourneMapPage() {
     blockCode: selectedBlock?.block.mb_code16 ?? null,
     blockLoading, tab: blockTab, trees: addedTrees, maxTrees: model?.max_trees ?? 0,
     milestones, comparison, plantedBlocks: scenarios.length,
+    reportBlocks: suburb && reportSelection.suburbCode === suburb.sa2_code16 ? reportSelection.items.map(item => item.code) : [],
   };
 
   function screenRect(bounds: [[number, number], [number, number]] | null): Rect | null {
@@ -720,13 +722,16 @@ export function MelbourneMapPage() {
   tourActions.current = {
     begin() {
       tourSnapshot.current = scenarios;
+      tourReportSnapshot.current = reportSelection;
       tourActiveRef.current = true;
       setScenarios([]);
+      setReportSelection({ suburbCode: "", items: [] });
       setPlantingNotice("");
     },
     end() {
       tourActiveRef.current = false;
       setScenarios(tourSnapshot.current);
+      setReportSelection(tourReportSnapshot.current);
       setComparison("after");
       setPreviewBefore(false);
       setPlantingNotice("");
@@ -759,6 +764,8 @@ export function MelbourneMapPage() {
     setComparison,
     setSheet(size) { setSheetRequest(current => ({ size, nonce: (current?.nonce ?? 0) + 1 })); },
     openPlantedList() { panelRef.current?.querySelector<HTMLDetailsElement>(".planted-blocks")?.setAttribute("open", ""); },
+    setReport(items) { if (suburb) setReportSelection({ suburbCode: suburb.sa2_code16, items }); },
+    openReportPanel() { panelRef.current?.querySelector<HTMLDetailsElement>(".report-panel")?.setAttribute("open", ""); },
     suburbSummary(code) {
       const properties = suburbDataRef.current.features.find(item => item.properties?.sa2_code16 === code)?.properties;
       return properties ? {
@@ -790,6 +797,7 @@ export function MelbourneMapPage() {
       clearHighlight: call("clearHighlight"), openBlock: call("openBlock"), closeBlock: call("closeBlock"),
       setTab: call("setTab"), setTrees: call("setTrees"), setComparison: call("setComparison"),
       setSheet: call("setSheet"), openPlantedList: call("openPlantedList"), suburbSummary: call("suburbSummary"),
+      setReport: call("setReport"), openReportPanel: call("openReportPanel"),
       suburbRect: call("suburbRect"), blockRect: call("blockRect"),
     };
   }, []);
@@ -904,7 +912,7 @@ export function MelbourneMapPage() {
           canopy={displayed?.canopy ?? selectedBlock.block.canopy_pct}
           modelled={effectiveComparison === "after" && addedTrees > 0 && !!displayed}
           tab={blockTab} onTab={setBlockTab}
-          reportAction={<button type="button" className="report-add" disabled={blockLoading || loadingSuburb || tourActive || !suburb}
+          reportAction={<button type="button" className="report-add" disabled={blockLoading || loadingSuburb || !suburb}
             aria-pressed={reportSelection.items.some(item => item.code === selectedBlock.block.mb_code16)}
             onClick={() => { if (suburb) setReportSelection(current => toggleReportBlock(current, suburb.sa2_code16,
               { code: selectedBlock.block.mb_code16, street: firstStreet(selectedBlock.streets) })); }}>
@@ -944,7 +952,7 @@ export function MelbourneMapPage() {
         {!future && plantingNotice && <p className="planting-notice" role="status">{plantingNotice}</p>}
         <ReportPanel suburb={suburb} items={suburb?.sa2_code16 === reportSelection.suburbCode ? reportSelection.items : []}
           scenarios={scenarios} warming={warmingLevel} apiBase={API_BASE}
-          disabled={!mapReady || blockLoading || loadingSuburb || tourActive}
+          disabled={!mapReady || blockLoading || loadingSuburb}
           onRemove={code => setReportSelection(current => ({ ...current, items: current.items.filter(item => item.code !== code) }))} />
       </ExplorerPanel>
 

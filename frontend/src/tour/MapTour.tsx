@@ -80,9 +80,19 @@ async function applyScene(scene: TourScene | undefined, demo: TourDemo, c: TourC
   }
   if (cancelled()) return;
   if (scene.comparison && get().comparison !== scene.comparison) c.setComparison(scene.comparison);
+  if (scene.report) {
+    const codes = (scene.report === "none" ? [] : scene.report === "primary" ? [demo.primary] : [demo.primary, demo.secondary])
+      .filter((code): code is string => !!code);
+    const same = (list: string[]) => list.length === codes.length && codes.every(code => list.includes(code));
+    if (!same(get().reportBlocks)) {
+      c.setReport(codes.map(code => ({ code, street: demo.streets[code] ?? demo.streetName })));
+      await wait(s => same(s.reportBlocks));
+    }
+  }
   if (scene.sheet) c.setSheet(scene.sheet);
   await nextFrame();
   if (scene.openPlantedList) c.openPlantedList();
+  if (scene.openReport) c.openReportPanel();
   // Let the panel and camera settle before measuring the spotlight.
   await new Promise(resolve => window.setTimeout(resolve, 380));
 }
@@ -257,7 +267,8 @@ export function MapTour({ state, controller }: { state: TourState; controller: T
   const placement = placeCard(step.target.kind === "none" ? null : rect, viewport, cardSize);
   const hint = demo && !applying && step.action?.hint ? step.action.hint(state, demo) : null;
   const chapter = step.chapter;
-  const eyebrow = chapter === 0 ? "Guided tour" : chapter === 5 ? "Tour complete" : `Chapter ${chapter} of 4 · ${TOUR_CHAPTERS[chapter]}`;
+  const lastChapter = TOUR_CHAPTERS.length - 1;
+  const eyebrow = chapter === 0 ? "Guided tour" : chapter === lastChapter ? "Tour complete" : `Chapter ${chapter} of ${lastChapter - 1} · ${TOUR_CHAPTERS[chapter]}`;
   const primaryLabel = first ? (demo ? "Start the tour" : "Getting ready…") : last ? "Explore the map" : step.action?.label ?? "Next";
   const progress = (index / (tourSteps.length - 1)) * 100;
 
