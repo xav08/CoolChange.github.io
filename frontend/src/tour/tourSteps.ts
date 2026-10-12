@@ -9,6 +9,7 @@ export const TOUR_CHAPTERS = [
   "Where the heat is today",
   "Your block, up close",
   "What trees could change",
+  "Take it to your council",
   "Your turn",
 ] as const;
 
@@ -208,11 +209,41 @@ export const tourSteps: TourStep[] = [
     scene: { block: "secondary", tab: "Plant", trees: "few", comparison: "after", openPlantedList: true, sheet: "half" },
   },
 
+  // Chapter 5 · Take it to your council
+  {
+    id: "report-add",
+    chapter: 5,
+    title: "Add blocks to a report.",
+    body: demo => `Found a block worth acting on? "Add to report" collects blocks into a PDF you can attach to a council submission or share with neighbours. Add this ${demo.streetName} block.`,
+    target: { kind: "element", selectors: panel(".report-add") },
+    scene: { future: false, suburb: "demo", block: "primary", tab: "Overview", report: "none", sheet: "half" },
+    action: {
+      label: "Show me",
+      done: (state, demo) => !!demo.primary && state.reportBlocks.includes(demo.primary),
+    },
+  },
+  {
+    id: "report-list",
+    chapter: 5,
+    title: "Build your list.",
+    body: (demo, state) => `${state.reportBlocks.length > 1 ? `We've added a second ${demo.streetName} block too. ` : ""}The Report list at the bottom of the panel holds every block you add in ${demo.suburb.sa2_name}, and Remove takes one out. Choosing another suburb starts a new list.`,
+    target: { kind: "element", selectors: panel(".report-panel") },
+    scene: { block: "primary", report: "both", openReport: true, sheet: "half" },
+  },
+  {
+    id: "report-export",
+    chapter: 5,
+    title: "Export the PDF.",
+    body: "Export PDF creates a report for every block in your list: surface heat and canopy before and after your trees, the model's likely range, and the data sources and limitations. The PDF is made in your browser and nothing is saved on our servers. Try it now if you like. This one will include the tour's example trees.",
+    target: { kind: "element", selectors: [...panel(".report-panel ul"), ...panel(".report-export")] },
+    scene: { block: "primary", report: "both", openReport: true, sheet: "half" },
+  },
+
   {
     id: "finish",
-    chapter: 5,
+    chapter: 6,
     title: "Your turn.",
-    body: "That's the tour. When you close this card, the tour's trees are removed and anything you'd saved comes back. Search for your own street to start exploring. You can replay the tour any time from the button next to Reset view.",
+    body: "That's the tour. When you close this card, the tour's trees and report list are removed and anything you'd saved comes back. Search for your own street to start exploring. You can replay the tour any time from the button next to Reset view.",
     target: { kind: "none" },
   },
 ];

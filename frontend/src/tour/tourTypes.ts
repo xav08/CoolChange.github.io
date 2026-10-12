@@ -30,6 +30,7 @@ export type TourState = {
   milestones: { trees: number; labels: string[] }[];
   comparison: "before" | "after";
   plantedBlocks: number;
+  reportBlocks: string[];
 };
 
 // Everything the tour is allowed to do to the map page.
@@ -50,6 +51,8 @@ export type TourController = {
   setComparison: (value: "before" | "after") => void;
   setSheet: (size: SheetSize) => void;
   openPlantedList: () => void;
+  setReport: (items: { code: string; street: string }[]) => void;
+  openReportPanel: () => void;
   suburbSummary: (code: string) => TourSuburb | null;
   suburbRect: () => Rect | null;
   blockRect: (code: string) => Rect | null;
@@ -61,6 +64,7 @@ export type TourDemo = {
   streetQuery: string;  // the exact text that returned results, e.g. "North Road, Clayton"
   primary: string | null;
   secondary: string | null;
+  streets: Record<string, string>; // first street of each candidate block, for the report list
 };
 
 // Desired map state for a step. Undefined fields are left alone.
@@ -75,6 +79,8 @@ export type TourScene = {
   comparison?: "before" | "after";
   sheet?: SheetSize;
   openPlantedList?: boolean;
+  report?: "none" | "primary" | "both";
+  openReport?: boolean;
 };
 
 export type TourTarget =
@@ -87,7 +93,7 @@ type Text = string | ((demo: TourDemo, state: TourState) => string);
 
 export type TourStep = {
   id: string;
-  chapter: 0 | 1 | 2 | 3 | 4 | 5; // 0 = welcome, 5 = finish
+  chapter: number; // 0 = welcome, last = finish (see TOUR_CHAPTERS)
   title: Text;
   body: Text;
   target: TourTarget;

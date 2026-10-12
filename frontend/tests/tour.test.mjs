@@ -66,9 +66,20 @@ test('tree targets avoid milestones for the starting value and prefer the suburb
 
 test('the story covers every chapter in order and every action step can finish', () => {
   const chapters = tourSteps.map(step => step.chapter);
-  assert.deepEqual([...new Set(chapters)], [0, 1, 2, 3, 4, 5]);
+  assert.deepEqual([...new Set(chapters)], TOUR_CHAPTERS.map((_, index) => index));
   assert.deepEqual(chapters, [...chapters].sort((a, b) => a - b));
-  assert.equal(TOUR_CHAPTERS.length, 6);
+  assert.equal(TOUR_CHAPTERS.length, 7);
   assert.equal(new Set(tourSteps.map(step => step.id)).size, tourSteps.length);
   for (const step of tourSteps.filter(item => item.action)) assert.equal(typeof step.action.done, 'function', step.id);
+});
+
+test('the report chapter adds a block, builds the list, then explains the export', () => {
+  const report = tourSteps.filter(step => step.chapter === TOUR_CHAPTERS.indexOf('Take it to your council'));
+  assert.deepEqual(report.map(step => step.id), ['report-add', 'report-list', 'report-export']);
+  assert.equal(report[0].scene.report, 'none');
+  assert.ok(report.slice(1).every(step => step.scene.report === 'both' && step.scene.openReport));
+  const demo = { primary: '1', secondary: '2' };
+  assert.equal(report[0].action.done({ reportBlocks: [] }, demo), false);
+  assert.equal(report[0].action.done({ reportBlocks: ['1'] }, demo), true);
+  assert.equal(tourSteps.at(-1).chapter, TOUR_CHAPTERS.length - 1);
 });

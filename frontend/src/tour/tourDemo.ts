@@ -58,5 +58,7 @@ export async function resolveTourDemo(apiBase: string, suburbSummary: (code: str
     };
   });
   const { primary, secondary } = pickDemoBlocks(candidates);
-  return { suburb, streetName: STREET, streetQuery: query, primary, secondary };
+  const streetNames = Object.fromEntries(inSuburb.map((block, index) =>
+    [block.mb_code16, details[index]?.streets.find(street => street.trim())?.trim() || STREET]));
+  return { suburb, streetName: STREET, streetQuery: query, primary, secondary, streets: streetNames };
 }
